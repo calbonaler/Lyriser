@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
-using System.Text.RegularExpressions;
-using Controls;
 
 namespace Lyriser
 {
@@ -30,7 +24,7 @@ namespace Lyriser
 		private void MainForm_Load(object sender, EventArgs e)
 		{
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
-			txtLyrics.HighlightTokenizer = LyricsLine.CreateHighlightTokenizer();
+			txtLyrics.HighlightTokenizer = new LyricsParser(ErrorSink.Null);
 			lyrics.Bounds = picViewer.Bounds;
 			lyrics.MainFont = new Font(Font.FontFamily, 14);
 			lyrics.PhoneticOffset = -5;
@@ -39,7 +33,10 @@ namespace Lyriser
 
 		private void btnRenew_Click(object sender, EventArgs e)
 		{
-			lyrics.Parse(txtLyrics.Text);
+			lyrics.Lines.Clear();
+			foreach (var line in new LyricsParser(new ListBoxBoundErrorSink(lstErrors)).Analyze(txtLyrics.Text))
+				lyrics.Lines.Add(line);
+			lyrics.ResetHighlightPosition();
 			OptimizeScrollBarMaximum();
 			picViewer.Invalidate();
 		}
@@ -146,6 +143,42 @@ namespace Lyriser
 			lyrics.ResetHighlightPosition();
 			scrLineScroll.Value = lyrics.ViewStartLineIndex;
 			picViewer.Invalidate();
+		}
+
+		private void lstErrors_DoubleClick(object sender, EventArgs e)
+		{
+			var info = lstErrors.SelectedItem as ErrorInfo;
+			if (info != null)
+			{
+				txtLyrics.Select();
+				txtLyrics.Select(info.Index, 0);
+			}
+		}
+
+		class ErrorInfo
+		{
+			public ErrorInfo(string description, int index)
+			{
+				Description = description;
+				Index = index;
+			}
+
+			public string Description { get; private set; }
+
+			public int Index { get; private set; }
+
+			public override string ToString() { return Description; }
+		}
+
+		class ListBoxBoundErrorSink : ErrorSink
+		{
+			public ListBoxBoundErrorSink(ListBox listBox) { _listBox = listBox; }
+
+			ListBox _listBox;
+
+			public override void ReportError(string description, int index) { _listBox.Items.Add(new ErrorInfo(description, index)); }
+
+			public override void Clear() { _listBox.Items.Clear(); }
 		}
 	}
 }

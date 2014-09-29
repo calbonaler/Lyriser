@@ -120,13 +120,10 @@
   <data name="tpView.Text" xml:space="preserve">
     <value>表示</value>
   </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="txtLyrics.Font" type="System.Drawing.Font, System.Drawing">
-    <value>メイリオ, 9.75pt</value>
-  </data>
   <data name="tpEdit.Text" xml:space="preserve">
     <value>編集</value>
   </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="miNew.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
@@ -139,7 +136,7 @@
 </value>
   </data>
   <data name="miNew.Size" type="System.Drawing.Size, System.Drawing">
-    <value>202, 22</value>
+    <value>195, 22</value>
   </data>
   <data name="miNew.Text" xml:space="preserve">
     <value>新規作成(&amp;N)</value>
@@ -161,13 +158,13 @@
 </value>
   </data>
   <data name="miOpen.Size" type="System.Drawing.Size, System.Drawing">
-    <value>202, 22</value>
+    <value>195, 22</value>
   </data>
   <data name="miOpen.Text" xml:space="preserve">
     <value>開く(&amp;O)...</value>
   </data>
   <data name="sepFile1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>199, 6</value>
+    <value>192, 6</value>
   </data>
   <data name="miSave.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -186,46 +183,46 @@
 </value>
   </data>
   <data name="miSave.Size" type="System.Drawing.Size, System.Drawing">
-    <value>202, 22</value>
+    <value>195, 22</value>
   </data>
   <data name="miSave.Text" xml:space="preserve">
     <value>上書き保存(&amp;S)</value>
   </data>
   <data name="miSaveAs.Size" type="System.Drawing.Size, System.Drawing">
-    <value>202, 22</value>
+    <value>195, 22</value>
   </data>
   <data name="miSaveAs.Text" xml:space="preserve">
     <value>名前を付けて保存(&amp;S)...</value>
   </data>
   <data name="sepFile2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>199, 6</value>
+    <value>192, 6</value>
   </data>
   <data name="miExit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>202, 22</value>
+    <value>195, 22</value>
   </data>
   <data name="miExit.Text" xml:space="preserve">
     <value>終了(&amp;X)</value>
   </data>
   <data name="miFile.Size" type="System.Drawing.Size, System.Drawing">
-    <value>85, 22</value>
+    <value>70, 20</value>
   </data>
   <data name="miFile.Text" xml:space="preserve">
     <value>ファイル(&amp;F)</value>
   </data>
   <data name="miUndo.Size" type="System.Drawing.Size, System.Drawing">
-    <value>201, 22</value>
+    <value>191, 22</value>
   </data>
   <data name="miUndo.Text" xml:space="preserve">
     <value>元に戻す(&amp;U)</value>
   </data>
   <data name="miRedo.Size" type="System.Drawing.Size, System.Drawing">
-    <value>201, 22</value>
+    <value>191, 22</value>
   </data>
   <data name="miRedo.Text" xml:space="preserve">
     <value>やり直し(&amp;R)</value>
   </data>
   <data name="sepEdit1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>198, 6</value>
+    <value>188, 6</value>
   </data>
   <data name="miCut.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -241,7 +238,7 @@
 </value>
   </data>
   <data name="miCut.Size" type="System.Drawing.Size, System.Drawing">
-    <value>201, 22</value>
+    <value>191, 22</value>
   </data>
   <data name="miCut.Text" xml:space="preserve">
     <value>切り取り(&amp;T)</value>
@@ -261,7 +258,7 @@
 </value>
   </data>
   <data name="miCopy.Size" type="System.Drawing.Size, System.Drawing">
-    <value>201, 22</value>
+    <value>191, 22</value>
   </data>
   <data name="miCopy.Text" xml:space="preserve">
     <value>コピー(&amp;C)</value>
@@ -283,83 +280,64 @@
 </value>
   </data>
   <data name="miPaste.Size" type="System.Drawing.Size, System.Drawing">
-    <value>201, 22</value>
+    <value>191, 22</value>
   </data>
   <data name="miPaste.Text" xml:space="preserve">
     <value>貼り付け(&amp;P)</value>
   </data>
   <data name="sepEdit2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>198, 6</value>
+    <value>188, 6</value>
   </data>
   <data name="miSelectAll.Size" type="System.Drawing.Size, System.Drawing">
-    <value>201, 22</value>
+    <value>191, 22</value>
   </data>
   <data name="miSelectAll.Text" xml:space="preserve">
     <value>すべて選択(&amp;A)</value>
   </data>
   <data name="miEdit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>61, 22</value>
+    <value>60, 20</value>
   </data>
   <data name="miEdit.Text" xml:space="preserve">
     <value>編集(&amp;E)</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="itmRenew.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
-    <value>F5</value>
-  </data>
   <data name="itmRenew.Size" type="System.Drawing.Size, System.Drawing">
-    <value>140, 22</value>
+    <value>137, 22</value>
   </data>
   <data name="itmRenew.Text" xml:space="preserve">
     <value>更新(&amp;R)</value>
   </data>
   <data name="miParse.Size" type="System.Drawing.Size, System.Drawing">
-    <value>61, 22</value>
+    <value>60, 20</value>
   </data>
   <data name="miParse.Text" xml:space="preserve">
     <value>解析(&amp;P)</value>
   </data>
-  <data name="miHighlightNext.ShortcutKeyDisplayString" xml:space="preserve">
-    <value>Right</value>
-  </data>
-  <data name="miHighlightNext.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
-    <value>None</value>
-  </data>
   <data name="miHighlightNext.Size" type="System.Drawing.Size, System.Drawing">
-    <value>251, 22</value>
+    <value>229, 22</value>
   </data>
   <data name="miHighlightNext.Text" xml:space="preserve">
     <value>次をハイライト(&amp;N)</value>
   </data>
-  <data name="miHighlightPrevious.ShortcutKeyDisplayString" xml:space="preserve">
-    <value>Left</value>
-  </data>
-  <data name="miHighlightPrevious.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
-    <value>None</value>
-  </data>
   <data name="miHighlightPrevious.Size" type="System.Drawing.Size, System.Drawing">
-    <value>251, 22</value>
+    <value>229, 22</value>
   </data>
   <data name="miHighlightPrevious.Text" xml:space="preserve">
     <value>前をハイライト(&amp;P)</value>
   </data>
   <data name="sepOperation.Size" type="System.Drawing.Size, System.Drawing">
-    <value>248, 6</value>
+    <value>226, 6</value>
   </data>
   <data name="itmHighlightFirst.ShortcutKeyDisplayString" xml:space="preserve">
     <value />
   </data>
-  <data name="itmHighlightFirst.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
-    <value>Ctrl+Left</value>
-  </data>
   <data name="itmHighlightFirst.Size" type="System.Drawing.Size, System.Drawing">
-    <value>251, 22</value>
+    <value>229, 22</value>
   </data>
   <data name="itmHighlightFirst.Text" xml:space="preserve">
     <value>最初をハイライト(&amp;F)</value>
   </data>
   <data name="miOperation.Size" type="System.Drawing.Size, System.Drawing">
-    <value>63, 22</value>
+    <value>62, 20</value>
   </data>
   <data name="miOperation.Text" xml:space="preserve">
     <value>操作(&amp;O)</value>
@@ -468,7 +446,8 @@
   <data name="btnPaste.Text" xml:space="preserve">
     <value>貼り付け(&amp;P)</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>Inherit</value>
+    <value>NoControl</value>
   </data>
 </root>

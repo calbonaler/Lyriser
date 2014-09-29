@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using Controls;
 
 namespace Lyriser
 {
@@ -19,17 +15,7 @@ namespace Lyriser
 		Font mainFont = null;
 		Font phoneticFont = null;
 
-		public void Clear() { lines.Clear(); }
-
-		public void Parse(string source)
-		{
-			if (source == null)
-				throw new ArgumentNullException("source");
-			lines.Clear();
-			foreach (var item in source.Split(new[] { "\n", "\r", "\r\n" }, StringSplitOptions.None))
-				lines.Add(LyricsLine.Parse(item));
-			ResetHighlightPosition();
-		}
+		public IList<LyricsLine> Lines { get { return lines; } }
 
 		public void Draw(Graphics graphics)
 		{
@@ -160,29 +146,24 @@ namespace Lyriser
 
 	public class LyricsLine
 	{
-		LyricsLine(IEnumerable<LyricsItem> items)
+		public LyricsLine(string line, IEnumerable<Syllable> syllables, Dictionary<int, Phonetic> phonetics)
 		{
-			AnalyzerSink sink = new AnalyzerSink();
-			StringBuilder sb = new StringBuilder();
-			LyricsItem.AnalyzeAll(items, sb, sink, true);
-			Line = sb.ToString();
-			_syllables = sink.Syllables;
-			_phonetics = sink.Phonetics;
+			Line = line;
+			_syllables = syllables.ToArray();
+			_phonetics = phonetics;
 		}
 
-		List<Syllable> _syllables;
+		Syllable[] _syllables;
 		Dictionary<int, Phonetic> _phonetics;
-
-		public static LyricsLine Parse(string line) { return new Parser(line).Parse(); }
 
 		public Syllable GetNextSyllable(int index, int subIndex)
 		{
-			int itemIndex = _syllables.BinarySearch(new Syllable(index, subIndex, 0), Comparer<Syllable>.Create(Syllable.CompareOrder));
+			int itemIndex = Array.BinarySearch(_syllables, new Syllable(index, subIndex, 0), Comparer<Syllable>.Create(Syllable.CompareOrder));
 			if (itemIndex >= 0)
 				itemIndex++;
 			else
 				itemIndex = ~itemIndex;
-			if (itemIndex < _syllables.Count)
+			if (itemIndex < _syllables.Length)
 				return _syllables[itemIndex];
 			else
 				return null;
@@ -190,7 +171,7 @@ namespace Lyriser
 
 		public Syllable GetPreviousSyllable(int index, int subIndex)
 		{
-			int itemIndex = _syllables.BinarySearch(new Syllable(index, subIndex, 0), Comparer<Syllable>.Create(Syllable.CompareOrder));
+			int itemIndex = Array.BinarySearch(_syllables, new Syllable(index, subIndex, 0), Comparer<Syllable>.Create(Syllable.CompareOrder));
 			if (itemIndex >= 0)
 				itemIndex--;
 			else
@@ -226,14 +207,6 @@ namespace Lyriser
 			}
 		}
 
-		public string PhoneticSubstring(int index, int subIndex, int length)
-		{
-			StringBuilder sb = new StringBuilder();
-			foreach (var i in GetStringIndexes(index, subIndex, length))
-				sb.Append(i.Item2 == null ? Line[i.Item1] : _phonetics[i.Item1].Text[(int)i.Item2]);
-			return sb.ToString();
-		}
-		
 		public void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, int x, int y, int phoneticOffset, Syllable highlightSyllable)
 		{
 			if (mainFont == null)
@@ -280,283 +253,6 @@ namespace Lyriser
 		}
 
 		public string Line { get; private set; }
-
-		public static IHighlightTokenizer CreateHighlightTokenizer() { return new LyricsHighlightTokenizer(); }
-
-		class LyricsHighlightTokenizer : IHighlightTokenizer
-		{
-			public IEnumerable<HighlightToken> GetTokens(string text)
-			{
-				List<HighlightToken> tokens = new List<HighlightToken>();
-				foreach (var item in text.Split(new[] { "\n", "\r", "\r\n" }, StringSplitOptions.None))
-				{
-					try
-					{
-						foreach (var li in new Parser(item).GetLyricsItems())
-						{
-							foreach (var token in li.GetTokens())
-								tokens.Add(token);
-						}
-					}
-					catch
-					{
-
-					}
-				}
-				return tokens;
-			}
-		}
-
-		class Parser
-		{
-			public Parser(string line) { _line = line; }
-
-			string _line;
-			int _index;
-
-			bool Accept(string chars)
-			{
-				if (_line.Length - _index < chars.Length)
-					return false;
-				for (int i = _index, j = 0; i < _line.Length && j < chars.Length; i++, j++)
-				{
-					if (_line[i] != chars[j])
-						return false;
-				}
-				_index += chars.Length;
-				return true;
-			}
-
-			public IList<LyricsItem> GetLyricsItems()
-			{
-				List<LyricsItem> items = new List<LyricsItem>();
-				while (_index < _line.Length)
-					items.Add(ParseLyricsItem());
-				return items;
-			}
-
-			public LyricsLine Parse() { return new LyricsLine(GetLyricsItems()); }
-
-			LyricsItem ParseLyricsItem()
-			{
-				int start = _index;
-				if (Accept("("))
-				{
-					List<LyricsItem> items = new List<LyricsItem>();
-					do
-					{
-						items.Add(ParseLyricsItem());
-					} while (!Accept(")"));
-					return new DeletedItem(items.ToArray(), start, _index);
-				}
-				if (Accept("["))
-				{
-					List<SimpleItem> mainItems = new List<SimpleItem>();
-					do
-					{
-						mainItems.Add(ParseSimpleItem());
-					} while (!Accept("\""));
-					List<SimpleItem> items = new List<SimpleItem>();
-					do
-					{
-						items.Add(ParseSimpleItem());
-					} while (!Accept("\""));
-					if (!Accept("]"))
-						throw new ArgumentException();
-					return new CompositeItem(mainItems.ToArray(), items.ToArray(), start, _index);
-				}
-				else
-				{
-					var item = ParseSimpleItem();
-					if (Accept("\""))
-					{
-						List<SimpleItem> items = new List<SimpleItem>();
-						do
-						{
-							items.Add(ParseSimpleItem());
-						} while (!Accept("\""));
-						return new CompositeItem(new[] { item }, items.ToArray(), start, _index);
-					}
-					else
-						return item;
-				}
-			}
-
-			SimpleItem ParseSimpleItem()
-			{
-				int start = _index;
-				bool escaping = false;
-				if (Accept("`"))
-					escaping = true;
-				StringBuilder sb = new StringBuilder();
-				sb.Append(_line[_index++]);
-				if (char.IsHighSurrogate(sb[sb.Length - 1]) && _index < _line.Length && char.IsLowSurrogate(_line[_index]))
-					sb.Append(_line[_index++]);
-				var text = sb.ToString();
-				CharacterState state = CharacterState.Default;
-				if (!escaping)
-				{
-					if (text == "{")
-						state = CharacterState.StartGrouping;
-					else if (text == "}")
-						state = CharacterState.StopGrouping;
-				}
-				return new SimpleItem(text, state, start, _index);
-			}
-		}
-
-		class AnalyzerSink
-		{
-			public AnalyzerSink()
-			{
-				Syllables = new List<Syllable>();
-				Phonetics = new Dictionary<int, Phonetic>();
-			}
-
-			public Tuple<int, int> SyllableStartIndex { get; set; }
-
-			public List<Syllable> Syllables { get; private set; }
-
-			public Dictionary<int, Phonetic> Phonetics { get; private set; }
-
-			public int Subtract(Tuple<int, int> x, Tuple<int, int> y)
-			{
-				int s = 0;
-				bool minus = x.Item1 < y.Item1;
-				int len = minus ? y.Item1 : x.Item1;
-				Phonetic ph;
-				for (int i = minus ? x.Item1 : y.Item1; i < len; i++)
-					s += (minus ? -1 : 1) * (Phonetics.TryGetValue(i, out ph) ? ph.Text.Length : 1);
-				return s + x.Item2 - y.Item2;
-			}
-		}
-
-		abstract class LyricsItem
-		{
-			protected LyricsItem(int start, int end)
-			{
-				StartIndex = start;
-				EndIndex = end;
-			}
-
-			public static void AnalyzeAll(IEnumerable<LyricsItem> items, StringBuilder sb, AnalyzerSink sink, bool createSyllable)
-			{
-				foreach (var item in items)
-					item.Analyze(sink, sb, sb.Length, 0, createSyllable);
-			}
-
-			public abstract void Analyze(AnalyzerSink sink, StringBuilder sb, int index, int subIndex, bool createSyllable);
-
-			public abstract IEnumerable<HighlightToken> GetTokens();
-
-			public int StartIndex { get; private set; }
-
-			public int EndIndex { get; private set; }
-		}
-
-		class SimpleItem : LyricsItem
-		{
-			public SimpleItem(string text, CharacterState state, int start, int end) : base(start, end)
-			{
-				State = state;
-				Text = text;
-			}
-
-			public CharacterState State { get; private set; }
-
-			public string Text { get; private set; }
-
-			public override void Analyze(AnalyzerSink sink, StringBuilder sb, int index, int subIndex, bool createSyllable)
-			{
-				if (createSyllable)
-				{
-					if (State == CharacterState.StartGrouping)
-						sink.SyllableStartIndex = new Tuple<int, int>(index, subIndex);
-					else if (State == CharacterState.StopGrouping)
-					{
-						if (sink.SyllableStartIndex != null)
-						{
-							sink.Syllables.Add(new Syllable(sink.SyllableStartIndex.Item1, sink.SyllableStartIndex.Item2, sink.Subtract(new Tuple<int, int>(index, subIndex), sink.SyllableStartIndex)));
-							sink.SyllableStartIndex = null;
-						}
-					}
-					else if (State == CharacterState.Default)
-					{
-						if (sink.SyllableStartIndex == null && !string.IsNullOrWhiteSpace(Text))
-							sink.Syllables.Add(new Syllable(index, subIndex, Text.Length));
-					}
-				}
-				if (State == CharacterState.Default)
-					sb.Append(Text);
-			}
-
-			public override IEnumerable<HighlightToken> GetTokens() { return Enumerable.Empty<HighlightToken>(); }
-
-			public override string ToString() { return Text + ", " + State.ToString(); }
-		}
-
-		class DeletedItem : LyricsItem
-		{
-			public DeletedItem(LyricsItem[] items, int start, int end) : base(start, end) { Items = items; }
-
-			public LyricsItem[] Items { get; private set; }
-
-			public override void Analyze(AnalyzerSink sink, StringBuilder sb, int index, int subIndex, bool createSyllable) { AnalyzeAll(Items, sb, sink, false); }
-
-			public override IEnumerable<HighlightToken> GetTokens() { yield return new HighlightToken(StartIndex, EndIndex - StartIndex, Color.Green, Color.Empty); }
-		}
-
-		class CompositeItem : LyricsItem
-		{
-			public CompositeItem(SimpleItem[] rawText, SimpleItem[] phonetic, int start, int end) : base(start, end)
-			{
-				_rawText = rawText;
-				Phonetic = phonetic;
-			}
-
-			SimpleItem[] _rawText;
-
-			public string Text { get { return string.Concat(_rawText.Where(x => x.State == CharacterState.Default).Select(x => x.Text)); } }
-
-			public SimpleItem[] Phonetic { get; private set; }
-
-			public override void Analyze(AnalyzerSink sink, StringBuilder sb, int index, int subIndex, bool createSyllable)
-			{
-				StringBuilder phoneticText = new StringBuilder();
-				foreach (var phonetic in Phonetic)
-					phonetic.Analyze(sink, phoneticText, sb.Length, phoneticText.Length, createSyllable);
-				sink.Phonetics.Add(sb.Length, new Phonetic(Text.Length, phoneticText.ToString()));
-				sb.Append(Text);
-			}
-
-			public override IEnumerable<HighlightToken> GetTokens()
-			{
-				yield return new HighlightToken(_rawText[0].StartIndex, _rawText[_rawText.Length - 1].EndIndex - _rawText[0].StartIndex, Color.Red, Color.Empty);
-				yield return new HighlightToken(Phonetic[0].StartIndex, Phonetic[Phonetic.Length - 1].EndIndex - Phonetic[0].StartIndex, Color.Blue, Color.Empty);
-			}
-
-			public override string ToString() { return Text + "(" + string.Concat(Phonetic.Where(x => x.State == CharacterState.Default).Select(x => x.Text)) + ")"; }
-		}
-
-		enum CharacterState
-		{
-			Default,
-			StartGrouping,
-			StopGrouping,
-		}
-
-		class Phonetic
-		{
-			public Phonetic(int length, string text)
-			{
-				Length = length;
-				Text = text;
-			}
-
-			public int Length { get; private set; }
-
-			public string Text { get; private set; }
-		}
 	}
 
 	public class Syllable
@@ -574,17 +270,30 @@ namespace Lyriser
 
 		public int Length { get; private set; }
 
-		public static int CompareOrder(Syllable x, Syllable y)
+		public static int CompareOrder(Syllable left, Syllable right)
 		{
-			if (ReferenceEquals(y, null))
-				return ReferenceEquals(x, null) ? 0 : 1;
-			if (ReferenceEquals(x, null))
+			if (ReferenceEquals(right, null))
+				return ReferenceEquals(left, null) ? 0 : 1;
+			if (ReferenceEquals(left, null))
 				return -1;
-			var comp = x.Index.CompareTo(y.Index);
+			var comp = left.Index.CompareTo(right.Index);
 			if (comp != 0)
 				return comp;
 			else
-				return x.SubIndex.CompareTo(y.SubIndex);
+				return left.SubIndex.CompareTo(right.SubIndex);
 		}
+	}
+
+	public class Phonetic
+	{
+		public Phonetic(int length, string text)
+		{
+			Length = length;
+			Text = text;
+		}
+
+		public int Length { get; private set; }
+
+		public string Text { get; private set; }
 	}
 }
