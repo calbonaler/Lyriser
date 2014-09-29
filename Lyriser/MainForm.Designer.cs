@@ -34,7 +34,7 @@
 			this.picViewer = new Lyriser.FocusablePictureBox();
 			this.scrLineScroll = new System.Windows.Forms.VScrollBar();
 			this.tpEdit = new System.Windows.Forms.TabPage();
-			this.txtLyrics = new Controls.SyntaxHighlightingTextBox();
+			this.txtLyrics = new Controls.WindowsForms.SyntaxHighlightingTextBox();
 			this.msMain = new System.Windows.Forms.MenuStrip();
 			this.miFile = new System.Windows.Forms.ToolStripMenuItem();
 			this.miNew = new System.Windows.Forms.ToolStripMenuItem();
@@ -377,7 +377,7 @@
 		private System.Windows.Forms.TabControl tcMain;
 		private System.Windows.Forms.TabPage tpView;
 		private System.Windows.Forms.TabPage tpEdit;
-		private Controls.SyntaxHighlightingTextBox txtLyrics;
+		private Controls.WindowsForms.SyntaxHighlightingTextBox txtLyrics;
 		private Lyriser.FocusablePictureBox picViewer;
 		private System.Windows.Forms.VScrollBar scrLineScroll;
 		private System.Windows.Forms.MenuStrip msMain;

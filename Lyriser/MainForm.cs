@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -31,11 +30,7 @@ namespace Lyriser
 		private void MainForm_Load(object sender, EventArgs e)
 		{
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
-			var composite = new CompositeHighlightTokenizer();
-			composite.HighlightDescriptors.Add(new RegexHighlightDescriptor(Color.Red, Color.Empty, @"(?<={)[^""]+?(?=(""[^""]+?"")?})|[^""](?=""[^""]+?"")"));
-			composite.HighlightDescriptors.Add(new RegexHighlightDescriptor(Color.Blue, Color.Empty, @"(?<={[^""]+?)""[^""]+?""(?=})|(?<=[^""])""[^""]+?"""));
-			composite.HighlightDescriptors.Add(new RegexHighlightDescriptor(Color.Silver, Color.Empty, @"\(.*?\)"));
-			txtLyrics.HighlightTokenizer = composite;
+			txtLyrics.HighlightTokenizer = LyricsLine.CreateHighlightTokenizer();
 			lyrics.Bounds = picViewer.Bounds;
 			lyrics.MainFont = new Font(Font.FontFamily, 14);
 			lyrics.PhoneticOffset = -5;
