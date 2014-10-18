@@ -207,6 +207,19 @@ namespace Lyriser
 			}
 		}
 
+		static RectangleF[] MeasureCharacterRects(Graphics graphics, StringFormat format, CharacterRange[] ranges, string text, Font font, RectangleF layoutRect)
+		{
+			List<RectangleF> rects = new List<RectangleF>();
+			for (int index = 0, copy; (copy = Math.Min(ranges.Length - index, 32)) > 0; index += copy)
+			{
+				var rs = new CharacterRange[copy];
+				Array.Copy(ranges, index, rs, 0, copy);
+				format.SetMeasurableCharacterRanges(rs);
+				rects.AddRange(graphics.MeasureCharacterRanges(text, font, layoutRect, format).Select(x => x.GetBounds(graphics)));
+			}
+			return rects.ToArray();
+		}
+
 		public void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, int x, int y, int phoneticOffset, Syllable highlightSyllable)
 		{
 			if (mainFont == null)
@@ -223,8 +236,7 @@ namespace Lyriser
 				{
 					var indexes = GetStringIndexes(highlightSyllable.Index, highlightSyllable.SubIndex, highlightSyllable.Length).ToArray();
 					charRanges = indexes.Select(r => new CharacterRange(r.Item1, r.Item2 != null ? _phonetics[r.Item1].Length : 1)).Distinct().ToArray();
-					format.SetMeasurableCharacterRanges(charRanges);
-					rects = graphics.MeasureCharacterRanges(Line, mainFont, strLayoutRect, format).Select(r => r.GetBounds(graphics)).ToArray();
+					rects = MeasureCharacterRects(graphics, format, charRanges, Line, mainFont, strLayoutRect);
 					foreach (var index in indexes)
 					{
 						var rect = rects[Array.FindIndex(charRanges, r => r.First == index.Item1)];
@@ -240,8 +252,7 @@ namespace Lyriser
 				}
 				// ふりがなの表示
 				charRanges = _phonetics.Select(r => new CharacterRange(r.Key, r.Value.Length)).ToArray();
-				format.SetMeasurableCharacterRanges(charRanges);
-				rects = graphics.MeasureCharacterRanges(Line, mainFont, strLayoutRect, format).Select(r => r.GetBounds(graphics)).ToArray();
+				rects = MeasureCharacterRects(graphics, format, charRanges, Line, mainFont, strLayoutRect);
 				for (int i = 0; i < charRanges.Length; i++)
 				{
 					var pw = (int)graphics.MeasureString(_phonetics[charRanges[i].First].Text, phoneticFont).Width;
