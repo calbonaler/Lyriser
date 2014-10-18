@@ -17,17 +17,14 @@ namespace Lyriser
 		int _baseIndex;
 		int _lineIndex;
 
-		bool Accept(string chars)
+		bool Accept(char ch)
 		{
-			if (_line.Length - _lineIndex < chars.Length)
-				return false;
-			for (int i = _lineIndex, j = 0; i < _line.Length && j < chars.Length; i++, j++)
+			if (_lineIndex < _line.Length && _line[_lineIndex] == ch)
 			{
-				if (_line[i] != chars[j])
-					return false;
+				_lineIndex++;
+				return true;
 			}
-			_lineIndex += chars.Length;
-			return true;
+			return false;
 		}
 
 		static string ReadLineWithLength(TextReader reader, out int length)
@@ -100,22 +97,22 @@ namespace Lyriser
 		LyricsItem ParseLyricsItem()
 		{
 			int start = Index;
-			if (Accept("("))
+			if (Accept('('))
 			{
 				List<LyricsItem> items = new List<LyricsItem>();
 				do
 				{
 					items.Add(ParseLyricsItem());
-				} while (!Accept(")") && _lineIndex < _line.Length);
+				} while (!Accept(')') && _lineIndex < _line.Length);
 				return new DeletedItem(items.ToArray(), start, Index);
 			}
-			if (Accept("["))
+			if (Accept('['))
 			{
 				List<SimpleItem> mainItems = new List<SimpleItem>();
 				while (true)
 				{
 					mainItems.Add(ParseSimpleItem());
-					if (Accept("\""))
+					if (Accept('"'))
 						break;
 					if (_lineIndex >= _line.Length)
 					{
@@ -127,7 +124,7 @@ namespace Lyriser
 				while (true)
 				{
 					items.Add(ParseSimpleItem());
-					if (Accept("\""))
+					if (Accept('"'))
 						break;
 					if (_lineIndex >= _line.Length)
 					{
@@ -135,7 +132,7 @@ namespace Lyriser
 						break;
 					}
 				}
-				if (!Accept("]"))
+				if (!Accept(']'))
 				{
 					if (_lineIndex < _line.Length)
 						ErrorSink.ReportError(string.Format(CultureInfo.CurrentCulture, "文字 ']' が予期されましたが、文字 '{0}' が見つかりました。", _line[_lineIndex]), Index);
@@ -147,13 +144,13 @@ namespace Lyriser
 			else
 			{
 				var item = ParseSimpleItem();
-				if (Accept("\""))
+				if (Accept('"'))
 				{
 					List<SimpleItem> items = new List<SimpleItem>();
 					while (true)
 					{
 						items.Add(ParseSimpleItem());
-						if (Accept("\""))
+						if (Accept('"'))
 							break;
 						if (_lineIndex >= _line.Length)
 						{
@@ -172,7 +169,7 @@ namespace Lyriser
 		{
 			int start = Index;
 			bool escaping = false;
-			if (Accept("`"))
+			if (Accept('`'))
 				escaping = true;
 			StringBuilder sb = new StringBuilder();
 			if (_lineIndex < _line.Length)
