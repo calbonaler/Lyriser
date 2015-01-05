@@ -71,18 +71,16 @@ namespace Lyriser
 			}
 		}
 
-		IList<IList<LyricsItem>> Parse(TextReader reader)
+		IEnumerable<IList<LyricsItem>> Parse(TextReader reader)
 		{
 			int len;
-			List<IList<LyricsItem>> lines = new List<IList<LyricsItem>>();
 			ErrorSink.Clear();
 			_baseIndex = 0;
 			while ((_line = ReadLineWithLength(reader, out len)) != null)
 			{
-				lines.Add(ParseLyricsLine());
+				yield return ParseLyricsLine();
 				_baseIndex += len;
 			}
-			return lines;
 		}
 
 		IList<LyricsItem> ParseLyricsLine()
@@ -104,7 +102,7 @@ namespace Lyriser
 				{
 					items.Add(ParseLyricsItem());
 				} while (!Accept(')') && _lineIndex < _line.Length);
-				return new DeletedItem(items.ToArray(), start, Index);
+				return new DeletedItem(items.ToArray(), start, Index - start);
 			}
 			if (Accept('['))
 			{
@@ -139,7 +137,7 @@ namespace Lyriser
 					else
 						ErrorSink.ReportError("文字 ']' が予期されましたが、行終端記号が見つかりました。", Index);
 				}
-				return new CompositeItem(mainItems.ToArray(), items.ToArray(), start, Index);
+				return new CompositeItem(mainItems.ToArray(), items.ToArray(), start, Index - start);
 			}
 			else
 			{
@@ -158,7 +156,7 @@ namespace Lyriser
 							break;
 						}
 					}
-					return new CompositeItem(new[] { item }, items.ToArray(), start, Index);
+					return new CompositeItem(new[] { item }, items.ToArray(), start, Index - start);
 				}
 				else
 					return item;
@@ -190,7 +188,7 @@ namespace Lyriser
 				else if (text == "}")
 					state = CharacterState.StopGrouping;
 			}
-			return new SimpleItem(text, state, start, Index);
+			return new SimpleItem(text, state, start, Index - start);
 		}
 
 		public IEnumerable<HighlightToken> GetTokens(string text)
@@ -235,10 +233,10 @@ namespace Lyriser
 
 		abstract class LyricsItem
 		{
-			protected LyricsItem(int start, int end)
+			protected LyricsItem(int start, int length)
 			{
 				StartIndex = start;
-				EndIndex = end;
+				Length = length;
 			}
 
 			public static void AnalyzeAll(IEnumerable<LyricsItem> items, StringBuilder sb, AnalyzerSink sink, bool createSyllable)
@@ -253,13 +251,13 @@ namespace Lyriser
 
 			public int StartIndex { get; private set; }
 
-			public int EndIndex { get; private set; }
+			public int Length { get; private set; }
 		}
 
 		class SimpleItem : LyricsItem
 		{
-			public SimpleItem(string text, CharacterState state, int start, int end)
-				: base(start, end)
+			public SimpleItem(string text, CharacterState state, int start, int length)
+				: base(start, length)
 			{
 				State = state;
 				Text = text;
@@ -293,26 +291,30 @@ namespace Lyriser
 					sb.Append(Text);
 			}
 
-			public override IEnumerable<HighlightToken> GetTokens() { return Enumerable.Empty<HighlightToken>(); }
+			public override IEnumerable<HighlightToken> GetTokens()
+			{
+				if (State == CharacterState.StartGrouping || State == CharacterState.StopGrouping)
+					yield return new HighlightToken(StartIndex, Length, Color.Red, Color.Empty);
+			}
 
 			public override string ToString() { return Text + ", " + State.ToString(); }
 		}
 
 		class DeletedItem : LyricsItem
 		{
-			public DeletedItem(LyricsItem[] items, int start, int end) : base(start, end) { Items = items; }
+			public DeletedItem(LyricsItem[] items, int start, int length) : base(start, length) { Items = items; }
 
 			public LyricsItem[] Items { get; private set; }
 
 			public override void Analyze(AnalyzerSink sink, StringBuilder sb, int index, int subIndex, bool createSyllable) { AnalyzeAll(Items, sb, sink, false); }
 
-			public override IEnumerable<HighlightToken> GetTokens() { yield return new HighlightToken(StartIndex, EndIndex - StartIndex, Color.Green, Color.Empty); }
+			public override IEnumerable<HighlightToken> GetTokens() { yield return new HighlightToken(StartIndex, Length, Color.Green, Color.Empty); }
 		}
 
 		class CompositeItem : LyricsItem
 		{
-			public CompositeItem(SimpleItem[] rawText, SimpleItem[] phonetic, int start, int end)
-				: base(start, end)
+			public CompositeItem(SimpleItem[] rawText, SimpleItem[] phonetic, int start, int length)
+				: base(start, length)
 			{
 				_rawText = rawText;
 				Phonetic = phonetic;
@@ -335,8 +337,18 @@ namespace Lyriser
 
 			public override IEnumerable<HighlightToken> GetTokens()
 			{
-				yield return new HighlightToken(_rawText[0].StartIndex, _rawText[_rawText.Length - 1].EndIndex - _rawText[0].StartIndex, Color.Red, Color.Empty);
-				yield return new HighlightToken(Phonetic[0].StartIndex, Phonetic[Phonetic.Length - 1].EndIndex - Phonetic[0].StartIndex, Color.Blue, Color.Empty);
+				yield return new HighlightToken(_rawText[0].StartIndex, _rawText.Sum(x => x.Length), Color.Red, Color.Empty);
+				foreach (var phonetic in Phonetic)
+				{
+					var phtokens = phonetic.GetTokens().ToArray();
+					if (phtokens.Length > 0)
+					{
+						foreach (var token in phtokens)
+							yield return token;
+					}
+					else
+						yield return new HighlightToken(phonetic.StartIndex, phonetic.Length, Color.Blue, Color.Empty);
+				}
 			}
 
 			public override string ToString() { return Text + "(" + string.Concat(Phonetic.Where(x => x.State == CharacterState.Default).Select(x => x.Text)) + ")"; }
