@@ -102,7 +102,7 @@ namespace Lyriser
 				{
 					items.Add(ParseLyricsItem());
 				} while (!Accept(')') && _lineIndex < _line.Length);
-				return new DeletedItem(items.ToArray(), start, Index - start);
+				return new SkippedItem(items.ToArray(), start, Index - start);
 			}
 			if (Accept('['))
 			{
@@ -213,22 +213,11 @@ namespace Lyriser
 				Phonetics = new Dictionary<int, Phonetic>();
 			}
 
-			public Tuple<int, int> SyllableStartIndex { get; set; }
+			public CharacterPointer SyllableStartIndex { get; set; }
 
 			public List<Syllable> Syllables { get; private set; }
 
 			public Dictionary<int, Phonetic> Phonetics { get; private set; }
-
-			public int Subtract(Tuple<int, int> x, Tuple<int, int> y)
-			{
-				int s = 0;
-				bool minus = x.Item1 < y.Item1;
-				int len = minus ? y.Item1 : x.Item1;
-				Phonetic ph;
-				for (int i = minus ? x.Item1 : y.Item1; i < len; i++)
-					s += (minus ? -1 : 1) * (Phonetics.TryGetValue(i, out ph) ? ph.Text.Length : 1);
-				return s + x.Item2 - y.Item2;
-			}
 		}
 
 		abstract class LyricsItem
@@ -242,10 +231,10 @@ namespace Lyriser
 			public static void AnalyzeAll(IEnumerable<LyricsItem> items, StringBuilder sb, AnalyzerSink sink, bool createSyllable)
 			{
 				foreach (var item in items)
-					item.Analyze(sink, sb, sb.Length, 0, createSyllable);
+					item.Analyze(sink, sb, () => new CharacterPointer(sb.Length, 0), createSyllable);
 			}
 
-			public abstract void Analyze(AnalyzerSink sink, StringBuilder sb, int index, int subIndex, bool createSyllable);
+			public abstract void Analyze(AnalyzerSink sink, StringBuilder sb, Func<CharacterPointer> pointerProvider, bool createSyllable);
 
 			public abstract IEnumerable<HighlightToken> GetTokens();
 
@@ -267,28 +256,28 @@ namespace Lyriser
 
 			public string Text { get; private set; }
 
-			public override void Analyze(AnalyzerSink sink, StringBuilder sb, int index, int subIndex, bool createSyllable)
+			public override void Analyze(AnalyzerSink sink, StringBuilder sb, Func<CharacterPointer> pointerProvider, bool createSyllable)
 			{
+				var beforeText = pointerProvider();
 				if (createSyllable)
 				{
 					if (State == CharacterState.StartGrouping)
-						sink.SyllableStartIndex = new Tuple<int, int>(index, subIndex);
+						sink.SyllableStartIndex = beforeText;
 					else if (State == CharacterState.StopGrouping)
 					{
 						if (sink.SyllableStartIndex != null)
 						{
-							sink.Syllables.Add(new Syllable(sink.SyllableStartIndex.Item1, sink.SyllableStartIndex.Item2, sink.Subtract(new Tuple<int, int>(index, subIndex), sink.SyllableStartIndex)));
+							sink.Syllables.Add(new Syllable(sink.SyllableStartIndex, beforeText));
 							sink.SyllableStartIndex = null;
 						}
 					}
-					else if (State == CharacterState.Default)
-					{
-						if (sink.SyllableStartIndex == null && !string.IsNullOrWhiteSpace(Text))
-							sink.Syllables.Add(new Syllable(index, subIndex, Text.Length));
-					}
 				}
 				if (State == CharacterState.Default)
+				{
 					sb.Append(Text);
+					if (createSyllable && sink.SyllableStartIndex == null && !string.IsNullOrWhiteSpace(Text))
+						sink.Syllables.Add(new Syllable(beforeText, pointerProvider()));
+				}
 			}
 
 			public override IEnumerable<HighlightToken> GetTokens()
@@ -300,13 +289,13 @@ namespace Lyriser
 			public override string ToString() { return Text + ", " + State.ToString(); }
 		}
 
-		class DeletedItem : LyricsItem
+		class SkippedItem : LyricsItem
 		{
-			public DeletedItem(LyricsItem[] items, int start, int length) : base(start, length) { Items = items; }
+			public SkippedItem(LyricsItem[] items, int start, int length) : base(start, length) { Items = items; }
 
 			public LyricsItem[] Items { get; private set; }
 
-			public override void Analyze(AnalyzerSink sink, StringBuilder sb, int index, int subIndex, bool createSyllable) { AnalyzeAll(Items, sb, sink, false); }
+			public override void Analyze(AnalyzerSink sink, StringBuilder sb, Func<CharacterPointer> pointerProvider, bool createSyllable) { AnalyzeAll(Items, sb, sink, false); }
 
 			public override IEnumerable<HighlightToken> GetTokens() { yield return new HighlightToken(StartIndex, Length, Color.Green, Color.Empty); }
 		}
@@ -326,11 +315,11 @@ namespace Lyriser
 
 			public SimpleItem[] Phonetic { get; private set; }
 
-			public override void Analyze(AnalyzerSink sink, StringBuilder sb, int index, int subIndex, bool createSyllable)
+			public override void Analyze(AnalyzerSink sink, StringBuilder sb, Func<CharacterPointer> pointerProvider, bool createSyllable)
 			{
 				StringBuilder phoneticText = new StringBuilder();
 				foreach (var phonetic in Phonetic)
-					phonetic.Analyze(sink, phoneticText, sb.Length, phoneticText.Length, createSyllable);
+					phonetic.Analyze(sink, phoneticText, () => new CharacterPointer(sb.Length, phoneticText.Length), createSyllable);
 				sink.Phonetics.Add(sb.Length, new Phonetic(Text.Length, phoneticText.ToString()));
 				sb.Append(Text);
 			}

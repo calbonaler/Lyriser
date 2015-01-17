@@ -21,15 +21,13 @@ namespace Lyriser
 		{
 			if (graphics == null)
 				throw new ArgumentNullException("graphics");
+			graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 			if (MaxViewedLines >= lines.Count)
 				ViewStartLineIndex = 0;
 			else if (ViewStartLineIndex > VerticalScrollMaximum)
 				ViewStartLineIndex = VerticalScrollMaximum;
 			for (int i = 0; i < MaxViewedLines && i + ViewStartLineIndex < lines.Count; i++)
-			{
-				lines[i + ViewStartLineIndex].Draw(graphics, MainFont, PhoneticFont, Brushes.Black, 5, i * (PhoneticFont.Height + PhoneticOffset + MainFont.Height),
-					PhoneticOffset, highlightLine == i + ViewStartLineIndex ? highlightSyllable : null);
-			}
+				lines[i + ViewStartLineIndex].Draw(graphics, MainFont, PhoneticFont, Brushes.Black, Brushes.Cyan, 5, i * (PhoneticFont.Height + PhoneticOffset + MainFont.Height), PhoneticOffset, highlightLine == i + ViewStartLineIndex ? highlightSyllable : null);
 			graphics.FillRectangle(Brushes.Gray, 0, ActualBounds.Bottom, Bounds.Width, Bounds.Height - ActualBounds.Height);
 			int hi = highlightLine;
 			do
@@ -37,7 +35,7 @@ namespace Lyriser
 				if (++hi >= lines.Count)
 					return;
 			} while (lines[hi].Line.Length <= 0);
-			lines[hi].Draw(graphics, MainFont, PhoneticFont, Brushes.White, 5, ActualBounds.Bottom, PhoneticOffset, null);
+			lines[hi].Draw(graphics, MainFont, PhoneticFont, Brushes.White, null, 5, ActualBounds.Bottom, PhoneticOffset, null);
 		}
 
 		public void ResetHighlightPosition()
@@ -67,7 +65,7 @@ namespace Lyriser
 			Syllable syllable = highlightSyllable;
 			do
 			{
-				syllable = lines[hi].GetPreviousSyllable(syllable != null ? syllable.Index : int.MaxValue, syllable != null ? syllable.SubIndex : 0);
+				syllable = lines[hi].GetPreviousSyllable(syllable != null ? syllable.Start.Index : int.MaxValue, syllable != null ? syllable.Start.SubIndex : 0);
 			} while (syllable == null && --hi >= 0);
 			if (syllable == null)
 				return false;
@@ -85,7 +83,7 @@ namespace Lyriser
 			Syllable syllable = highlightSyllable;
 			do
 			{
-				syllable = lines[hi].GetNextSyllable(syllable != null ? syllable.Index : -1, syllable != null ? syllable.SubIndex : 0);
+				syllable = lines[hi].GetNextSyllable(syllable != null ? syllable.Start.Index : -1, syllable != null ? syllable.Start.SubIndex : 0);
 			} while (syllable == null && ++hi < lines.Count);
 			if (syllable == null)
 				return false;
@@ -93,18 +91,6 @@ namespace Lyriser
 			highlightSyllable = syllable;
 			ScrollInto(highlightLine);
 			return true;
-		}
-
-		public void ScrollUp()
-		{
-			if (--ViewStartLineIndex < 0)
-				ViewStartLineIndex = 0;
-		}
-
-		public void ScrollDown()
-		{
-			if (++ViewStartLineIndex > VerticalScrollMaximum)
-				ViewStartLineIndex = VerticalScrollMaximum;
 		}
 
 		public void ScrollInto(int line)
@@ -158,7 +144,7 @@ namespace Lyriser
 
 		public Syllable GetNextSyllable(int index, int subIndex)
 		{
-			int itemIndex = Array.BinarySearch(_syllables, new Syllable(index, subIndex, 0), Comparer<Syllable>.Create(Syllable.CompareOrder));
+			int itemIndex = Array.BinarySearch(_syllables, new Syllable(new CharacterPointer(index, subIndex), new CharacterPointer(0, 0)), Comparer<Syllable>.Create(Syllable.CompareOrder));
 			if (itemIndex >= 0)
 				itemIndex++;
 			else
@@ -171,7 +157,7 @@ namespace Lyriser
 
 		public Syllable GetPreviousSyllable(int index, int subIndex)
 		{
-			int itemIndex = Array.BinarySearch(_syllables, new Syllable(index, subIndex, 0), Comparer<Syllable>.Create(Syllable.CompareOrder));
+			int itemIndex = Array.BinarySearch(_syllables, new Syllable(new CharacterPointer(index, subIndex), new CharacterPointer(0, 0)), Comparer<Syllable>.Create(Syllable.CompareOrder));
 			if (itemIndex >= 0)
 				itemIndex--;
 			else
@@ -182,106 +168,64 @@ namespace Lyriser
 				return null;
 		}
 
-		IEnumerable<Tuple<int, int?>> GetStringIndexes(int index, int subIndex, int length)
-		{
-			for (int i = index; i < Line.Length; i++)
-			{
-				Phonetic ph;
-				if (_phonetics.TryGetValue(i, out ph))
-				{
-					for (int j = i > index ? 0 : subIndex; j < ph.Text.Length; j++)
-					{
-						yield return new Tuple<int, int?>(i, j);
-						length--;
-						if (length <= 0)
-							yield break;
-					}
-				}
-				else
-				{
-					yield return new Tuple<int, int?>(i, null);
-					length--;
-					if (length <= 0)
-						yield break;
-				}
-			}
-		}
-
-		static RectangleF[] MeasureCharacterRects(Graphics graphics, StringFormat format, CharacterRange[] ranges, string text, Font font, RectangleF layoutRect)
-		{
-			List<RectangleF> rects = new List<RectangleF>();
-			for (int index = 0, copy; (copy = Math.Min(ranges.Length - index, 32)) > 0; index += copy)
-			{
-				var rs = new CharacterRange[copy];
-				Array.Copy(ranges, index, rs, 0, copy);
-				format.SetMeasurableCharacterRanges(rs);
-				rects.AddRange(graphics.MeasureCharacterRanges(text, font, layoutRect, format).Select(x => x.GetBounds(graphics)));
-			}
-			return rects.ToArray();
-		}
-
-		public void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, int x, int y, int phoneticOffset, Syllable highlightSyllable)
+		public void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int phoneticOffset, Syllable highlightSyllable)
 		{
 			if (mainFont == null)
 				throw new ArgumentNullException("mainFont");
 			if (phoneticFont == null)
 				throw new ArgumentNullException("phoneticFont");
-			using (StringFormat format = new StringFormat())
+			int offset;
+			var charWidths = graphics.MeasureCharacterWidths(Line, mainFont, Enumerable.Range(0, Line.Length).Select(i => new CharacterRange(i, 1)), out offset);
+			for (int i = 0; i < Line.Length; )
 			{
-				CharacterRange[] charRanges;
-				RectangleF[] rects;
-				var strLayoutRect = new RectangleF(x, y + phoneticFont.Height + phoneticOffset, (int)graphics.MeasureString(Line, mainFont).Width + 5, mainFont.Height);
-				// 音節の強調表示
-				if (highlightSyllable != null)
+				Phonetic phonetic;
+				if (_phonetics.TryGetValue(i, out phonetic))
 				{
-					var indexes = GetStringIndexes(highlightSyllable.Index, highlightSyllable.SubIndex, highlightSyllable.Length).ToArray();
-					charRanges = indexes.Select(r => new CharacterRange(r.Item1, r.Item2 != null ? _phonetics[r.Item1].Length : 1)).Distinct().ToArray();
-					rects = MeasureCharacterRects(graphics, format, charRanges, Line, mainFont, strLayoutRect);
-					foreach (var index in indexes)
+					var phoneticWidth = graphics.MeasureStringWidth(phonetic.Text, phoneticFont);
+					var baseTextWidth = charWidths.Skip(i).Take(phonetic.Length).Sum();
+					var drawingWidth = Math.Max(phoneticWidth, baseTextWidth);
+					// ハイライトの描画
+					if (highlightSyllable != null && i >= highlightSyllable.Start.Index && i <= highlightSyllable.End.Index)
 					{
-						var rect = rects[Array.FindIndex(charRanges, r => r.First == index.Item1)];
-						if (index.Item2 != null)
-						{
-							int sum = phoneticFont.Height + phoneticOffset;
-							graphics.FillRectangle(Brushes.Cyan, rect.X + rect.Width * (int)index.Item2 / _phonetics[index.Item1].Text.Length,
-								rect.Y - sum, rect.Width / _phonetics[index.Item1].Text.Length, rect.Height + sum);
-						}
-						else
-							graphics.FillRectangle(Brushes.Cyan, rect);
+						for (int j = i > highlightSyllable.Start.Index ? 0 : highlightSyllable.Start.SubIndex; j < phonetic.Text.Length && (i < highlightSyllable.End.Index || j < highlightSyllable.End.SubIndex); j++)
+							graphics.FillRectangle(highlightBrush, x + offset + MathUtils.CeilingDivide(j * drawingWidth, phonetic.Text.Length), y, MathUtils.CeilingDivide(drawingWidth, phonetic.Text.Length), phoneticFont.Height + phoneticOffset + mainFont.Height);
 					}
+					// ふりがなの描画
+					graphics.DrawString(phonetic.Text, phoneticFont, brush, x + offset * phoneticFont.Height / mainFont.Height + Math.Max(baseTextWidth - phoneticWidth, 0) / 2, y);
+					// ベーステキストの描画
+					graphics.DrawString(Line.Substring(i, phonetic.Length), mainFont, brush, x + Math.Max(phoneticWidth - baseTextWidth, 0) / 2, y + phoneticFont.Height + phoneticOffset);
+					x += drawingWidth;
+					i += Math.Max(1, phonetic.Length);
 				}
-				// ふりがなの表示
-				charRanges = _phonetics.Select(r => new CharacterRange(r.Key, r.Value.Length)).ToArray();
-				rects = MeasureCharacterRects(graphics, format, charRanges, Line, mainFont, strLayoutRect);
-				for (int i = 0; i < charRanges.Length; i++)
+				else
 				{
-					var pw = (int)graphics.MeasureString(_phonetics[charRanges[i].First].Text, phoneticFont).Width;
-					graphics.DrawString(_phonetics[charRanges[i].First].Text, phoneticFont, brush, rects[i].X + (rects[i].Width - pw) / 2, y);
+					// ハイライトの描画
+					if (highlightSyllable != null && i >= highlightSyllable.Start.Index && i < highlightSyllable.End.Index)
+						graphics.FillRectangle(highlightBrush, x + offset, y + phoneticFont.Height + phoneticOffset, charWidths[i], mainFont.Height);
+					// ベーステキストの描画
+					graphics.DrawString(Line[i].ToString(), mainFont, brush, x, y + phoneticFont.Height + phoneticOffset);
+					x += charWidths[i];
+					i++;
 				}
-				// 基本テキストの表示
-				graphics.DrawString(Line, mainFont, brush, strLayoutRect, format);
 			}
 		}
 
 		public string Line { get; private set; }
 	}
 
-	public class Syllable
+	public class CharacterPointer
 	{
-		public Syllable(int index, int subIndex, int length)
+		public CharacterPointer(int index, int subIndex)
 		{
 			Index = index;
 			SubIndex = subIndex;
-			Length = length;
 		}
 
 		public int Index { get; private set; }
 
 		public int SubIndex { get; private set; }
 
-		public int Length { get; private set; }
-
-		public static int CompareOrder(Syllable left, Syllable right)
+		public static int Compare(CharacterPointer left, CharacterPointer right)
 		{
 			if (ReferenceEquals(right, null))
 				return ReferenceEquals(left, null) ? 0 : 1;
@@ -293,6 +237,21 @@ namespace Lyriser
 			else
 				return left.SubIndex.CompareTo(right.SubIndex);
 		}
+	}
+
+	public class Syllable
+	{
+		public static int CompareOrder(Syllable left, Syllable right) { return CharacterPointer.Compare(left.Start, right.Start); }
+
+		public Syllable(CharacterPointer start, CharacterPointer end)
+		{
+			Start = start;
+			End = end;
+		}
+
+		public CharacterPointer Start { get; private set; }
+
+		public CharacterPointer End { get; private set; }
 	}
 
 	public class Phonetic
