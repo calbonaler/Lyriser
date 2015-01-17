@@ -9,7 +9,7 @@ namespace Lyriser
 {
 	static class GraphicUtils
 	{
-		public static int[] MeasureCharacterWidths(this Graphics graphics, string text, Font font, IEnumerable<CharacterRange> ranges, out int offset)
+		public static int[] MeasureCharacterRangeWidths(this Graphics graphics, string text, Font font, IEnumerable<CharacterRange> ranges, out int offset)
 		{
 			using (StringFormat format = new StringFormat(StringFormatFlags.MeasureTrailingSpaces))
 			{
@@ -20,10 +20,13 @@ namespace Lyriser
 					format.SetMeasurableCharacterRanges(rangeArray);
 					int baseIndex = rects.Count;
 					rects.AddRange(graphics.MeasureCharacterRanges(text, font, new RectangleF(0, 0, float.PositiveInfinity, float.PositiveInfinity), format).Select(r => r.GetBounds(graphics)));
-					for (int i = 0; i < rangeArray.Length; i++)
+					if (rangeArray.Length != rects.Count - baseIndex)
 					{
-						if (rangeArray[i].Length == 0)
-							rects.Insert(i + baseIndex, new RectangleF(i + baseIndex >= rects.Count ? 0 : rects[i + baseIndex].X, 0, 0, 0));
+						for (int i = 0; i < rangeArray.Length; i++)
+						{
+							if (rangeArray[i].Length == 0)
+								rects.Insert(i + baseIndex, new RectangleF(i + baseIndex >= rects.Count ? 0 : rects[i + baseIndex].X, 0, 0, 0));
+						}
 					}
 					ranges = ranges.Skip(32);
 				}
@@ -38,7 +41,7 @@ namespace Lyriser
 		public static int MeasureStringWidth(this Graphics graphics, string text, Font font)
 		{
 			int dummy;
-			return MeasureCharacterWidths(graphics, text, font, Enumerable.Repeat(new CharacterRange(0, text.Length), 1), out dummy)[0];
+			return MeasureCharacterRangeWidths(graphics, text, font, Enumerable.Repeat(new CharacterRange(0, text.Length), 1), out dummy)[0];
 		}
 	}
 

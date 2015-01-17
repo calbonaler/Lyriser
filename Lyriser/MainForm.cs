@@ -23,6 +23,7 @@ namespace Lyriser
 
 		private void MainForm_Load(object sender, EventArgs e)
 		{
+			picViewer.MouseWheel += picViewer_MouseWheel;
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
 			txtLyrics.HighlightTokenizer = new LyricsParser(ErrorSink.Null);
 			lyrics.Bounds = picViewer.Bounds;
@@ -31,13 +32,24 @@ namespace Lyriser
 			btnRenew_Click(sender, e);
 		}
 
+		private void picViewer_MouseWheel(object sender, MouseEventArgs e)
+		{
+			var newValue = scrLineScroll.Value - e.Delta / SystemInformation.MouseWheelScrollDelta;
+			if (newValue < 0)
+				newValue = 0;
+			if (newValue > scrLineScroll.Maximum + 1 - scrLineScroll.LargeChange)
+				newValue = scrLineScroll.Maximum + 1 - scrLineScroll.LargeChange;
+			scrLineScroll.Value = newValue;
+		}
+
 		private void btnRenew_Click(object sender, EventArgs e)
 		{
 			lyrics.Lines.Clear();
-			foreach (var line in new LyricsParser(new ListBoxBoundErrorSink(lstErrors)).Analyze(txtLyrics.Text))
+			foreach (var line in new LyricsParser(new ListBoxBoundErrorSink(lstErrors)).Transform(txtLyrics.Text))
 				lyrics.Lines.Add(line);
 			lyrics.ResetHighlightPosition();
 			OptimizeScrollBarMaximum();
+			scrLineScroll.Value = 0;
 			picViewer.Invalidate();
 		}
 
@@ -141,7 +153,7 @@ namespace Lyriser
 		private void itmHighlightFirst_Click(object sender, EventArgs e)
 		{
 			lyrics.ResetHighlightPosition();
-			scrLineScroll.Value = lyrics.ViewStartLineIndex;
+			scrLineScroll.Value = 0;
 			picViewer.Invalidate();
 		}
 
