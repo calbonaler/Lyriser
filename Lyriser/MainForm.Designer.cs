@@ -56,12 +56,14 @@
 			this.sepEdit2 = new System.Windows.Forms.ToolStripSeparator();
 			this.miSelectAll = new System.Windows.Forms.ToolStripMenuItem();
 			this.miParse = new System.Windows.Forms.ToolStripMenuItem();
-			this.itmRenew = new System.Windows.Forms.ToolStripMenuItem();
+			this.miRenew = new System.Windows.Forms.ToolStripMenuItem();
 			this.miOperation = new System.Windows.Forms.ToolStripMenuItem();
 			this.miHighlightNext = new System.Windows.Forms.ToolStripMenuItem();
 			this.miHighlightPrevious = new System.Windows.Forms.ToolStripMenuItem();
+			this.miHighlightNextLine = new System.Windows.Forms.ToolStripMenuItem();
+			this.miHighlightPreviousLine = new System.Windows.Forms.ToolStripMenuItem();
 			this.sepOperation = new System.Windows.Forms.ToolStripSeparator();
-			this.itmHighlightFirst = new System.Windows.Forms.ToolStripMenuItem();
+			this.miHighlightFirst = new System.Windows.Forms.ToolStripMenuItem();
 			this.tsMain = new System.Windows.Forms.ToolStrip();
 			this.btnNew = new System.Windows.Forms.ToolStripButton();
 			this.btnOpen = new System.Windows.Forms.ToolStripButton();
@@ -274,23 +276,25 @@
 			// miParse
 			// 
 			this.miParse.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.itmRenew});
+            this.miRenew});
 			this.miParse.Name = "miParse";
 			resources.ApplyResources(this.miParse, "miParse");
 			// 
-			// itmRenew
+			// miRenew
 			// 
-			this.itmRenew.Name = "itmRenew";
-			resources.ApplyResources(this.itmRenew, "itmRenew");
-			this.itmRenew.Click += new System.EventHandler(this.btnRenew_Click);
+			this.miRenew.Name = "miRenew";
+			resources.ApplyResources(this.miRenew, "miRenew");
+			this.miRenew.Click += new System.EventHandler(this.miRenew_Click);
 			// 
 			// miOperation
 			// 
 			this.miOperation.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miHighlightNext,
             this.miHighlightPrevious,
+            this.miHighlightNextLine,
+            this.miHighlightPreviousLine,
             this.sepOperation,
-            this.itmHighlightFirst});
+            this.miHighlightFirst});
 			this.miOperation.Name = "miOperation";
 			resources.ApplyResources(this.miOperation, "miOperation");
 			// 
@@ -306,16 +310,28 @@
 			resources.ApplyResources(this.miHighlightPrevious, "miHighlightPrevious");
 			this.miHighlightPrevious.Click += new System.EventHandler(this.miHighlightPrevious_Click);
 			// 
+			// miHighlightNextLine
+			// 
+			this.miHighlightNextLine.Name = "miHighlightNextLine";
+			resources.ApplyResources(this.miHighlightNextLine, "miHighlightNextLine");
+			this.miHighlightNextLine.Click += new System.EventHandler(this.miHighlightNextLine_Click);
+			// 
+			// miHighlightPreviousLine
+			// 
+			this.miHighlightPreviousLine.Name = "miHighlightPreviousLine";
+			resources.ApplyResources(this.miHighlightPreviousLine, "miHighlightPreviousLine");
+			this.miHighlightPreviousLine.Click += new System.EventHandler(this.miHighlightPreviousLine_Click);
+			// 
 			// sepOperation
 			// 
 			this.sepOperation.Name = "sepOperation";
 			resources.ApplyResources(this.sepOperation, "sepOperation");
 			// 
-			// itmHighlightFirst
+			// miHighlightFirst
 			// 
-			this.itmHighlightFirst.Name = "itmHighlightFirst";
-			resources.ApplyResources(this.itmHighlightFirst, "itmHighlightFirst");
-			this.itmHighlightFirst.Click += new System.EventHandler(this.itmHighlightFirst_Click);
+			this.miHighlightFirst.Name = "miHighlightFirst";
+			resources.ApplyResources(this.miHighlightFirst, "miHighlightFirst");
+			this.miHighlightFirst.Click += new System.EventHandler(this.miHighlightFirst_Click);
 			// 
 			// tsMain
 			// 
@@ -438,14 +454,16 @@
 		private System.Windows.Forms.ToolStripButton btnCopy;
 		private System.Windows.Forms.ToolStripButton btnPaste;
 		private System.Windows.Forms.ToolStripMenuItem miParse;
-		private System.Windows.Forms.ToolStripMenuItem itmRenew;
+		private System.Windows.Forms.ToolStripMenuItem miRenew;
 		private System.Windows.Forms.ToolStripMenuItem miOperation;
 		private System.Windows.Forms.ToolStripMenuItem miHighlightNext;
 		private System.Windows.Forms.ToolStripMenuItem miHighlightPrevious;
 		private System.Windows.Forms.ToolStripSeparator sepOperation;
-		private System.Windows.Forms.ToolStripMenuItem itmHighlightFirst;
+		private System.Windows.Forms.ToolStripMenuItem miHighlightFirst;
 		private System.Windows.Forms.SplitContainer splMain;
 		private System.Windows.Forms.ListBox lstErrors;
+		private System.Windows.Forms.ToolStripMenuItem miHighlightNextLine;
+		private System.Windows.Forms.ToolStripMenuItem miHighlightPreviousLine;
 	}
 }
 

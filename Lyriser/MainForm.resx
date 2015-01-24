@@ -243,6 +243,108 @@
   <data name="&gt;&gt;splMain.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
+  <data name="&gt;&gt;tpView.Name" xml:space="preserve">
+    <value>tpView</value>
+  </data>
+  <data name="&gt;&gt;tpView.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tpView.Parent" xml:space="preserve">
+    <value>tcMain</value>
+  </data>
+  <data name="&gt;&gt;tpView.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;tpEdit.Name" xml:space="preserve">
+    <value>tpEdit</value>
+  </data>
+  <data name="&gt;&gt;tpEdit.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tpEdit.Parent" xml:space="preserve">
+    <value>tcMain</value>
+  </data>
+  <data name="&gt;&gt;tpEdit.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="tcMain.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="tcMain.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 49</value>
+  </data>
+  <data name="tcMain.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="tcMain.Size" type="System.Drawing.Size, System.Drawing">
+    <value>431, 344</value>
+  </data>
+  <data name="tcMain.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;tcMain.Name" xml:space="preserve">
+    <value>tcMain</value>
+  </data>
+  <data name="&gt;&gt;tcMain.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tcMain.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;tcMain.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;picViewer.Name" xml:space="preserve">
+    <value>picViewer</value>
+  </data>
+  <data name="&gt;&gt;picViewer.Type" xml:space="preserve">
+    <value>Lyriser.FocusablePictureBox, Lyriser, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;picViewer.Parent" xml:space="preserve">
+    <value>tpView</value>
+  </data>
+  <data name="&gt;&gt;picViewer.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;scrLineScroll.Name" xml:space="preserve">
+    <value>scrLineScroll</value>
+  </data>
+  <data name="&gt;&gt;scrLineScroll.Type" xml:space="preserve">
+    <value>System.Windows.Forms.VScrollBar, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;scrLineScroll.Parent" xml:space="preserve">
+    <value>tpView</value>
+  </data>
+  <data name="&gt;&gt;scrLineScroll.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="tpView.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 27</value>
+  </data>
+  <data name="tpView.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="tpView.Size" type="System.Drawing.Size, System.Drawing">
+    <value>423, 313</value>
+  </data>
+  <data name="tpView.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="tpView.Text" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="&gt;&gt;tpView.Name" xml:space="preserve">
+    <value>tpView</value>
+  </data>
+  <data name="&gt;&gt;tpView.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tpView.Parent" xml:space="preserve">
+    <value>tcMain</value>
+  </data>
+  <data name="&gt;&gt;tpView.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <data name="picViewer.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Fill</value>
   </data>
@@ -297,33 +399,6 @@
   <data name="&gt;&gt;scrLineScroll.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
-  <data name="tpView.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 27</value>
-  </data>
-  <data name="tpView.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 0, 0, 0</value>
-  </data>
-  <data name="tpView.Size" type="System.Drawing.Size, System.Drawing">
-    <value>423, 313</value>
-  </data>
-  <data name="tpView.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="tpView.Text" xml:space="preserve">
-    <value>View</value>
-  </data>
-  <data name="&gt;&gt;tpView.Name" xml:space="preserve">
-    <value>tpView</value>
-  </data>
-  <data name="&gt;&gt;tpView.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;tpView.Parent" xml:space="preserve">
-    <value>tcMain</value>
-  </data>
-  <data name="&gt;&gt;tpView.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
   <data name="tpEdit.Location" type="System.Drawing.Point, System.Drawing">
     <value>4, 27</value>
   </data>
@@ -351,36 +426,105 @@
   <data name="&gt;&gt;tpEdit.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
-  <data name="tcMain.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
-    <value>Fill</value>
-  </data>
-  <data name="tcMain.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 49</value>
-  </data>
-  <data name="tcMain.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 0, 0, 0</value>
-  </data>
-  <data name="tcMain.Size" type="System.Drawing.Size, System.Drawing">
-    <value>431, 344</value>
-  </data>
-  <data name="tcMain.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;tcMain.Name" xml:space="preserve">
-    <value>tcMain</value>
-  </data>
-  <data name="&gt;&gt;tcMain.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;tcMain.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;tcMain.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
   <metadata name="msMain.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="miFile.Size" type="System.Drawing.Size, System.Drawing">
+    <value>39, 20</value>
+  </data>
+  <data name="miFile.Text" xml:space="preserve">
+    <value>&amp;File</value>
+  </data>
+  <data name="miEdit.Size" type="System.Drawing.Size, System.Drawing">
+    <value>41, 20</value>
+  </data>
+  <data name="miEdit.Text" xml:space="preserve">
+    <value>&amp;Edit</value>
+  </data>
+  <data name="miParse.Size" type="System.Drawing.Size, System.Drawing">
+    <value>51, 20</value>
+  </data>
+  <data name="miParse.Text" xml:space="preserve">
+    <value>&amp;Parse</value>
+  </data>
+  <data name="miHighlightNext.ShortcutKeyDisplayString" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="miHighlightNext.Size" type="System.Drawing.Size, System.Drawing">
+    <value>229, 22</value>
+  </data>
+  <data name="miHighlightNext.Text" xml:space="preserve">
+    <value>Highlight &amp;Next</value>
+  </data>
+  <data name="miHighlightPrevious.ShortcutKeyDisplayString" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="miHighlightPrevious.Size" type="System.Drawing.Size, System.Drawing">
+    <value>229, 22</value>
+  </data>
+  <data name="miHighlightPrevious.Text" xml:space="preserve">
+    <value>Highlight &amp;Previous</value>
+  </data>
+  <data name="miHighlightNextLine.ShortcutKeyDisplayString" xml:space="preserve">
+    <value>Down</value>
+  </data>
+  <data name="miHighlightNextLine.Size" type="System.Drawing.Size, System.Drawing">
+    <value>229, 22</value>
+  </data>
+  <data name="miHighlightNextLine.Text" xml:space="preserve">
+    <value>Highlight N&amp;ext Line</value>
+  </data>
+  <data name="miHighlightPreviousLine.ShortcutKeyDisplayString" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="miHighlightPreviousLine.Size" type="System.Drawing.Size, System.Drawing">
+    <value>229, 22</value>
+  </data>
+  <data name="miHighlightPreviousLine.Text" xml:space="preserve">
+    <value>Highlight P&amp;revious Line</value>
+  </data>
+  <data name="sepOperation.Size" type="System.Drawing.Size, System.Drawing">
+    <value>226, 6</value>
+  </data>
+  <data name="miHighlightFirst.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Ctrl+Left</value>
+  </data>
+  <data name="miHighlightFirst.Size" type="System.Drawing.Size, System.Drawing">
+    <value>229, 22</value>
+  </data>
+  <data name="miHighlightFirst.Text" xml:space="preserve">
+    <value>Highlight &amp;First</value>
+  </data>
+  <data name="miOperation.Size" type="System.Drawing.Size, System.Drawing">
+    <value>66, 20</value>
+  </data>
+  <data name="miOperation.Text" xml:space="preserve">
+    <value>&amp;Operate</value>
+  </data>
+  <data name="msMain.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="msMain.Size" type="System.Drawing.Size, System.Drawing">
+    <value>431, 24</value>
+  </data>
+  <data name="msMain.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="msMain.Text" xml:space="preserve">
+    <value>menuStrip1</value>
+  </data>
+  <data name="&gt;&gt;msMain.Name" xml:space="preserve">
+    <value>msMain</value>
+  </data>
+  <data name="&gt;&gt;msMain.Type" xml:space="preserve">
+    <value>System.Windows.Forms.MenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;msMain.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;msMain.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
   <data name="miNew.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
@@ -477,12 +621,6 @@
   </data>
   <data name="miExit.Text" xml:space="preserve">
     <value>E&amp;xit</value>
-  </data>
-  <data name="miFile.Size" type="System.Drawing.Size, System.Drawing">
-    <value>39, 20</value>
-  </data>
-  <data name="miFile.Text" xml:space="preserve">
-    <value>&amp;File</value>
   </data>
   <data name="miUndo.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
     <value>Ctrl+Z</value>
@@ -596,90 +734,42 @@
   <data name="miSelectAll.Text" xml:space="preserve">
     <value>Select &amp;All</value>
   </data>
-  <data name="miEdit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>41, 20</value>
-  </data>
-  <data name="miEdit.Text" xml:space="preserve">
-    <value>&amp;Edit</value>
-  </data>
-  <data name="itmRenew.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+  <data name="miRenew.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
     <value>F5</value>
   </data>
-  <data name="itmRenew.Size" type="System.Drawing.Size, System.Drawing">
-    <value>139, 22</value>
+  <data name="miRenew.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
   </data>
-  <data name="itmRenew.Text" xml:space="preserve">
+  <data name="miRenew.Text" xml:space="preserve">
     <value>&amp;Refresh</value>
-  </data>
-  <data name="miParse.Size" type="System.Drawing.Size, System.Drawing">
-    <value>51, 20</value>
-  </data>
-  <data name="miParse.Text" xml:space="preserve">
-    <value>&amp;Parse</value>
-  </data>
-  <data name="miHighlightNext.ShortcutKeyDisplayString" xml:space="preserve">
-    <value>Right</value>
-  </data>
-  <data name="miHighlightNext.Size" type="System.Drawing.Size, System.Drawing">
-    <value>216, 22</value>
-  </data>
-  <data name="miHighlightNext.Text" xml:space="preserve">
-    <value>Highlight &amp;Next</value>
-  </data>
-  <data name="miHighlightPrevious.ShortcutKeyDisplayString" xml:space="preserve">
-    <value>Left</value>
-  </data>
-  <data name="miHighlightPrevious.Size" type="System.Drawing.Size, System.Drawing">
-    <value>216, 22</value>
-  </data>
-  <data name="miHighlightPrevious.Text" xml:space="preserve">
-    <value>Highlight &amp;Previous</value>
-  </data>
-  <data name="sepOperation.Size" type="System.Drawing.Size, System.Drawing">
-    <value>213, 6</value>
-  </data>
-  <data name="itmHighlightFirst.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
-    <value>Ctrl+Left</value>
-  </data>
-  <data name="itmHighlightFirst.Size" type="System.Drawing.Size, System.Drawing">
-    <value>216, 22</value>
-  </data>
-  <data name="itmHighlightFirst.Text" xml:space="preserve">
-    <value>Highlight &amp;First</value>
-  </data>
-  <data name="miOperation.Size" type="System.Drawing.Size, System.Drawing">
-    <value>66, 20</value>
-  </data>
-  <data name="miOperation.Text" xml:space="preserve">
-    <value>&amp;Operate</value>
-  </data>
-  <data name="msMain.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 0</value>
-  </data>
-  <data name="msMain.Size" type="System.Drawing.Size, System.Drawing">
-    <value>431, 24</value>
-  </data>
-  <data name="msMain.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="msMain.Text" xml:space="preserve">
-    <value>menuStrip1</value>
-  </data>
-  <data name="&gt;&gt;msMain.Name" xml:space="preserve">
-    <value>msMain</value>
-  </data>
-  <data name="&gt;&gt;msMain.Type" xml:space="preserve">
-    <value>System.Windows.Forms.MenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;msMain.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;msMain.ZOrder" xml:space="preserve">
-    <value>2</value>
   </data>
   <metadata name="tsMain.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>123, 17</value>
   </metadata>
+  <data name="tsMain.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 24</value>
+  </data>
+  <data name="tsMain.Size" type="System.Drawing.Size, System.Drawing">
+    <value>431, 25</value>
+  </data>
+  <data name="tsMain.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="tsMain.Text" xml:space="preserve">
+    <value>toolStrip1</value>
+  </data>
+  <data name="&gt;&gt;tsMain.Name" xml:space="preserve">
+    <value>tsMain</value>
+  </data>
+  <data name="&gt;&gt;tsMain.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tsMain.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;tsMain.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
   <data name="btnNew.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
@@ -823,33 +913,6 @@
   <data name="btnPaste.Text" xml:space="preserve">
     <value>&amp;Paste</value>
   </data>
-  <data name="tsMain.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 24</value>
-  </data>
-  <data name="tsMain.Size" type="System.Drawing.Size, System.Drawing">
-    <value>431, 25</value>
-  </data>
-  <data name="tsMain.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
-  </data>
-  <data name="tsMain.Text" xml:space="preserve">
-    <value>toolStrip1</value>
-  </data>
-  <data name="&gt;&gt;tsMain.Name" xml:space="preserve">
-    <value>tsMain</value>
-  </data>
-  <data name="&gt;&gt;tsMain.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ToolStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;tsMain.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;tsMain.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <metadata name="$this.Language" type="System.Globalization.CultureInfo, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>ja-JP</value>
-  </metadata>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
@@ -976,10 +1039,10 @@
   <data name="&gt;&gt;miParse.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;itmRenew.Name" xml:space="preserve">
-    <value>itmRenew</value>
+  <data name="&gt;&gt;miRenew.Name" xml:space="preserve">
+    <value>miRenew</value>
   </data>
-  <data name="&gt;&gt;itmRenew.Type" xml:space="preserve">
+  <data name="&gt;&gt;miRenew.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;miOperation.Name" xml:space="preserve">
@@ -1000,16 +1063,28 @@
   <data name="&gt;&gt;miHighlightPrevious.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="&gt;&gt;miHighlightNextLine.Name" xml:space="preserve">
+    <value>miHighlightNextLine</value>
+  </data>
+  <data name="&gt;&gt;miHighlightNextLine.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;miHighlightPreviousLine.Name" xml:space="preserve">
+    <value>miHighlightPreviousLine</value>
+  </data>
+  <data name="&gt;&gt;miHighlightPreviousLine.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="&gt;&gt;sepOperation.Name" xml:space="preserve">
     <value>sepOperation</value>
   </data>
   <data name="&gt;&gt;sepOperation.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;itmHighlightFirst.Name" xml:space="preserve">
-    <value>itmHighlightFirst</value>
+  <data name="&gt;&gt;miHighlightFirst.Name" xml:space="preserve">
+    <value>miHighlightFirst</value>
   </data>
-  <data name="&gt;&gt;itmHighlightFirst.Type" xml:space="preserve">
+  <data name="&gt;&gt;miHighlightFirst.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;btnNew.Name" xml:space="preserve">

@@ -42,7 +42,7 @@ namespace Lyriser
 			scrLineScroll.Value = newValue;
 		}
 
-		private void btnRenew_Click(object sender, EventArgs e)
+		private void miRenew_Click(object sender, EventArgs e)
 		{
 			lyrics.Lines.Clear();
 			foreach (var line in new LyricsParser(new ListBoxBoundErrorSink(lstErrors)).Transform(txtLyrics.Text))
@@ -70,6 +70,10 @@ namespace Lyriser
 				miHighlightPrevious_Click(sender, e);
 			else if (e.KeyCode == Keys.Right)
 				miHighlightNext_Click(sender, e);
+			else if (e.KeyCode == Keys.Up)
+				miHighlightPreviousLine_Click(sender, e);
+			else if (e.KeyCode == Keys.Down)
+				miHighlightNextLine_Click(sender, e);
 		}
 
 		private void scrLineScroll_ValueChanged(object sender, EventArgs e)
@@ -83,7 +87,7 @@ namespace Lyriser
 			savedFilePath = null;
 			txtLyrics.Clear();
 			txtLyrics.ClearUndo();
-			btnRenew_Click(sender, e);
+			miRenew_Click(sender, e);
 			Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Properties.Resources.Untitled);
 		}
 
@@ -97,7 +101,7 @@ namespace Lyriser
 					miNew_Click(sender, e);
 					txtLyrics.LoadFile(dialog.FileName, RichTextBoxStreamType.PlainText);
 					savedFilePath = dialog.FileName;
-					btnRenew_Click(sender, e);
+					miRenew_Click(sender, e);
 					Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, System.IO.Path.GetFileName(savedFilePath));
 				}
 			}
@@ -153,7 +157,21 @@ namespace Lyriser
 			picViewer.Invalidate();
 		}
 
-		private void itmHighlightFirst_Click(object sender, EventArgs e)
+		private void miHighlightNextLine_Click(object sender, EventArgs e)
+		{
+			lyrics.HighlightNextLine();
+			scrLineScroll.Value = lyrics.ViewStartLineIndex;
+			picViewer.Invalidate();
+		}
+
+		private void miHighlightPreviousLine_Click(object sender, EventArgs e)
+		{
+			lyrics.HighlightPreviousLine();
+			scrLineScroll.Value = lyrics.ViewStartLineIndex;
+			picViewer.Invalidate();
+		}
+
+		private void miHighlightFirst_Click(object sender, EventArgs e)
 		{
 			lyrics.ResetHighlightPosition();
 			scrLineScroll.Value = 0;

@@ -59,6 +59,40 @@ namespace Lyriser
 			ScrollInto(highlightLine);
 		}
 
+		public bool HighlightPreviousLine()
+		{
+			if (highlightLine < 0)
+				return false;
+			for (int line = highlightLine; --line >= 0; )
+			{
+				if (lines[line].SyllableCount > 0)
+				{
+					highlightLine = line;
+					highlightSyllableId = Math.Min(highlightSyllableId, lines[line].SyllableCount - 1);
+					ScrollInto(highlightLine);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public bool HighlightNextLine()
+		{
+			if (highlightLine < 0)
+				return false;
+			for (int line = highlightLine; ++line < lines.Count; )
+			{
+				if (lines[line].SyllableCount > 0)
+				{
+					highlightLine = line;
+					highlightSyllableId = Math.Min(highlightSyllableId, lines[line].SyllableCount - 1);
+					ScrollInto(highlightLine);
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public bool HighlightPrevious()
 		{
 			if (highlightLine < 0)
