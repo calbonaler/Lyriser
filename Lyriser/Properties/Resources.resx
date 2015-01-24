@@ -120,4 +120,10 @@
   <data name="LyricsFileFilter" xml:space="preserve">
     <value>テキストファイル|*.txt</value>
   </data>
+  <data name="TitleFormat" xml:space="preserve">
+    <value>{0} - Lyriser</value>
+  </data>
+  <data name="Untitled" xml:space="preserve">
+    <value>無題</value>
+  </data>
 </root>

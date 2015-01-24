@@ -29,7 +29,7 @@ namespace Lyriser
 			lyrics.Bounds = picViewer.Bounds;
 			lyrics.MainFont = new Font(Font.FontFamily, 14);
 			lyrics.PhoneticOffset = -5;
-			btnRenew_Click(sender, e);
+			miNew_Click(sender, e);
 		}
 
 		private void picViewer_MouseWheel(object sender, MouseEventArgs e)
@@ -84,6 +84,7 @@ namespace Lyriser
 			txtLyrics.Clear();
 			txtLyrics.ClearUndo();
 			btnRenew_Click(sender, e);
+			Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Properties.Resources.Untitled);
 		}
 
 		private void miOpen_Click(object sender, EventArgs e)
@@ -97,6 +98,7 @@ namespace Lyriser
 					txtLyrics.LoadFile(dialog.FileName, RichTextBoxStreamType.PlainText);
 					savedFilePath = dialog.FileName;
 					btnRenew_Click(sender, e);
+					Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, System.IO.Path.GetFileName(savedFilePath));
 				}
 			}
 		}
@@ -118,6 +120,7 @@ namespace Lyriser
 				{
 					txtLyrics.SaveFile(dialog.FileName, RichTextBoxStreamType.PlainText);
 					savedFilePath = dialog.FileName;
+					Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, System.IO.Path.GetFileName(savedFilePath));
 				}
 			}
 		}
