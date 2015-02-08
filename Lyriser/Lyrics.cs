@@ -8,133 +8,87 @@ namespace Lyriser
 {
 	public class Lyrics
 	{
-		List<LyricsLine> lines = new List<LyricsLine>();
+		public Lyrics() { Lines = new List<LyricsLine>(); }
 
-		int highlightLine = 0;
-		int highlightSyllableId = -1;
+		int _highlightLineIndex = 0;
+		int _highlightSyllableId = 0;
 
-		Font mainFont = null;
-		Font phoneticFont = null;
+		Font _mainFont = null;
+		Font _phoneticFont = null;
 
-		public IList<LyricsLine> Lines { get { return lines; } }
+		public IList<LyricsLine> Lines { get; private set; }
 
 		public void Draw(Graphics graphics)
 		{
 			if (graphics == null)
 				throw new ArgumentNullException("graphics");
 			graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-			if (MaxViewedLines >= lines.Count)
-				ViewStartLineIndex = 0;
-			else if (ViewStartLineIndex > VerticalScrollMaximum)
-				ViewStartLineIndex = VerticalScrollMaximum;
-			for (int i = 0; i < MaxViewedLines && i + ViewStartLineIndex < lines.Count; i++)
-				lines[i + ViewStartLineIndex].Draw(graphics, MainFont, PhoneticFont, Brushes.Black, Brushes.Cyan, 5, i * (PhoneticFont.Height + PhoneticOffset + MainFont.Height), PhoneticOffset, highlightLine == i + ViewStartLineIndex ? highlightSyllableId : -1);
+			for (int i = 0; i < MaxViewedLines && i + ViewStartLineIndex < Lines.Count; i++)
+				Lines[i + ViewStartLineIndex].Draw(graphics, MainFont, PhoneticFont, Brushes.Black, Brushes.Cyan, 5, i * (PhoneticFont.Height + PhoneticOffset + MainFont.Height), PhoneticOffset, _highlightLineIndex == i + ViewStartLineIndex ? _highlightSyllableId : -1);
 			graphics.FillRectangle(Brushes.Gray, 0, ActualBounds.Bottom, Bounds.Width, Bounds.Height - ActualBounds.Height);
-			int hi = highlightLine;
-			do
-			{
-				if (++hi >= lines.Count)
-					return;
-			} while (lines[hi].SectionLength <= 0);
-			lines[hi].Draw(graphics, MainFont, PhoneticFont, Brushes.White, null, 5, ActualBounds.Bottom, PhoneticOffset, -1);
+			int hi = GetNextHighlightableLineIndex(_highlightLineIndex, true);
+			if (hi >= 0)
+				Lines[hi].Draw(graphics, MainFont, PhoneticFont, Brushes.White, null, 5, ActualBounds.Bottom, PhoneticOffset, -1);
 		}
 
 		public void ResetHighlightPosition()
 		{
-			if (lines.Count <= 0)
-			{
-				highlightLine = -1;
-				return;
-			}
-			highlightLine = 0;
-			highlightSyllableId = 0;
-			while (lines[highlightLine].SyllableCount <= 0)
-			{
-				if (++highlightLine >= lines.Count)
-				{
-					highlightLine = -1;
-					return;
-				}
-			}
-			ScrollInto(highlightLine);
+			ScrollInto(_highlightLineIndex = GetNextHighlightableLineIndex(-1, true));
+			_highlightSyllableId = 0;
 		}
 
-		public bool HighlightPreviousLine()
+		public bool HighlightNextLine(bool forward)
 		{
-			if (highlightLine < 0)
-				return false;
-			for (int line = highlightLine; --line >= 0; )
+			int nextHighlightable = GetNextHighlightableLineIndex(_highlightLineIndex, forward);
+			if (nextHighlightable >= 0)
 			{
-				if (lines[line].SyllableCount > 0)
-				{
-					highlightLine = line;
-					highlightSyllableId = Math.Min(highlightSyllableId, lines[line].SyllableCount - 1);
-					ScrollInto(highlightLine);
-					return true;
-				}
+				ScrollInto(_highlightLineIndex = nextHighlightable);
+				_highlightSyllableId = Math.Min(_highlightSyllableId, Lines[nextHighlightable].SyllableCount - 1);
+				return true;
 			}
 			return false;
 		}
 
-		public bool HighlightNextLine()
+		int GetNextHighlightableLineIndex(int start, bool forward)
 		{
-			if (highlightLine < 0)
-				return false;
-			for (int line = highlightLine; ++line < lines.Count; )
+			for (int i = start; ; )
 			{
-				if (lines[line].SyllableCount > 0)
-				{
-					highlightLine = line;
-					highlightSyllableId = Math.Min(highlightSyllableId, lines[line].SyllableCount - 1);
-					ScrollInto(highlightLine);
-					return true;
-				}
+				i += forward ? 1 : -1;
+				if (i < 0 || i >= Lines.Count)
+					return -1;
+				if (Lines[i].SyllableCount > 0)
+					return i;
+			}
+		}
+
+		public bool HighlightNext(bool forward)
+		{
+			if (_highlightLineIndex < 0 || _highlightLineIndex >= Lines.Count)
+				return false;
+			if (forward ? _highlightSyllableId < Lines[_highlightLineIndex].SyllableCount - 1 : _highlightSyllableId > 0)
+			{
+				_highlightSyllableId += forward ? 1 : -1;
+				return true;
+			}
+			var nextHighlightable = GetNextHighlightableLineIndex(_highlightLineIndex, forward);
+			if (nextHighlightable >= 0)
+			{
+				ScrollInto(_highlightLineIndex = nextHighlightable);
+				_highlightSyllableId = forward ? 0 : Lines[nextHighlightable].SyllableCount - 1;
+				return true;
 			}
 			return false;
-		}
-
-		public bool HighlightPrevious()
-		{
-			if (highlightLine < 0)
-				return false;
-			int hi = highlightLine;
-			var syllable = highlightSyllableId;
-			while (--syllable < 0)
-			{
-				if (--hi < 0)
-					return false;
-				syllable = lines[hi].SyllableCount;
-			}
-			highlightLine = hi;
-			highlightSyllableId = syllable;
-			ScrollInto(highlightLine);
-			return true;
-		}
-
-		public bool HighlightNext()
-		{
-			if (highlightLine < 0)
-				return false;
-			int hi = highlightLine;
-			var syllable = highlightSyllableId;
-			while (++syllable >= lines[hi].SyllableCount)
-			{
-				if (++hi >= lines.Count)
-					return false;
-				syllable = -1;
-			}
-			highlightLine = hi;
-			highlightSyllableId = syllable;
-			ScrollInto(highlightLine);
-			return true;
 		}
 
 		public void ScrollInto(int line)
 		{
-			if (line > ViewStartLineIndex + MaxViewedLines - 1)
-				ViewStartLineIndex = Math.Max(line - MaxViewedLines + 1, 0);
-			else if (line < ViewStartLineIndex)
-				ViewStartLineIndex = line;
+			if (line >= 0 && line < Lines.Count)
+			{
+				if (line > ViewStartLineIndex + MaxViewedLines - 1)
+					ViewStartLineIndex = Math.Max(line - MaxViewedLines + 1, 0);
+				else if (line < ViewStartLineIndex)
+					ViewStartLineIndex = line;
+			}
 		}
 
 		public Rectangle ActualBounds { get { return new Rectangle(Bounds.X, Bounds.Y, Bounds.Width, Bounds.Height - MainFont.Height - PhoneticFont.Height); } }
@@ -143,17 +97,17 @@ namespace Lyriser
 
 		public Font MainFont
 		{
-			get { return mainFont ?? SystemFonts.DefaultFont; }
-			set { mainFont = value; }
+			get { return _mainFont ?? SystemFonts.DefaultFont; }
+			set { _mainFont = value; }
 		}
 
 		public Font PhoneticFont
 		{
 			get
 			{
-				if (phoneticFont == null || phoneticFont.FontFamily != MainFont.FontFamily)
-					return phoneticFont = new Font(MainFont.FontFamily, MainFont.Size / 2);
-				return phoneticFont;
+				if (_phoneticFont == null || _phoneticFont.FontFamily != MainFont.FontFamily)
+					return _phoneticFont = new Font(MainFont.FontFamily, MainFont.Size / 2);
+				return _phoneticFont;
 			}
 		}
 
@@ -163,7 +117,7 @@ namespace Lyriser
 
 		public int ViewStartLineIndex { get; set; }
 
-		public int VerticalScrollMaximum { get { return lines.Count - MaxViewedLines; } }
+		public int VerticalScrollMaximum { get { return Lines.Count - MaxViewedLines; } }
 	}
 
 	public class LyricsLine

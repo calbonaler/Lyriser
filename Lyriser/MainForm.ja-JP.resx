@@ -300,10 +300,10 @@
   <data name="miEdit.Text" xml:space="preserve">
     <value>編集(&amp;E)</value>
   </data>
-  <data name="itmRenew.Size" type="System.Drawing.Size, System.Drawing">
-    <value>137, 22</value>
+  <data name="miRenew.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
   </data>
-  <data name="itmRenew.Text" xml:space="preserve">
+  <data name="miRenew.Text" xml:space="preserve">
     <value>更新(&amp;R)</value>
   </data>
   <data name="miParse.Size" type="System.Drawing.Size, System.Drawing">
@@ -318,16 +318,13 @@
   <data name="miHighlightPrevious.Text" xml:space="preserve">
     <value>前をハイライト(&amp;P)</value>
   </data>
-  <data name="itmHighlightNextLine.Text" xml:space="preserve">
+  <data name="miHighlightNextLine.Text" xml:space="preserve">
     <value>次行をハイライト(&amp;E)</value>
   </data>
-  <data name="itmHighlightPreviousLine.Text" xml:space="preserve">
+  <data name="miHighlightPreviousLine.Text" xml:space="preserve">
     <value>前行をハイライト(&amp;R)</value>
   </data>
-  <data name="itmHighlightFirst.ShortcutKeyDisplayString" xml:space="preserve">
-    <value />
-  </data>
-  <data name="itmHighlightFirst.Text" xml:space="preserve">
+  <data name="miHighlightFirst.Text" xml:space="preserve">
     <value>最初をハイライト(&amp;F)</value>
   </data>
   <data name="miOperation.Size" type="System.Drawing.Size, System.Drawing">
@@ -439,5 +436,9 @@
   </data>
   <data name="btnPaste.Text" xml:space="preserve">
     <value>貼り付け(&amp;P)</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
 </root>

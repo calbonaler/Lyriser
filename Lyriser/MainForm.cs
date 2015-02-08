@@ -98,7 +98,8 @@ namespace Lyriser
 				dialog.Filter = Properties.Resources.LyricsFileFilter;
 				if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
 				{
-					miNew_Click(sender, e);
+					txtLyrics.Clear();
+					txtLyrics.ClearUndo();
 					txtLyrics.LoadFile(dialog.FileName, RichTextBoxStreamType.PlainText);
 					savedFilePath = dialog.FileName;
 					miRenew_Click(sender, e);
@@ -145,28 +146,28 @@ namespace Lyriser
 
 		private void miHighlightNext_Click(object sender, EventArgs e)
 		{
-			lyrics.HighlightNext();
+			lyrics.HighlightNext(true);
 			scrLineScroll.Value = lyrics.ViewStartLineIndex;
 			picViewer.Invalidate();
 		}
 
 		private void miHighlightPrevious_Click(object sender, EventArgs e)
 		{
-			lyrics.HighlightPrevious();
+			lyrics.HighlightNext(false);
 			scrLineScroll.Value = lyrics.ViewStartLineIndex;
 			picViewer.Invalidate();
 		}
 
 		private void miHighlightNextLine_Click(object sender, EventArgs e)
 		{
-			lyrics.HighlightNextLine();
+			lyrics.HighlightNextLine(true);
 			scrLineScroll.Value = lyrics.ViewStartLineIndex;
 			picViewer.Invalidate();
 		}
 
 		private void miHighlightPreviousLine_Click(object sender, EventArgs e)
 		{
-			lyrics.HighlightPreviousLine();
+			lyrics.HighlightNextLine(false);
 			scrLineScroll.Value = lyrics.ViewStartLineIndex;
 			picViewer.Invalidate();
 		}
