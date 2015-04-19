@@ -122,13 +122,13 @@ namespace Lyriser
 
 	public class LyricsLine
 	{
-		internal LyricsLine(IEnumerable<LyricsSection> sections, SyllableIdProvider provider)
+		internal LyricsLine(IEnumerable<LyricsItem> sections, SyllableIdProvider provider)
 		{
 			_sections = sections.ToArray();
 			_syllableCount = provider.SyllableCount;
 		}
 
-		LyricsSection[] _sections;
+		LyricsItem[] _sections;
 		int _syllableCount;
 
 		public void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int phoneticOffset, int highlightSyllableId)
@@ -151,18 +151,18 @@ namespace Lyriser
 		public int SectionLength { get { return _sections.Length; } }
 	}
 
-	public abstract class LyricsSection
+	public abstract class LyricsItem
 	{
-		protected LyricsSection(string text) { Text = text; }
+		protected LyricsItem(string text) { Text = text; }
 
 		public string Text { get; private set; }
 
 		public abstract int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffset, int textOffset, int highlightSyllableId);
 	}
 
-	public class LyricsCharacterSection : LyricsSection
+	public class LyricsCharacterItem : LyricsItem
 	{
-		public LyricsCharacterSection(string text, int? syllableId) : base(text) { SyllableIdentifier = syllableId; }
+		public LyricsCharacterItem(string text, int? syllableId) : base(text) { SyllableIdentifier = syllableId; }
 
 		public int? SyllableIdentifier { get; private set; }
 
@@ -177,11 +177,11 @@ namespace Lyriser
 		}
 	}
 
-	public class LyricsCompositeSection : LyricsSection
+	public class LyricsCompositeItem : LyricsItem
 	{
-		public LyricsCompositeSection(string text, IEnumerable<LyricsCharacterSection> phonetic) : base(text) { Phonetic = phonetic.ToArray(); }
+		public LyricsCompositeItem(string text, IEnumerable<LyricsCharacterItem> phonetic) : base(text) { Phonetic = phonetic.ToArray(); }
 
-		public IReadOnlyList<LyricsCharacterSection> Phonetic { get; private set; }
+		public IReadOnlyList<LyricsCharacterItem> Phonetic { get; private set; }
 
 		public override int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffset, int textOffset, int highlightSyllableId)
 		{

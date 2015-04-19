@@ -69,7 +69,7 @@ namespace Lyriser
 			}
 		}
 
-		IEnumerable<IList<LyricsItem>> Parse(TextReader reader)
+		IEnumerable<IList<LyricsNode>> Parse(TextReader reader)
 		{
 			int len;
 			ErrorSink.Clear();
@@ -81,30 +81,30 @@ namespace Lyriser
 			}
 		}
 
-		IList<LyricsItem> ParseLyricsLine()
+		IList<LyricsNode> ParseLyricsLine()
 		{
-			List<LyricsItem> items = new List<LyricsItem>();
+			List<LyricsNode> items = new List<LyricsNode>();
 			_lineIndex = 0;
 			while (_lineIndex < _line.Length)
 				items.Add(ParseLyricsItem());
 			return items;
 		}
 
-		LyricsItem ParseLyricsItem()
+		LyricsNode ParseLyricsItem()
 		{
 			int start = Index;
 			if (Accept('('))
 			{
-				List<LyricsItem> items = new List<LyricsItem>();
+				List<LyricsNode> items = new List<LyricsNode>();
 				do
 				{
 					items.Add(ParseLyricsItem());
 				} while (!Accept(')') && _lineIndex < _line.Length);
-				return new SkippedItem(items.ToArray(), start, Index - start);
+				return new SkippedNode(items.ToArray(), start, Index - start);
 			}
 			if (Accept('['))
 			{
-				List<SimpleItem> mainItems = new List<SimpleItem>();
+				List<SimpleNode> mainItems = new List<SimpleNode>();
 				while (true)
 				{
 					mainItems.Add(ParseSimpleItem());
@@ -116,7 +116,7 @@ namespace Lyriser
 						break;
 					}
 				}
-				List<SimpleItem> items = new List<SimpleItem>();
+				List<SimpleNode> items = new List<SimpleNode>();
 				while (true)
 				{
 					items.Add(ParseSimpleItem());
@@ -135,14 +135,14 @@ namespace Lyriser
 					else
 						ErrorSink.ReportError("文字 ']' が予期されましたが、行終端記号が見つかりました。", Index);
 				}
-				return new CompositeItem(mainItems.ToArray(), items.ToArray(), start, Index - start);
+				return new CompositeNode(mainItems.ToArray(), items.ToArray(), start, Index - start);
 			}
 			else
 			{
 				var item = ParseSimpleItem();
 				if (Accept('"'))
 				{
-					List<SimpleItem> items = new List<SimpleItem>();
+					List<SimpleNode> items = new List<SimpleNode>();
 					while (true)
 					{
 						items.Add(ParseSimpleItem());
@@ -154,14 +154,14 @@ namespace Lyriser
 							break;
 						}
 					}
-					return new CompositeItem(new[] { item }, items.ToArray(), start, Index - start);
+					return new CompositeNode(new[] { item }, items.ToArray(), start, Index - start);
 				}
 				else
 					return item;
 			}
 		}
 
-		SimpleItem ParseSimpleItem()
+		SimpleNode ParseSimpleItem()
 		{
 			int start = Index;
 			bool escaping = false;
@@ -186,7 +186,7 @@ namespace Lyriser
 				else if (text == "}")
 					state = CharacterState.StopGrouping;
 			}
-			return new SimpleItem(text, state, start, Index - start);
+			return new SimpleNode(text, state, start, Index - start);
 		}
 
 		public IEnumerable<HighlightToken> GetTokens(string text)
@@ -235,15 +235,15 @@ namespace Lyriser
 		public int SyllableCount { get { return _syllableId; } }
 	}
 
-	abstract class LyricsItem
+	abstract class LyricsNode
 	{
-		protected LyricsItem(int start, int length)
+		protected LyricsNode(int start, int length)
 		{
 			StartIndex = start;
 			Length = length;
 		}
 
-		public abstract IEnumerable<LyricsSection> Transform(SyllableIdProvider provider);
+		public abstract IEnumerable<LyricsItem> Transform(SyllableIdProvider provider);
 
 		public abstract IEnumerable<HighlightToken> Tokens { get; }
 
@@ -252,38 +252,39 @@ namespace Lyriser
 		public int Length { get; private set; }
 	}
 
-	class SimpleItem : LyricsItem
+	class SimpleNode : LyricsNode
 	{
-		public SimpleItem(string text, CharacterState state, int start, int length) : base(start, length)
+		public SimpleNode(string text, CharacterState state, int start, int length) : base(start, length)
 		{
-			State = state;
-			Text = text;
+			_state = state;
+			_text = text;
 		}
 
-		public CharacterState State { get; private set; }
+		CharacterState _state;
+		string _text;
 
-		public string Text { get; private set; }
+		public string Text { get { return _state == CharacterState.Default ? _text : string.Empty; } }
 
-		public override IEnumerable<LyricsSection> Transform(SyllableIdProvider provider)
+		public override IEnumerable<LyricsItem> Transform(SyllableIdProvider provider)
 		{
-			if (State == CharacterState.StartGrouping)
+			if (_state == CharacterState.StartGrouping)
 			{
 				if (provider != null)
 					provider.StartSyllableGeneration();
-				return Enumerable.Empty<LyricsSection>();
+				return Enumerable.Empty<LyricsItem>();
 			}
-			else if (State == CharacterState.StopGrouping)
+			else if (_state == CharacterState.StopGrouping)
 			{
 				if (provider != null)
 					provider.StopSyllableGeneration();
-				return Enumerable.Empty<LyricsSection>();
+				return Enumerable.Empty<LyricsItem>();
 			}
 			else
 			{
-				if (provider != null && !string.IsNullOrWhiteSpace(Text))
-					return Enumerable.Repeat(new LyricsCharacterSection(Text, provider.GetOrUpdateSyllableId()), 1);
+				if (provider != null && !string.IsNullOrWhiteSpace(_text))
+					return Enumerable.Repeat(new LyricsCharacterItem(_text, provider.GetOrUpdateSyllableId()), 1);
 				else
-					return Enumerable.Repeat(new LyricsCharacterSection(Text, null), 1);
+					return Enumerable.Repeat(new LyricsCharacterItem(_text, null), 1);
 			}
 		}
 
@@ -291,47 +292,54 @@ namespace Lyriser
 		{
 			get
 			{
-				if (State == CharacterState.StartGrouping || State == CharacterState.StopGrouping)
+				if (_state == CharacterState.StartGrouping || _state == CharacterState.StopGrouping)
 					yield return new HighlightToken(StartIndex, Length, Color.Red, Color.Empty);
 			}
 		}
 
-		public override string ToString() { return Text + ", " + State.ToString(); }
+		public override string ToString()
+		{
+			if (_state == CharacterState.Default)
+				return _text;
+			else
+				return "(" + _state.ToString() + ")";
+		}
 	}
 
-	class SkippedItem : LyricsItem
+	class SkippedNode : LyricsNode
 	{
-		public SkippedItem(LyricsItem[] items, int start, int length) : base(start, length) { Items = items; }
+		public SkippedNode(LyricsNode[] items, int start, int length) : base(start, length) { _items = items; }
 
-		public LyricsItem[] Items { get; private set; }
+		LyricsNode[] _items;
 
-		public override IEnumerable<LyricsSection> Transform(SyllableIdProvider provider) { return Items.SelectMany(x => x.Transform(null)); }
+		public override IEnumerable<LyricsItem> Transform(SyllableIdProvider provider) { return _items.SelectMany(x => x.Transform(null)); }
 
 		public override IEnumerable<HighlightToken> Tokens { get { yield return new HighlightToken(StartIndex, Length, Color.Green, Color.Empty); } }
 	}
 
-	class CompositeItem : LyricsItem
+	class CompositeNode : LyricsNode
 	{
-		public CompositeItem(SimpleItem[] rawText, SimpleItem[] phonetic, int start, int length) : base(start, length)
+		public CompositeNode(SimpleNode[] rawText, SimpleNode[] phonetic, int start, int length) : base(start, length)
 		{
-			_rawText = rawText;
-			Phonetic = phonetic;
+			_text = string.Concat(rawText.Select(x => x.Text));
+			_rawTextStartIndex = rawText[0].StartIndex;
+			_rawTextLength = rawText.Sum(x => x.Length);
+			_phonetic = phonetic;
 		}
 
-		SimpleItem[] _rawText;
+		string _text;
+		int _rawTextStartIndex;
+		int _rawTextLength;
+		SimpleNode[] _phonetic;
 
-		public string Text { get { return string.Concat(_rawText.Where(x => x.State == CharacterState.Default).Select(x => x.Text)); } }
-
-		public SimpleItem[] Phonetic { get; private set; }
-
-		public override IEnumerable<LyricsSection> Transform(SyllableIdProvider provider) { return Enumerable.Repeat(new LyricsCompositeSection(Text, Phonetic.SelectMany(x => x.Transform(provider)).Cast<LyricsCharacterSection>()), 1); }
+		public override IEnumerable<LyricsItem> Transform(SyllableIdProvider provider) { return Enumerable.Repeat(new LyricsCompositeItem(_text, _phonetic.SelectMany(x => x.Transform(provider)).Cast<LyricsCharacterItem>()), 1); }
 
 		public override IEnumerable<HighlightToken> Tokens
 		{
 			get
 			{
-				yield return new HighlightToken(_rawText[0].StartIndex, _rawText.Sum(x => x.Length), Color.Red, Color.Empty);
-				foreach (var phonetic in Phonetic)
+				yield return new HighlightToken(_rawTextStartIndex, _rawTextLength, Color.Red, Color.Empty);
+				foreach (var phonetic in _phonetic)
 				{
 					var phtokens = phonetic.Tokens.ToArray();
 					if (phtokens.Length > 0)
@@ -345,7 +353,7 @@ namespace Lyriser
 			}
 		}
 
-		public override string ToString() { return Text + "(" + string.Concat(Phonetic.Where(x => x.State == CharacterState.Default).Select(x => x.Text)) + ")"; }
+		public override string ToString() { return _text + "(" + string.Concat(_phonetic.Select(x => x.Text)) + ")"; }
 	}
 
 	enum CharacterState
