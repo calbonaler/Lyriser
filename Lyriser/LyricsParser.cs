@@ -19,13 +19,15 @@ namespace Lyriser
 
 		bool Accept(char ch)
 		{
-			if (_lineIndex < _line.Length && _line[_lineIndex] == ch)
+			if (Predict(ch))
 			{
 				_lineIndex++;
 				return true;
 			}
 			return false;
 		}
+
+		bool Predict(char ch) { return _lineIndex < _line.Length && _line[_lineIndex] == ch; }
 
 		static string ReadLineWithLength(TextReader reader, out int length)
 		{
@@ -96,36 +98,38 @@ namespace Lyriser
 			if (Accept('('))
 			{
 				List<LyricsNode> items = new List<LyricsNode>();
-				do
-				{
+				while (!Accept(')') && _lineIndex < _line.Length)
 					items.Add(ParseLyricsItem());
-				} while (!Accept(')') && _lineIndex < _line.Length);
-				return new SkippedNode(items.ToArray(), start, Index - start);
+				return new SkippedNode(items, start, Index - start);
 			}
 			if (Accept('['))
 			{
 				List<SimpleNode> mainItems = new List<SimpleNode>();
-				while (true)
+				while (!Predict('"'))
 				{
-					mainItems.Add(ParseSimpleItem());
-					if (Accept('"'))
-						break;
 					if (_lineIndex >= _line.Length)
 					{
 						ErrorSink.ReportError("文字 '\"' が予期されましたが、行終端記号が見つかりました。", Index);
 						break;
 					}
+					mainItems.Add(ParseSimpleItem());
+				}
+				if (mainItems.Count <= 0)
+				{
+					ErrorSink.ReportError("ふりがなのベースを空にすることはできません。", Index);
+					mainItems.Add(new SimpleNode("_", CharacterState.Default, Index, 0));
 				}
 				List<SimpleNode> items = new List<SimpleNode>();
-				while (true)
+				if (Accept('"'))
 				{
-					items.Add(ParseSimpleItem());
-					if (Accept('"'))
-						break;
-					if (_lineIndex >= _line.Length)
+					while (!Accept('"'))
 					{
-						ErrorSink.ReportError("文字 '\"' が予期されましたが、行終端記号が見つかりました。", Index);
-						break;
+						if (_lineIndex >= _line.Length)
+						{
+							ErrorSink.ReportError("文字 '\"' が予期されましたが、行終端記号が見つかりました。", Index);
+							break;
+						}
+						items.Add(ParseSimpleItem());
 					}
 				}
 				if (!Accept(']'))
@@ -135,7 +139,7 @@ namespace Lyriser
 					else
 						ErrorSink.ReportError("文字 ']' が予期されましたが、行終端記号が見つかりました。", Index);
 				}
-				return new CompositeNode(mainItems.ToArray(), items.ToArray(), start, Index - start);
+				return new CompositeNode(mainItems, items, start, Index - start);
 			}
 			else
 			{
@@ -143,18 +147,16 @@ namespace Lyriser
 				if (Accept('"'))
 				{
 					List<SimpleNode> items = new List<SimpleNode>();
-					while (true)
+					while (!Accept('"'))
 					{
-						items.Add(ParseSimpleItem());
-						if (Accept('"'))
-							break;
 						if (_lineIndex >= _line.Length)
 						{
 							ErrorSink.ReportError("文字 '\"' が予期されましたが、行終端記号が見つかりました。", Index);
 							break;
 						}
+						items.Add(ParseSimpleItem());
 					}
-					return new CompositeNode(new[] { item }, items.ToArray(), start, Index - start);
+					return new CompositeNode(new[] { item }, items, start, Index - start);
 				}
 				else
 					return item;
@@ -188,7 +190,8 @@ namespace Lyriser
 			}
 			return new SimpleNode(text, state, start, Index - start);
 		}
-
+		
+		[CLSCompliant(false)]
 		public IEnumerable<HighlightToken> GetTokens(string text)
 		{
 			List<HighlightToken> tokens = new List<HighlightToken>();
@@ -308,7 +311,7 @@ namespace Lyriser
 
 	class SkippedNode : LyricsNode
 	{
-		public SkippedNode(LyricsNode[] items, int start, int length) : base(start, length) { _items = items; }
+		public SkippedNode(IEnumerable<LyricsNode> items, int start, int length) : base(start, length) { _items = items.ToArray(); }
 
 		LyricsNode[] _items;
 
@@ -319,12 +322,12 @@ namespace Lyriser
 
 	class CompositeNode : LyricsNode
 	{
-		public CompositeNode(SimpleNode[] rawText, SimpleNode[] phonetic, int start, int length) : base(start, length)
+		public CompositeNode(IEnumerable<SimpleNode> rawText, IEnumerable<SimpleNode> phonetic, int start, int length) : base(start, length)
 		{
 			_text = string.Concat(rawText.Select(x => x.Text));
-			_rawTextStartIndex = rawText[0].StartIndex;
+			_rawTextStartIndex = rawText.First().StartIndex;
 			_rawTextLength = rawText.Sum(x => x.Length);
-			_phonetic = phonetic;
+			_phonetic = phonetic.ToArray();
 		}
 
 		string _text;
