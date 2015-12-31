@@ -47,6 +47,6 @@ namespace Lyriser
 
 	static class MathUtils
 	{
-		public static int CeilingDivide(int dividend, int divisor) { return (dividend + divisor - 1) / divisor; }
+		public static int CeilingDivide(int dividend, int divisor) => (dividend + divisor - 1) / divisor;
 	}
 }

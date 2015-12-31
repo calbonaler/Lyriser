@@ -6,10 +6,7 @@ namespace Lyriser
 {
 	public partial class MainForm : Form
 	{
-		public MainForm()
-		{
-			InitializeComponent();
-		}
+		public MainForm() { InitializeComponent(); }
 
 		Lyrics lyrics = new Lyrics();
 		string savedFilePath;
@@ -53,10 +50,7 @@ namespace Lyriser
 			picViewer.Invalidate();
 		}
 
-		private void picViewer_Paint(object sender, PaintEventArgs e)
-		{
-			lyrics.Draw(e.Graphics);
-		}
+		private void picViewer_Paint(object sender, PaintEventArgs e) { lyrics.Draw(e.Graphics); }
 
 		private void picViewer_Resize(object sender, EventArgs e)
 		{
@@ -96,7 +90,7 @@ namespace Lyriser
 			using (OpenFileDialog dialog = new OpenFileDialog())
 			{
 				dialog.Filter = Properties.Resources.LyricsFileFilter;
-				if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+				if (dialog.ShowDialog() == DialogResult.OK)
 				{
 					txtLyrics.Clear();
 					txtLyrics.ClearUndo();
@@ -121,7 +115,7 @@ namespace Lyriser
 			using (SaveFileDialog dialog = new SaveFileDialog())
 			{
 				dialog.Filter = Properties.Resources.LyricsFileFilter;
-				if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+				if (dialog.ShowDialog() == DialogResult.OK)
 				{
 					txtLyrics.SaveFile(dialog.FileName, RichTextBoxStreamType.PlainText);
 					savedFilePath = dialog.FileName;
@@ -182,11 +176,10 @@ namespace Lyriser
 		private void lstErrors_DoubleClick(object sender, EventArgs e)
 		{
 			var info = lstErrors.SelectedItem as ErrorInfo;
-			if (info != null)
-			{
-				txtLyrics.Select();
-				txtLyrics.Select(info.Index, 0);
-			}
+			if (info == null)
+				return;
+			txtLyrics.Select();
+			txtLyrics.Select(info.Index, 0);
 		}
 
 		class ErrorInfo
@@ -197,11 +190,11 @@ namespace Lyriser
 				Index = index;
 			}
 
-			public string Description { get; private set; }
+			public string Description { get; }
 
-			public int Index { get; private set; }
+			public int Index { get; }
 
-			public override string ToString() { return Description; }
+			public override string ToString() => Description;
 		}
 
 		class ListBoxBoundErrorSink : ErrorSink
@@ -210,9 +203,9 @@ namespace Lyriser
 
 			ListBox _listBox;
 
-			public override void ReportError(string description, int index) { _listBox.Items.Add(new ErrorInfo(description, index)); }
+			public override void ReportError(string description, int index) => _listBox.Items.Add(new ErrorInfo(description, index));
 
-			public override void Clear() { _listBox.Items.Clear(); }
+			public override void Clear() => _listBox.Items.Clear();
 		}
 	}
 }

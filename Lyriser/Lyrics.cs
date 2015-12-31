@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace Lyriser
 {
 	public class Lyrics
 	{
-		public Lyrics() { Lines = new List<LyricsLine>(); }
+		public Lyrics() { Lines = new Collection<LyricsLine>(); }
 
 		int _highlightLineIndex = 0;
 		int _highlightSyllableId = 0;
@@ -16,7 +17,7 @@ namespace Lyriser
 		Font _mainFont = null;
 		Font _phoneticFont = null;
 
-		public IList<LyricsLine> Lines { get; private set; }
+		public Collection<LyricsLine> Lines { get; }
 
 		public void Draw(Graphics graphics)
 		{
@@ -91,7 +92,7 @@ namespace Lyriser
 			}
 		}
 
-		public Rectangle ActualBounds { get { return new Rectangle(Bounds.X, Bounds.Y, Bounds.Width, Bounds.Height - MainFont.Height - PhoneticFont.Height); } }
+		public Rectangle ActualBounds => new Rectangle(Bounds.X, Bounds.Y, Bounds.Width, Bounds.Height - MainFont.Height - PhoneticFont.Height);
 
 		public Rectangle Bounds { get; set; }
 
@@ -113,11 +114,11 @@ namespace Lyriser
 
 		public int PhoneticOffset { get; set; }
 
-		public int MaxViewedLines { get { return ActualBounds.Height / (MainFont.Height + PhoneticFont.Height + PhoneticOffset); } }
+		public int MaxViewedLines => ActualBounds.Height / (MainFont.Height + PhoneticFont.Height + PhoneticOffset);
 
 		public int ViewStartLineIndex { get; set; }
 
-		public int VerticalScrollMaximum { get { return Lines.Count - MaxViewedLines; } }
+		public int VerticalScrollMaximum => Lines.Count - MaxViewedLines;
 	}
 
 	public class LyricsLine
@@ -146,16 +147,16 @@ namespace Lyriser
 				x += _sections[i].Draw(graphics, mainFont, phoneticFont, brush, highlightBrush, x, y, rangeWidths[i], phoneticOffset, offset, highlightSyllableId);
 		}
 
-		public int SyllableCount { get { return _syllableCount; } }
+		public int SyllableCount => _syllableCount;
 
-		public int SectionLength { get { return _sections.Length; } }
+		public int SectionLength => _sections.Length;
 	}
 
 	public abstract class LyricsItem
 	{
 		protected LyricsItem(string text) { Text = text; }
 
-		public string Text { get; private set; }
+		public string Text { get; }
 
 		public abstract int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffset, int textOffset, int highlightSyllableId);
 	}
@@ -164,7 +165,7 @@ namespace Lyriser
 	{
 		public LyricsCharacterItem(string text, int? syllableId) : base(text) { SyllableIdentifier = syllableId; }
 
-		public int? SyllableIdentifier { get; private set; }
+		public int? SyllableIdentifier { get; }
 
 		public override int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffset, int textOffset, int highlightSyllableId)
 		{
@@ -179,9 +180,9 @@ namespace Lyriser
 
 	public class LyricsCompositeItem : LyricsItem
 	{
-		public LyricsCompositeItem(string text, IEnumerable<LyricsCharacterItem> phonetic) : base(text) { Phonetic = phonetic.ToArray(); }
+		public LyricsCompositeItem(string text, IEnumerable<LyricsCharacterItem> phonetic) : base(text) { Phonetic = new ReadOnlyCollection<LyricsCharacterItem>(phonetic.ToArray()); }
 
-		public IReadOnlyList<LyricsCharacterItem> Phonetic { get; private set; }
+		public ReadOnlyCollection<LyricsCharacterItem> Phonetic { get; }
 
 		public override int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffset, int textOffset, int highlightSyllableId)
 		{
