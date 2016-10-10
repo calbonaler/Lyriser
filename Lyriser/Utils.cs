@@ -8,12 +8,12 @@ namespace Lyriser
 {
 	static class GraphicsUtils
 	{
-		public static int[] MeasureCharacterRangeWidths(this Graphics graphics, string text, Font font, IEnumerable<CharacterRange> ranges, out int offset)
+		public static RectangleF[] MeasureCharacterRanges(this Graphics graphics, string text, Font font, IEnumerable<CharacterRange> ranges)
 		{
 			var allRanges = ranges.ToArray();
 			int subRangeStartIndex = 0;
 			List<RectangleF> rects = new List<RectangleF>();
-			using (StringFormat format = new StringFormat(StringFormatFlags.MeasureTrailingSpaces))
+			using (StringFormat format = new StringFormat(StringFormat.GenericTypographic))
 			{
 				while (subRangeStartIndex < allRanges.Length)
 				{
@@ -36,17 +36,8 @@ namespace Lyriser
 					rects.Insert(i, new RectangleF(x, 0, 0, 0));
 				}
 			}
-			var result = new int[rects.Count];
-			for (int i = 0; i < rects.Count; i++)
-				result[i] = (int)Math.Round(i + 1 >= rects.Count ? rects[i].Width : rects[i + 1].X - rects[i].X);
-			offset = rects.Count > 0 ? (int)Math.Round(rects[0].X) : 0;
-			return result;
+			return rects.ToArray();
 		}
-	}
-
-	static class MathUtils
-	{
-		public static int CeilingDivide(int dividend, int divisor) => (dividend + divisor - 1) / divisor;
 	}
 
 	sealed class DisposableArray<T> : IList<T>, IList, IReadOnlyList<T>, IDisposable where T : IDisposable
