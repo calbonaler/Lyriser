@@ -134,15 +134,8 @@ namespace Lyriser
 
 		public void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int phoneticOffset, int highlightSyllableId)
 		{
-			CharacterRange[] ranges = new CharacterRange[_sections.Length];
-			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < _sections.Length; i++)
-			{
-				ranges[i] = new CharacterRange(sb.Length, _sections[i].Text.Length);
-				sb.Append(_sections[i].Text);
-			}
 			int offset;
-			var rangeWidths = graphics.MeasureCharacterRangeWidths(sb.ToString(), mainFont, ranges, out offset);
+			var rangeWidths = LyricsItem.MeasureItemWidths(graphics, _sections, mainFont, out offset);
 			for (int i = 0; i < _sections.Length; i++)
 				x += _sections[i].Draw(graphics, mainFont, phoneticFont, brush, highlightBrush, x, y, rangeWidths[i], phoneticOffset, offset, highlightSyllableId);
 		}
@@ -158,7 +151,19 @@ namespace Lyriser
 
 		public string Text { get; }
 
-		public abstract int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffset, int textOffset, int highlightSyllableId);
+		public static int[] MeasureItemWidths(Graphics graphics, IEnumerable<LyricsItem> items, Font font, out int offset)
+		{
+			List<CharacterRange> ranges = new List<CharacterRange>();
+			StringBuilder sb = new StringBuilder();
+			foreach (var item in items)
+			{
+				ranges.Add(new CharacterRange(sb.Length, item.Text.Length));
+				sb.Append(item.Text);
+			}
+			return graphics.MeasureCharacterRangeWidths(sb.ToString(), font, ranges, out offset);
+		}
+
+		public abstract int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffsetY, int textOffset, int highlightSyllableId);
 	}
 
 	public class LyricsCharacterItem : LyricsItem
@@ -167,13 +172,13 @@ namespace Lyriser
 
 		public int? SyllableIdentifier { get; }
 
-		public override int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffset, int textOffset, int highlightSyllableId)
+		public override int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffsetY, int textOffset, int highlightSyllableId)
 		{
 			// ハイライトの描画
 			if (SyllableIdentifier == highlightSyllableId)
-				graphics.FillRectangle(highlightBrush, x + textOffset, y + phoneticFont.Height + phoneticOffset, textWidth, mainFont.Height);
+				graphics.FillRectangle(highlightBrush, x + textOffset, y + phoneticFont.Height + phoneticOffsetY, textWidth, mainFont.Height);
 			// ベーステキストの描画
-			graphics.DrawString(Text, mainFont, brush, x, y + phoneticFont.Height + phoneticOffset);
+			graphics.DrawString(Text, mainFont, brush, x, y + phoneticFont.Height + phoneticOffsetY);
 			return textWidth;
 		}
 	}
@@ -184,21 +189,22 @@ namespace Lyriser
 
 		public ReadOnlyCollection<LyricsCharacterItem> Phonetic { get; }
 
-		public override int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffset, int textOffset, int highlightSyllableId)
+		public override int Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, Brush highlightBrush, int x, int y, int textWidth, int phoneticOffsetY, int textOffset, int highlightSyllableId)
 		{
-			var phoneticText = string.Concat(Phonetic.Select(p => p.Text));
-			var phoneticWidth = graphics.MeasureStringWidth(phoneticText, phoneticFont);
-			var drawingWidth = Math.Max(phoneticWidth, textWidth);
+			int phoneticOffsetX;
+			var phoneticWidths = MeasureItemWidths(graphics, Phonetic, phoneticFont, out phoneticOffsetX);
+			var drawingWidth = Math.Max(phoneticWidths.Sum(), textWidth);
 			// ハイライトの描画
-			for (int j = 0; j < Phonetic.Count; j++)
+			for (int i = 0; i < Phonetic.Count; i++)
 			{
-				if (Phonetic[j].SyllableIdentifier == highlightSyllableId)
-					graphics.FillRectangle(highlightBrush, x + textOffset + MathUtils.CeilingDivide(j * drawingWidth, Phonetic.Count), y, MathUtils.CeilingDivide(drawingWidth, Phonetic.Count), phoneticFont.Height + phoneticOffset + mainFont.Height);
+				if (Phonetic[i].SyllableIdentifier == highlightSyllableId)
+					graphics.FillRectangle(highlightBrush, x + textOffset + MathUtils.CeilingDivide(i * drawingWidth, Phonetic.Count), y, MathUtils.CeilingDivide(drawingWidth, Phonetic.Count), phoneticFont.Height + phoneticOffsetY + mainFont.Height);
 			}
 			// ふりがなの描画
-			graphics.DrawString(phoneticText, phoneticFont, brush, x + textOffset * phoneticFont.Height / mainFont.Height + Math.Max(textWidth - phoneticWidth, 0) / 2, y);
+			for (int i = 0; i < Phonetic.Count; i++)
+				graphics.DrawString(Phonetic[i].Text, phoneticFont, brush, x + textOffset + i * drawingWidth / Phonetic.Count + (drawingWidth / Phonetic.Count - phoneticWidths[i]) / 2, y);
 			// ベーステキストの描画
-			graphics.DrawString(Text, mainFont, brush, x + Math.Max(phoneticWidth - textWidth, 0) / 2, y + phoneticFont.Height + phoneticOffset);
+			graphics.DrawString(Text, mainFont, brush, x + (drawingWidth - textWidth) / 2, y + phoneticFont.Height + phoneticOffsetY);
 			return drawingWidth;
 		}
 	}

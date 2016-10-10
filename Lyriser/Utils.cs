@@ -42,12 +42,6 @@ namespace Lyriser
 			offset = rects.Count > 0 ? (int)Math.Round(rects[0].X) : 0;
 			return result;
 		}
-
-		public static int MeasureStringWidth(this Graphics graphics, string text, Font font)
-		{
-			int dummy;
-			return MeasureCharacterRangeWidths(graphics, text, font, Enumerable.Repeat(new CharacterRange(0, text.Length), 1), out dummy)[0];
-		}
 	}
 
 	static class MathUtils
