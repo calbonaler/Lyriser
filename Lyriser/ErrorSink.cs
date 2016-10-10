@@ -1,7 +1,4 @@
-﻿using System;
-using System.Globalization;
-
-namespace Lyriser
+﻿namespace Lyriser
 {
 	public abstract class ErrorSink
 	{
