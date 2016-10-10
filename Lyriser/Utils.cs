@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Lyriser
 {
-	static class GraphicUtils
+	static class GraphicsUtils
 	{
 		public static int[] MeasureCharacterRangeWidths(this Graphics graphics, string text, Font font, IEnumerable<CharacterRange> ranges, out int offset)
 		{
