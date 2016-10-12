@@ -160,7 +160,7 @@ namespace Lyriser
 
 		public int ViewStartLineIndex { get; set; }
 
-		public int VerticalScrollMaximum => Lines.Count - MaxViewedLines;
+		public int VerticalScrollMaximum => Math.Max(0, Lines.Count - MaxViewedLines);
 	}
 
 	public struct LyricsHitTestResult

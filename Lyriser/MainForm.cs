@@ -14,8 +14,9 @@ namespace Lyriser
 		void OptimizeScrollBarMaximum()
 		{
 			scrLineScroll.Enabled = lyrics.VerticalScrollMaximum > 0;
-			if (scrLineScroll.Enabled)
-				scrLineScroll.Maximum = lyrics.VerticalScrollMaximum + scrLineScroll.LargeChange - 1;
+			scrLineScroll.Maximum = lyrics.VerticalScrollMaximum + scrLineScroll.LargeChange - 1;
+			if (scrLineScroll.Value > scrLineScroll.Maximum + 1 - scrLineScroll.LargeChange)
+				scrLineScroll.Value = scrLineScroll.Maximum + 1 - scrLineScroll.LargeChange;
 		}
 
 		private void MainForm_Load(object sender, EventArgs e)
