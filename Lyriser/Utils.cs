@@ -15,6 +15,7 @@ namespace Lyriser
 			List<RectangleF> rects = new List<RectangleF>();
 			using (StringFormat format = new StringFormat(StringFormat.GenericTypographic))
 			{
+				format.FormatFlags = StringFormatFlags.MeasureTrailingSpaces;
 				while (subRangeStartIndex < allRanges.Length)
 				{
 					var subRange = new CharacterRange[Math.Min(allRanges.Length - subRangeStartIndex, 32)];
