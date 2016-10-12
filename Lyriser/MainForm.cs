@@ -50,6 +50,13 @@ namespace Lyriser
 			picViewer.Invalidate();
 		}
 
+		private void picViewer_MouseDown(object sender, MouseEventArgs e)
+		{
+			var res = lyrics.HitTestSyllable(e.Location);
+			lyrics.Highlight(res.LineIndex, _ => res.SyllableIndex);
+			picViewer.Invalidate();
+		}
+
 		private void picViewer_Paint(object sender, PaintEventArgs e) { lyrics.Draw(e.Graphics); }
 
 		private void picViewer_Resize(object sender, EventArgs e)

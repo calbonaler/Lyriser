@@ -31,6 +31,34 @@ namespace Lyriser
 				_shouldMeasure = true;
 		}
 
+		int GetNextHighlightableLineIndex(int start, bool forward)
+		{
+			for (int i = start; ; )
+			{
+				i += forward ? 1 : -1;
+				if (i < 0 || i >= Lines.Count)
+					return -1;
+				if (Lines[i].SyllableCount > 0)
+					return i;
+			}
+		}
+
+		public LyricsHitTestResult HitTestSyllable(PointF point)
+		{
+			Func<int, double> ycoord = l => (l - ViewStartLineIndex + 0.5) * (PhoneticFont.Height + PhoneticOffset + MainFont.Height);
+			int line = -1;
+			for (int i = 0; i < ViewStartLineIndex + MaxViewedLines && i < Lines.Count; i++)
+			{
+				if (Lines[i].SyllableCount <= 0)
+					continue;
+				if (line < 0 || Math.Abs(ycoord(i) - point.Y) < Math.Abs(ycoord(line) - point.Y))
+					line = i;
+			}
+			if (line < 0)
+				return new LyricsHitTestResult(line, 0);
+			return new LyricsHitTestResult(line, (int)Lines[line].GetNearestSyllableItem(point.X - LyricsXOffset).SyllableIdentifier);
+		}
+
 		public void Draw(Graphics graphics)
 		{
 			if (graphics == null)
@@ -54,37 +82,27 @@ namespace Lyriser
 				Lines[hi].Draw(graphics, MainFont, PhoneticFont, Brushes.White, LyricsXOffset, ActualBounds.Bottom, PhoneticOffset);
 		}
 
-		public void ResetHighlightPosition()
-		{
-			ScrollInto(_highlightLineIndex = GetNextHighlightableLineIndex(-1, true));
-			_highlightSyllableId = 0;
-		}
+		public void ResetHighlightPosition() { Highlight(GetNextHighlightableLineIndex(-1, true), _ => 0); }
 
-		public bool HighlightNextLine(bool forward)
+		public bool Highlight(int line, Func<int, int> syllableIdCreator)
 		{
-			int nextHighlightable = GetNextHighlightableLineIndex(_highlightLineIndex, forward);
-			if (nextHighlightable < 0)
+			if (line < 0 || line >= Lines.Count)
 				return false;
-			var syllables = Lines[_highlightLineIndex].GetItemsForSyllableId(_highlightSyllableId);
-			var center = (syllables[0].Left + syllables[syllables.Length - 1].Left + syllables[syllables.Length - 1].AdvanceWidth) / 2;
-			var nextItem = Lines[nextHighlightable].GetNearestSyllableItem(center);
-			_highlightLineIndex = nextHighlightable;
-			_highlightSyllableId = (int)nextItem.SyllableIdentifier;
-			ScrollInto(nextHighlightable);
+			var syllableId = syllableIdCreator(line);
+			if (syllableId < 0 || syllableId >= Lines[line].SyllableCount)
+				return false;
+			_highlightLineIndex = line;
+			_highlightSyllableId = syllableId;
+			ScrollInto(_highlightLineIndex);
 			return true;
 		}
 
-		int GetNextHighlightableLineIndex(int start, bool forward)
+		public bool HighlightNextLine(bool forward) => Highlight(GetNextHighlightableLineIndex(_highlightLineIndex, forward), next =>
 		{
-			for (int i = start; ; )
-			{
-				i += forward ? 1 : -1;
-				if (i < 0 || i >= Lines.Count)
-					return -1;
-				if (Lines[i].SyllableCount > 0)
-					return i;
-			}
-		}
+			var syllables = Lines[_highlightLineIndex].GetItemsForSyllableId(_highlightSyllableId);
+			var center = (syllables[0].Left + syllables[syllables.Length - 1].Left + syllables[syllables.Length - 1].AdvanceWidth) / 2;
+			return (int)Lines[next].GetNearestSyllableItem(center).SyllableIdentifier;
+		});
 
 		public bool HighlightNext(bool forward)
 		{
@@ -95,14 +113,7 @@ namespace Lyriser
 				_highlightSyllableId += forward ? 1 : -1;
 				return true;
 			}
-			var nextHighlightable = GetNextHighlightableLineIndex(_highlightLineIndex, forward);
-			if (nextHighlightable >= 0)
-			{
-				ScrollInto(_highlightLineIndex = nextHighlightable);
-				_highlightSyllableId = forward ? 0 : Lines[nextHighlightable].SyllableCount - 1;
-				return true;
-			}
-			return false;
+			return Highlight(GetNextHighlightableLineIndex(_highlightLineIndex, forward), next => forward ? 0 : Lines[next].SyllableCount - 1);
 		}
 
 		public void ScrollInto(int line)
@@ -152,6 +163,17 @@ namespace Lyriser
 		public int VerticalScrollMaximum => Lines.Count - MaxViewedLines;
 	}
 
+	public struct LyricsHitTestResult
+	{
+		public LyricsHitTestResult(int lineIndex, int syllableIndex)
+		{
+			LineIndex = lineIndex;
+			SyllableIndex = syllableIndex;
+		}
+		public int LineIndex { get; }
+		public int SyllableIndex { get; }
+	}
+
 	public class LyricsLine
 	{
 		internal LyricsLine(IEnumerable<LyricsItem> sections, SyllableIdProvider provider)
@@ -181,8 +203,8 @@ namespace Lyriser
 
 		public LyricsCharacterItem[] GetItemsForSyllableId(int syllableId) => CharacterItems().Where(x => x.SyllableIdentifier == syllableId).ToArray();
 
-		public LyricsCharacterItem GetNearestSyllableItem(float x)
-			=> CharacterItems().Where(i => i.SyllableIdentifier != null).Aggregate((LyricsCharacterItem)null, (a, b) => a == null || Math.Abs(b.Left + b.AdvanceWidth / 2 - x) < Math.Abs(a.Left + a.AdvanceWidth / 2 - x) ? b : a);
+		public LyricsCharacterItem GetNearestSyllableItem(float x) =>
+			CharacterItems().Where(i => i.SyllableIdentifier != null).Aggregate((LyricsCharacterItem)null, (a, b) => a == null || Math.Abs(b.Left + b.AdvanceWidth / 2 - x) < Math.Abs(a.Left + a.AdvanceWidth / 2 - x) ? b : a);
 
 		public void Measure(Graphics graphics, Font mainFont, Font phoneticFont)
 		{
