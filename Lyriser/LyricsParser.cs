@@ -11,7 +11,7 @@ namespace Lyriser
 {
 	public class LyricsParser : IHighlightTokenizer
 	{
-		public LyricsParser(ErrorSink errorSink) { ErrorSink = errorSink; }
+		public LyricsParser(ErrorSink errorSink) => ErrorSink = errorSink;
 
 		string _line;
 		int _baseIndex;
@@ -288,7 +288,7 @@ namespace Lyriser
 
 	class SkippedNode : LyricsNode
 	{
-		public SkippedNode(IEnumerable<LyricsNode> items, int start, int length) : base(start, length) { _items = items.ToArray(); }
+		public SkippedNode(IEnumerable<LyricsNode> items, int start, int length) : base(start, length) => _items = items.ToArray();
 
 		LyricsNode[] _items;
 

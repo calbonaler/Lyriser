@@ -53,8 +53,8 @@ namespace Lyriser
 
 		private void picViewer_MouseDown(object sender, MouseEventArgs e)
 		{
-			var res = lyrics.HitTestSyllable(e.Location);
-			lyrics.Highlight(res.LineIndex, _ => res.SyllableIndex);
+			var (lineIndex, syllableIndex) = lyrics.HitTestSyllable(e.Location);
+			lyrics.Highlight(lineIndex, _ => syllableIndex);
 			picViewer.Invalidate();
 		}
 
