@@ -33,7 +33,7 @@ namespace Lyriser
 
 		int GetNextHighlightableLineIndex(int start, bool forward)
 		{
-			for (int i = start; ;)
+			for (var i = start; ;)
 			{
 				i += forward ? 1 : -1;
 				if (i < 0 || i >= Lines.Count)
@@ -45,9 +45,9 @@ namespace Lyriser
 
 		public (int lineIndex, int syllableIndex) HitTestSyllable(PointF point)
 		{
-			Func<int, double> ycoord = l => (l - ViewStartLineIndex + 0.5) * (PhoneticFont.Height + PhoneticOffset + MainFont.Height);
-			int line = -1;
-			for (int i = 0; i < ViewStartLineIndex + MaxViewedLines && i < Lines.Count; i++)
+			double ycoord(int l) => (l - ViewStartLineIndex + 0.5) * (PhoneticFont.Height + PhoneticOffset + MainFont.Height);
+			var line = -1;
+			for (var i = 0; i < ViewStartLineIndex + MaxViewedLines && i < Lines.Count; i++)
 			{
 				if (Lines[i].SyllableCount <= 0)
 					continue;
@@ -70,19 +70,19 @@ namespace Lyriser
 					line.Measure(graphics, MainFont, PhoneticFont);
 				_shouldMeasure = false;
 			}
-			for (int i = 0; i < MaxViewedLines && i + ViewStartLineIndex < Lines.Count; i++)
+			for (var i = 0; i < MaxViewedLines && i + ViewStartLineIndex < Lines.Count; i++)
 			{
 				if (_highlightLineIndex == i + ViewStartLineIndex)
 					Lines[i + ViewStartLineIndex].DrawHighlight(graphics, MainFont, PhoneticFont, Brushes.Cyan, LyricsXOffset, i * (PhoneticFont.Height + PhoneticOffset + MainFont.Height), PhoneticOffset, _highlightSyllableId);
 				Lines[i + ViewStartLineIndex].Draw(graphics, MainFont, PhoneticFont, Brushes.Black, LyricsXOffset, i * (PhoneticFont.Height + PhoneticOffset + MainFont.Height), PhoneticOffset);
 			}
 			graphics.FillRectangle(Brushes.Gray, 0, ActualBounds.Bottom, Bounds.Width, Bounds.Height - ActualBounds.Height);
-			int hi = GetNextHighlightableLineIndex(_highlightLineIndex, true);
+			var hi = GetNextHighlightableLineIndex(_highlightLineIndex, true);
 			if (hi >= 0)
 				Lines[hi].Draw(graphics, MainFont, PhoneticFont, Brushes.White, LyricsXOffset, ActualBounds.Bottom, PhoneticOffset);
 		}
 
-		public void ResetHighlightPosition() { Highlight(GetNextHighlightableLineIndex(-1, true), _ => 0); }
+		public void ResetHighlightPosition() => Highlight(GetNextHighlightableLineIndex(-1, true), _ => 0);
 
 		public bool Highlight(int line, Func<int, int> syllableIdCreator)
 		{
@@ -133,7 +133,7 @@ namespace Lyriser
 
 		public Font MainFont
 		{
-			get { return _mainFont ?? SystemFonts.DefaultFont; }
+			get => _mainFont ?? SystemFonts.DefaultFont;
 			set
 			{
 				if (_mainFont != value)
@@ -168,11 +168,10 @@ namespace Lyriser
 		internal LyricsLine(IEnumerable<LyricsItem> sections, SyllableIdProvider provider)
 		{
 			_sections = sections.ToArray();
-			_syllableCount = provider.SyllableCount;
+			SyllableCount = provider.SyllableCount;
 		}
 
 		LyricsItem[] _sections;
-		int _syllableCount;
 
 		IEnumerable<LyricsCharacterItem> CharacterItems()
 		{
@@ -196,7 +195,7 @@ namespace Lyriser
 		public void Measure(Graphics graphics, Font mainFont, Font phoneticFont)
 		{
 			LyricsItem.MeasureItems(graphics, _sections, mainFont);
-			for (int i = 0; i < _sections.Length; i++)
+			for (var i = 0; i < _sections.Length; i++)
 			{
 				_sections[i].Left = i <= 0 ? 0 : _sections[i - 1].AdvanceWidth + _sections[i - 1].Left;
 				_sections[i].AdvanceWidth = _sections[i].TextWidth;
@@ -207,23 +206,23 @@ namespace Lyriser
 		public void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, float left, float top, float phoneticOffsetY)
 		{
 			top += phoneticFont.Height + phoneticOffsetY + mainFont.Height;
-			for (int i = 0; i < _sections.Length; i++)
+			for (var i = 0; i < _sections.Length; i++)
 				_sections[i].Draw(graphics, mainFont, phoneticFont, brush, left, top, phoneticOffsetY);
 		}
 
 		public void DrawHighlight(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, float left, float top, float phoneticOffsetY, int highlightSyllableId)
 		{
 			top += phoneticFont.Height + phoneticOffsetY + mainFont.Height;
-			for (int i = 0; i < _sections.Length; i++)
+			for (var i = 0; i < _sections.Length; i++)
 				_sections[i].DrawHighlight(graphics, mainFont, phoneticFont, brush, left, top, phoneticOffsetY, 0, highlightSyllableId);
 		}
 
-		public int SyllableCount => _syllableCount;
+		public int SyllableCount { get; }
 	}
 
 	public abstract class LyricsItem
 	{
-		protected LyricsItem(string text) { Text = text; }
+		protected LyricsItem(string text) => Text = text;
 
 		public string Text { get; }
 
@@ -237,8 +236,8 @@ namespace Lyriser
 		{
 			if (items.Count <= 0)
 				return;
-			List<CharacterRange> ranges = new List<CharacterRange>();
-			StringBuilder sb = new StringBuilder();
+			var ranges = new List<CharacterRange>();
+			var sb = new StringBuilder();
 			foreach (var item in items)
 			{
 				ranges.Add(new CharacterRange(sb.Length, item.Text.Length));
@@ -251,17 +250,14 @@ namespace Lyriser
 
 		public virtual void Measure(Graphics graphics, Font mainFont, Font phoneticFont) { }
 
-		public virtual void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, float left, float bottom, float phoneticOffsetY)
-		{
-			graphics.DrawString(Text, mainFont, brush, left + Left + (AdvanceWidth - TextWidth) / 2, bottom - mainFont.Height, StringFormat.GenericTypographic);
-		}
+		public virtual void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, float left, float bottom, float phoneticOffsetY) => graphics.DrawString(Text, mainFont, brush, left + Left + (AdvanceWidth - TextWidth) / 2, bottom - mainFont.Height, StringFormat.GenericTypographic);
 
 		public abstract void DrawHighlight(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, float left, float bottom, float phoneticOffsetY, float additionalHeight, int highlightSyllableId);
 	}
 
 	public class LyricsCharacterItem : LyricsItem
 	{
-		public LyricsCharacterItem(string text, int? syllableId) : base(text) { SyllableIdentifier = syllableId; }
+		public LyricsCharacterItem(string text, int? syllableId) : base(text) => SyllableIdentifier = syllableId;
 
 		public int? SyllableIdentifier { get; }
 
@@ -274,7 +270,7 @@ namespace Lyriser
 
 	public class LyricsCompositeItem : LyricsItem
 	{
-		public LyricsCompositeItem(string text, IEnumerable<LyricsCharacterItem> phonetic) : base(text) { Phonetic = new ReadOnlyCollection<LyricsCharacterItem>(phonetic.ToArray()); }
+		public LyricsCompositeItem(string text, IEnumerable<LyricsCharacterItem> phonetic) : base(text) => Phonetic = new ReadOnlyCollection<LyricsCharacterItem>(phonetic.ToArray());
 
 		public ReadOnlyCollection<LyricsCharacterItem> Phonetic { get; }
 
@@ -282,7 +278,7 @@ namespace Lyriser
 		{
 			MeasureItems(graphics, Phonetic, phoneticFont);
 			AdvanceWidth = Math.Max(Phonetic.Sum(x => x.TextWidth), AdvanceWidth);
-			for (int i = 0; i < Phonetic.Count; i++)
+			for (var i = 0; i < Phonetic.Count; i++)
 			{
 				Phonetic[i].AdvanceWidth = AdvanceWidth / Phonetic.Count;
 				Phonetic[i].Left = Left + i * AdvanceWidth / Phonetic.Count;
@@ -292,7 +288,7 @@ namespace Lyriser
 		public override void Draw(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, float left, float bottom, float phoneticOffsetY)
 		{
 			// ふりがなの描画
-			for (int i = 0; i < Phonetic.Count; i++)
+			for (var i = 0; i < Phonetic.Count; i++)
 				graphics.DrawString(Phonetic[i].Text, phoneticFont, brush, left + Phonetic[i].Left + (Phonetic[i].AdvanceWidth - Phonetic[i].TextWidth) / 2, bottom - mainFont.Height - phoneticOffsetY - phoneticFont.Height, StringFormat.GenericTypographic);
 			// ベーステキストの描画
 			base.Draw(graphics, mainFont, phoneticFont, brush, left, bottom, phoneticOffsetY);
@@ -300,7 +296,7 @@ namespace Lyriser
 
 		public override void DrawHighlight(Graphics graphics, Font mainFont, Font phoneticFont, Brush brush, float left, float bottom, float phoneticOffsetY, float additionalHeight, int highlightSyllableId)
 		{
-			for (int i = 0; i < Phonetic.Count; i++)
+			for (var i = 0; i < Phonetic.Count; i++)
 				Phonetic[i].DrawHighlight(graphics, phoneticFont, null, brush, left, bottom - mainFont.Height - phoneticOffsetY, 0, additionalHeight + phoneticOffsetY + mainFont.Height, highlightSyllableId);
 		}
 	}

@@ -31,7 +31,7 @@ namespace Lyriser
 
 		static string ReadLineWithLength(TextReader reader, out int length)
 		{
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			length = 0;
 			int ch;
 			while (true)
@@ -73,10 +73,9 @@ namespace Lyriser
 
 		IEnumerable<LyricsNode[]> Parse(TextReader reader)
 		{
-			int len;
 			ErrorSink.Clear();
 			_baseIndex = 0;
-			while ((_line = ReadLineWithLength(reader, out len)) != null)
+			while ((_line = ReadLineWithLength(reader, out var len)) != null)
 			{
 				yield return ParseLyricsLine();
 				_baseIndex += len;
@@ -85,7 +84,7 @@ namespace Lyriser
 
 		LyricsNode[] ParseLyricsLine()
 		{
-			List<LyricsNode> items = new List<LyricsNode>();
+			var items = new List<LyricsNode>();
 			_lineIndex = 0;
 			while (_lineIndex < _line.Length)
 				items.Add(ParseLyricsItem());
@@ -94,17 +93,17 @@ namespace Lyriser
 
 		LyricsNode ParseLyricsItem()
 		{
-			int start = Index;
+			var start = Index;
 			if (Accept('('))
 			{
-				List<LyricsNode> items = new List<LyricsNode>();
+				var items = new List<LyricsNode>();
 				while (!Accept(')') && _lineIndex < _line.Length)
 					items.Add(ParseLyricsItem());
 				return new SkippedNode(items, start, Index - start);
 			}
 			if (Accept('['))
 			{
-				List<SimpleNode> mainItems = new List<SimpleNode>();
+				var mainItems = new List<SimpleNode>();
 				while (!Predict('"'))
 				{
 					if (_lineIndex >= _line.Length)
@@ -119,7 +118,7 @@ namespace Lyriser
 					ErrorSink.ReportError("ふりがなのベースを空にすることはできません。", Index);
 					mainItems.Add(new SimpleNode("_", CharacterState.Default, Index, 0));
 				}
-				List<SimpleNode> items = new List<SimpleNode>();
+				var items = new List<SimpleNode>();
 				if (Accept('"'))
 				{
 					while (!Accept('"'))
@@ -144,7 +143,7 @@ namespace Lyriser
 			var item = ParseSimpleItem();
 			if (!Accept('"'))
 				return item;
-			List<SimpleNode> phoneticItems = new List<SimpleNode>();
+			var phoneticItems = new List<SimpleNode>();
 			while (!Accept('"'))
 			{
 				if (_lineIndex >= _line.Length)
@@ -159,11 +158,11 @@ namespace Lyriser
 
 		SimpleNode ParseSimpleItem()
 		{
-			int start = Index;
-			bool escaping = false;
+			var start = Index;
+			var escaping = false;
 			if (Accept('`'))
 				escaping = true;
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			if (_lineIndex < _line.Length)
 				sb.Append(_line[_lineIndex++]);
 			else
@@ -174,7 +173,7 @@ namespace Lyriser
 			if (char.IsHighSurrogate(sb[sb.Length - 1]) && _lineIndex < _line.Length && char.IsLowSurrogate(_line[_lineIndex]))
 				sb.Append(_line[_lineIndex++]);
 			var text = sb.ToString();
-			CharacterState state = CharacterState.Default;
+			var state = CharacterState.Default;
 			if (!escaping)
 			{
 				if (text == "{")
@@ -196,7 +195,6 @@ namespace Lyriser
 	class SyllableIdProvider
 	{
 		bool _syllableIdCreated = false;
-		int _syllableId = 0;
 
 		public void StartSyllableGeneration()
 		{
@@ -209,19 +207,19 @@ namespace Lyriser
 			if (_syllableIdCreated)
 			{
 				_syllableIdCreated = false;
-				_syllableId++;
+				SyllableCount++;
 			}
 		}
 
 		public int GetOrUpdateSyllableId()
 		{
 			if (!_syllableIdCreated)
-				return _syllableId++;
+				return SyllableCount++;
 			else
-				return _syllableId;
+				return SyllableCount;
 		}
 
-		public int SyllableCount => _syllableId;
+		public int SyllableCount { get; private set; } = 0;
 	}
 
 	abstract class LyricsNode
@@ -250,7 +248,7 @@ namespace Lyriser
 		}
 
 		CharacterState _state;
-		string _text;
+		readonly string _text;
 
 		public string Text => _state == CharacterState.Default ? _text : string.Empty;
 
@@ -302,14 +300,13 @@ namespace Lyriser
 		public CompositeNode(IEnumerable<SimpleNode> rawText, IEnumerable<SimpleNode> phonetic, int start, int length) : base(start, length)
 		{
 			_text = string.Concat(rawText.Select(x => x.Text));
-			_rawTextStartIndex = rawText.First().StartIndex;
+			RawTextStartIndex = rawText.First().StartIndex;
 			_rawTextLength = rawText.Sum(x => x.Length);
 			_phonetic = phonetic.ToArray();
 		}
 
-		string _text;
-		int _rawTextStartIndex;
-		int _rawTextLength;
+		readonly string _text;
+		readonly int _rawTextLength;
 		SimpleNode[] _phonetic;
 
 		public override IEnumerable<LyricsItem> Transform(SyllableIdProvider provider) => Enumerable.Repeat(new LyricsCompositeItem(_text, _phonetic.SelectMany(x => x.Transform(provider)).Cast<LyricsCharacterItem>()), 1);
@@ -318,7 +315,7 @@ namespace Lyriser
 		{
 			get
 			{
-				yield return new HighlightToken(_rawTextStartIndex, _rawTextLength, Color.Red, Color.Empty);
+				yield return new HighlightToken(RawTextStartIndex, _rawTextLength, Color.Red, Color.Empty);
 				foreach (var phonetic in _phonetic)
 				{
 					var phtokens = phonetic.Tokens.ToArray();
@@ -332,6 +329,8 @@ namespace Lyriser
 				}
 			}
 		}
+
+		public int RawTextStartIndex { get; }
 
 		public override string ToString() => _text + "(" + string.Concat(_phonetic.Select(x => x.Text)) + ")";
 	}

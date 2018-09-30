@@ -6,7 +6,7 @@ namespace Lyriser
 {
 	public partial class MainForm : Form
 	{
-		public MainForm() { InitializeComponent(); }
+		public MainForm() => InitializeComponent();
 
 		Lyrics lyrics = new Lyrics();
 		string savedFilePath;
@@ -19,7 +19,7 @@ namespace Lyriser
 				scrLineScroll.Value = scrLineScroll.Maximum + 1 - scrLineScroll.LargeChange;
 		}
 
-		private void MainForm_Load(object sender, EventArgs e)
+		void MainForm_Load(object sender, EventArgs e)
 		{
 			picViewer.MouseWheel += picViewer_MouseWheel;
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
@@ -30,7 +30,7 @@ namespace Lyriser
 			miNew_Click(sender, e);
 		}
 
-		private void picViewer_MouseWheel(object sender, MouseEventArgs e)
+		void picViewer_MouseWheel(object sender, MouseEventArgs e)
 		{
 			var newValue = scrLineScroll.Value - e.Delta / SystemInformation.MouseWheelScrollDelta;
 			if (newValue < 0)
@@ -40,7 +40,7 @@ namespace Lyriser
 			scrLineScroll.Value = newValue;
 		}
 
-		private void miRenew_Click(object sender, EventArgs e)
+		void miRenew_Click(object sender, EventArgs e)
 		{
 			lyrics.Lines.Clear();
 			foreach (var line in new LyricsParser(new ListBoxBoundErrorSink(lstErrors)).Transform(txtLyrics.Text))
@@ -51,22 +51,22 @@ namespace Lyriser
 			picViewer.Invalidate();
 		}
 
-		private void picViewer_MouseDown(object sender, MouseEventArgs e)
+		void picViewer_MouseDown(object sender, MouseEventArgs e)
 		{
 			var (lineIndex, syllableIndex) = lyrics.HitTestSyllable(e.Location);
 			lyrics.Highlight(lineIndex, _ => syllableIndex);
 			picViewer.Invalidate();
 		}
 
-		private void picViewer_Paint(object sender, PaintEventArgs e) { lyrics.Draw(e.Graphics); }
+		void picViewer_Paint(object sender, PaintEventArgs e) => lyrics.Draw(e.Graphics);
 
-		private void picViewer_Resize(object sender, EventArgs e)
+		void picViewer_Resize(object sender, EventArgs e)
 		{
 			lyrics.Bounds = picViewer.Bounds;
 			OptimizeScrollBarMaximum();
 		}
 
-		private void picViewer_KeyDown(object sender, KeyEventArgs e)
+		void picViewer_KeyDown(object sender, KeyEventArgs e)
 		{
 			if (e.KeyCode == Keys.Left)
 				miHighlightPrevious_Click(sender, e);
@@ -78,13 +78,13 @@ namespace Lyriser
 				miHighlightNextLine_Click(sender, e);
 		}
 
-		private void scrLineScroll_ValueChanged(object sender, EventArgs e)
+		void scrLineScroll_ValueChanged(object sender, EventArgs e)
 		{
 			lyrics.ViewStartLineIndex = scrLineScroll.Value;
 			picViewer.Invalidate();
 		}
 
-		private void miNew_Click(object sender, EventArgs e)
+		void miNew_Click(object sender, EventArgs e)
 		{
 			savedFilePath = null;
 			txtLyrics.Clear();
@@ -93,9 +93,9 @@ namespace Lyriser
 			Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Properties.Resources.Untitled);
 		}
 
-		private void miOpen_Click(object sender, EventArgs e)
+		void miOpen_Click(object sender, EventArgs e)
 		{
-			using (OpenFileDialog dialog = new OpenFileDialog())
+			using (var dialog = new OpenFileDialog())
 			{
 				dialog.Filter = Properties.Resources.LyricsFileFilter;
 				if (dialog.ShowDialog() == DialogResult.OK)
@@ -110,7 +110,7 @@ namespace Lyriser
 			}
 		}
 
-		private void miSave_Click(object sender, EventArgs e)
+		void miSave_Click(object sender, EventArgs e)
 		{
 			if (string.IsNullOrEmpty(savedFilePath))
 				miSaveAs_Click(sender, e);
@@ -118,9 +118,9 @@ namespace Lyriser
 				txtLyrics.SaveFile(savedFilePath, RichTextBoxStreamType.PlainText);
 		}
 
-		private void miSaveAs_Click(object sender, EventArgs e)
+		void miSaveAs_Click(object sender, EventArgs e)
 		{
-			using (SaveFileDialog dialog = new SaveFileDialog())
+			using (var dialog = new SaveFileDialog())
 			{
 				dialog.Filter = Properties.Resources.LyricsFileFilter;
 				if (dialog.ShowDialog() == DialogResult.OK)
@@ -132,59 +132,58 @@ namespace Lyriser
 			}
 		}
 
-		private void miExit_Click(object sender, EventArgs e) { Close(); }
+		void miExit_Click(object sender, EventArgs e) => Close();
 
-		private void miUndo_Click(object sender, EventArgs e) { txtLyrics.Undo(); }
+		void miUndo_Click(object sender, EventArgs e) => txtLyrics.Undo();
 
-		private void miRedo_Click(object sender, EventArgs e) { txtLyrics.Redo(); }
+		void miRedo_Click(object sender, EventArgs e) => txtLyrics.Redo();
 
-		private void miCut_Click(object sender, EventArgs e) { txtLyrics.Cut(); }
+		void miCut_Click(object sender, EventArgs e) => txtLyrics.Cut();
 
-		private void miCopy_Click(object sender, EventArgs e) { txtLyrics.Copy(); }
+		void miCopy_Click(object sender, EventArgs e) => txtLyrics.Copy();
 
-		private void miPaste_Click(object sender, EventArgs e) { txtLyrics.Paste(); }
+		void miPaste_Click(object sender, EventArgs e) => txtLyrics.Paste();
 
-		private void miSelectAll_Click(object sender, EventArgs e) { txtLyrics.SelectAll(); }
+		void miSelectAll_Click(object sender, EventArgs e) => txtLyrics.SelectAll();
 
-		private void miHighlightNext_Click(object sender, EventArgs e)
+		void miHighlightNext_Click(object sender, EventArgs e)
 		{
 			lyrics.HighlightNext(true);
 			scrLineScroll.Value = lyrics.ViewStartLineIndex;
 			picViewer.Invalidate();
 		}
 
-		private void miHighlightPrevious_Click(object sender, EventArgs e)
+		void miHighlightPrevious_Click(object sender, EventArgs e)
 		{
 			lyrics.HighlightNext(false);
 			scrLineScroll.Value = lyrics.ViewStartLineIndex;
 			picViewer.Invalidate();
 		}
 
-		private void miHighlightNextLine_Click(object sender, EventArgs e)
+		void miHighlightNextLine_Click(object sender, EventArgs e)
 		{
 			lyrics.HighlightNextLine(true);
 			scrLineScroll.Value = lyrics.ViewStartLineIndex;
 			picViewer.Invalidate();
 		}
 
-		private void miHighlightPreviousLine_Click(object sender, EventArgs e)
+		void miHighlightPreviousLine_Click(object sender, EventArgs e)
 		{
 			lyrics.HighlightNextLine(false);
 			scrLineScroll.Value = lyrics.ViewStartLineIndex;
 			picViewer.Invalidate();
 		}
 
-		private void miHighlightFirst_Click(object sender, EventArgs e)
+		void miHighlightFirst_Click(object sender, EventArgs e)
 		{
 			lyrics.ResetHighlightPosition();
 			scrLineScroll.Value = 0;
 			picViewer.Invalidate();
 		}
 
-		private void lstErrors_DoubleClick(object sender, EventArgs e)
+		void lstErrors_DoubleClick(object sender, EventArgs e)
 		{
-			var info = lstErrors.SelectedItem as ErrorInfo;
-			if (info == null)
+			if (!(lstErrors.SelectedItem is ErrorInfo info))
 				return;
 			txtLyrics.Select();
 			txtLyrics.Select(info.Index, 0);
@@ -207,7 +206,7 @@ namespace Lyriser
 
 		class ListBoxBoundErrorSink : ErrorSink
 		{
-			public ListBoxBoundErrorSink(ListBox listBox) { _listBox = listBox; }
+			public ListBoxBoundErrorSink(ListBox listBox) => _listBox = listBox;
 
 			ListBox _listBox;
 

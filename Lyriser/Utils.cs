@@ -11,7 +11,7 @@ namespace Lyriser
 		public static RectangleF[] MeasureCharacterRanges(this Graphics graphics, string text, Font font, IEnumerable<CharacterRange> ranges)
 		{
 			var allRanges = ranges.ToArray();
-			int subRangeStartIndex = 0;
+			var subRangeStartIndex = 0;
 			var rects = new List<RectangleF>();
 			using (var format = new StringFormat(StringFormat.GenericTypographic))
 			{
@@ -26,7 +26,7 @@ namespace Lyriser
 						rects.AddRange(regions.Select(r => r.GetBounds(graphics)));
 				}
 			}
-			for (int i = 0; i < allRanges.Length; i++)
+			for (var i = 0; i < allRanges.Length; i++)
 			{
 				if (allRanges[i].Length == 0)
 					rects.Insert(i, new RectangleF(i < rects.Count ? rects[i].X : i > 0 ? rects[i - 1].Right : 0, 0, 0, 0));
@@ -37,7 +37,7 @@ namespace Lyriser
 
 	sealed class CompositeDisposable<T> : IEnumerable<T>, IDisposable where T : IDisposable
 	{
-		public CompositeDisposable(T[] items) { _items = items; }
+		public CompositeDisposable(T[] items) => _items = items;
 
 		T[] _items;
 
