@@ -8,26 +8,14 @@ namespace Lyriser
 	{
 		public MainForm() => InitializeComponent();
 
-		Lyrics lyrics = new Lyrics();
 		string savedFilePath;
 		
-		void OptimizeScrollBarMaximum()
+		protected override void OnLoad(EventArgs e)
 		{
-			scrLineScroll.Enabled = lyrics.VerticalScrollMaximum > 0;
-			scrLineScroll.Maximum = lyrics.VerticalScrollMaximum + scrLineScroll.LargeChange - 1;
-			if (scrLineScroll.Value > scrLineScroll.Maximum + 1 - scrLineScroll.LargeChange)
-				scrLineScroll.Value = scrLineScroll.Maximum + 1 - scrLineScroll.LargeChange;
-		}
-
-		void MainForm_Load(object sender, EventArgs e)
-		{
-			picViewer.MouseWheel += picViewer_MouseWheel;
+			base.OnLoad(e);
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
 			txtLyrics.HighlightTokenizer = new LyricsParser(ErrorSink.Null);
-			lyrics.Bounds = picViewer.Bounds;
-			lyrics.MainFont = new Font(Font.FontFamily, 14);
-			lyrics.PhoneticOffset = -5;
-			miNew_Click(sender, e);
+			miNew_Click(this, e);
 		}
 
 		protected override void OnDpiChanged(DpiChangedEventArgs e)
@@ -41,59 +29,7 @@ namespace Lyriser
 			tsMain.ImageScalingSize = new Size(tsMain.ImageScalingSize.Width * e.DeviceDpiNew / e.DeviceDpiOld, tsMain.ImageScalingSize.Height * e.DeviceDpiNew / e.DeviceDpiOld);
 		}
 
-		void picViewer_MouseWheel(object sender, MouseEventArgs e)
-		{
-			var newValue = scrLineScroll.Value - e.Delta / SystemInformation.MouseWheelScrollDelta;
-			if (newValue < 0)
-				newValue = 0;
-			if (newValue > scrLineScroll.Maximum + 1 - scrLineScroll.LargeChange)
-				newValue = scrLineScroll.Maximum + 1 - scrLineScroll.LargeChange;
-			scrLineScroll.Value = newValue;
-		}
-
-		void miRenew_Click(object sender, EventArgs e)
-		{
-			lyrics.Lines.Clear();
-			foreach (var line in new LyricsParser(new ListBoxBoundErrorSink(lstErrors)).Transform(txtLyrics.Text))
-				lyrics.Lines.Add(line);
-			lyrics.ResetHighlightPosition();
-			OptimizeScrollBarMaximum();
-			scrLineScroll.Value = 0;
-			picViewer.Invalidate();
-		}
-
-		void picViewer_MouseDown(object sender, MouseEventArgs e)
-		{
-			var (lineIndex, syllableIndex) = lyrics.HitTestSyllable(e.Location);
-			lyrics.Highlight(lineIndex, _ => syllableIndex);
-			picViewer.Invalidate();
-		}
-
-		void picViewer_Paint(object sender, PaintEventArgs e) => lyrics.Draw(e.Graphics);
-
-		void picViewer_Resize(object sender, EventArgs e)
-		{
-			lyrics.Bounds = picViewer.Bounds;
-			OptimizeScrollBarMaximum();
-		}
-
-		void picViewer_KeyDown(object sender, KeyEventArgs e)
-		{
-			if (e.KeyCode == Keys.Left)
-				miHighlightPrevious_Click(sender, e);
-			else if (e.KeyCode == Keys.Right)
-				miHighlightNext_Click(sender, e);
-			else if (e.KeyCode == Keys.Up)
-				miHighlightPreviousLine_Click(sender, e);
-			else if (e.KeyCode == Keys.Down)
-				miHighlightNextLine_Click(sender, e);
-		}
-
-		void scrLineScroll_ValueChanged(object sender, EventArgs e)
-		{
-			lyrics.ViewStartLineIndex = scrLineScroll.Value;
-			picViewer.Invalidate();
-		}
+		void miRenew_Click(object sender, EventArgs e) => lvMain.Setup(new LyricsParser(new ListBoxBoundErrorSink(lstErrors)).Transform(txtLyrics.Text));
 
 		void miNew_Click(object sender, EventArgs e)
 		{
@@ -157,40 +93,15 @@ namespace Lyriser
 
 		void miSelectAll_Click(object sender, EventArgs e) => txtLyrics.SelectAll();
 
-		void miHighlightNext_Click(object sender, EventArgs e)
-		{
-			lyrics.HighlightNext(true);
-			scrLineScroll.Value = lyrics.ViewStartLineIndex;
-			picViewer.Invalidate();
-		}
+		void miHighlightNext_Click(object sender, EventArgs e) => lvMain.HighlightNext();
 
-		void miHighlightPrevious_Click(object sender, EventArgs e)
-		{
-			lyrics.HighlightNext(false);
-			scrLineScroll.Value = lyrics.ViewStartLineIndex;
-			picViewer.Invalidate();
-		}
+		void miHighlightPrevious_Click(object sender, EventArgs e) => lvMain.HighlightPrevious();
 
-		void miHighlightNextLine_Click(object sender, EventArgs e)
-		{
-			lyrics.HighlightNextLine(true);
-			scrLineScroll.Value = lyrics.ViewStartLineIndex;
-			picViewer.Invalidate();
-		}
+		void miHighlightNextLine_Click(object sender, EventArgs e) => lvMain.HighlightNextLine(true);
 
-		void miHighlightPreviousLine_Click(object sender, EventArgs e)
-		{
-			lyrics.HighlightNextLine(false);
-			scrLineScroll.Value = lyrics.ViewStartLineIndex;
-			picViewer.Invalidate();
-		}
+		void miHighlightPreviousLine_Click(object sender, EventArgs e) => lvMain.HighlightNextLine(false);
 
-		void miHighlightFirst_Click(object sender, EventArgs e)
-		{
-			lyrics.ResetHighlightPosition();
-			scrLineScroll.Value = 0;
-			picViewer.Invalidate();
-		}
+		void miHighlightFirst_Click(object sender, EventArgs e) => lvMain.HighlightFirst();
 
 		void lstErrors_DoubleClick(object sender, EventArgs e)
 		{

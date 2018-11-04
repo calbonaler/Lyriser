@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Controls;
+using SharpDX.DirectWrite;
 
 namespace Lyriser
 {
@@ -59,14 +60,20 @@ namespace Lyriser
 
 		public ErrorSink ErrorSink { get; }
 
-		public IEnumerable<LyricsLine> Transform(string source)
+		public IEnumerable<(RubiedLine Line, CharacterIndex[][] Keys)> Transform(string source)
 		{
 			using (var reader = new StringReader(source))
 			{
-				foreach (var line in Parse(reader))
+				var lineIndex = 0;
+				foreach (var nodes in Parse(reader))
 				{
-					var provider = new SyllableIdProvider();
-					yield return new LyricsLine(line.SelectMany(x => x.Transform(provider)), provider);
+					var baseTextBuilder = new StringBuilder();
+					var rubySpecs = new List<RubySpecifier>();
+					var keyStore = new KeyStore();
+					foreach (var node in nodes)
+						node.Transform(lineIndex, baseTextBuilder, rubySpecs, keyStore);
+					yield return (new RubiedLine(baseTextBuilder.ToString(), rubySpecs.ToArray()), keyStore.ToArray());
+					lineIndex++;
 				}
 			}
 		}
@@ -183,7 +190,7 @@ namespace Lyriser
 			}
 			return new SimpleNode(text, state, start, Index - start);
 		}
-		
+
 		[CLSCompliant(false)]
 		public IEnumerable<HighlightToken> GetTokens(string text)
 		{
@@ -192,34 +199,35 @@ namespace Lyriser
 		}
 	}
 
-	class SyllableIdProvider
+	class KeyStore
 	{
-		bool _syllableIdCreated = false;
+		readonly List<CharacterIndex[]> _keys = new List<CharacterIndex[]>();
+		List<CharacterIndex> _subKeys;
 
-		public void StartSyllableGeneration()
+		public void StartGrouping()
 		{
-			if (!_syllableIdCreated)
-				_syllableIdCreated = true;
+			if (_subKeys == null)
+				_subKeys = new List<CharacterIndex>();
 		}
 
-		public void StopSyllableGeneration()
+		public void StopGrouping()
 		{
-			if (_syllableIdCreated)
+			if (_subKeys != null)
 			{
-				_syllableIdCreated = false;
-				SyllableCount++;
+				_keys.Add(_subKeys.ToArray());
+				_subKeys = null;
 			}
 		}
 
-		public int GetOrUpdateSyllableId()
+		public void Add(CharacterIndex index)
 		{
-			if (!_syllableIdCreated)
-				return SyllableCount++;
+			if (_subKeys != null)
+				_subKeys.Add(index);
 			else
-				return SyllableCount;
+				_keys.Add(new[] { index });
 		}
 
-		public int SyllableCount { get; private set; } = 0;
+		public CharacterIndex[][] ToArray() => _keys.ToArray();
 	}
 
 	abstract class LyricsNode
@@ -230,7 +238,7 @@ namespace Lyriser
 			Length = length;
 		}
 
-		public abstract IEnumerable<LyricsItem> Transform(SyllableIdProvider provider);
+		public abstract void Transform(int lineIndex, StringBuilder textBuilder, List<RubySpecifier> rubySpecifiers, KeyStore keyStore);
 
 		public abstract IEnumerable<HighlightToken> Tokens { get; }
 
@@ -247,29 +255,25 @@ namespace Lyriser
 			_text = text;
 		}
 
-		CharacterState _state;
+		readonly CharacterState _state;
 		readonly string _text;
 
 		public string Text => _state == CharacterState.Default ? _text : string.Empty;
 
-		public override IEnumerable<LyricsItem> Transform(SyllableIdProvider provider)
+		public override void Transform(int lineIndex, StringBuilder textBuilder, List<RubySpecifier> rubySpecifiers, KeyStore keyStore) => Transform(lineIndex, textBuilder, -1, keyStore);
+
+		public void Transform(int lineIndex, StringBuilder textBuilder, int rubyIndex, KeyStore keyStore)
 		{
 			if (_state == CharacterState.StartGrouping)
-			{
-				if (provider != null)
-					provider.StartSyllableGeneration();
-				return Enumerable.Empty<LyricsItem>();
-			}
-			if (_state == CharacterState.StopGrouping)
-			{
-				if (provider != null)
-					provider.StopSyllableGeneration();
-				return Enumerable.Empty<LyricsItem>();
-			}
-			if (provider != null && !string.IsNullOrWhiteSpace(_text))
-				return Enumerable.Repeat(new LyricsCharacterItem(_text, provider.GetOrUpdateSyllableId()), 1);
+				keyStore?.StartGrouping();
+			else if (_state == CharacterState.StopGrouping)
+				keyStore?.StopGrouping();
 			else
-				return Enumerable.Repeat(new LyricsCharacterItem(_text, null), 1);
+			{
+				if (keyStore != null && !string.IsNullOrWhiteSpace(Text))
+					keyStore.Add(new CharacterIndex(lineIndex, rubyIndex, textBuilder.Length));
+				textBuilder.Append(Text);
+			}
 		}
 
 		public override IEnumerable<HighlightToken> Tokens
@@ -288,9 +292,13 @@ namespace Lyriser
 	{
 		public SkippedNode(IEnumerable<LyricsNode> items, int start, int length) : base(start, length) => _items = items.ToArray();
 
-		LyricsNode[] _items;
+		readonly LyricsNode[] _items;
 
-		public override IEnumerable<LyricsItem> Transform(SyllableIdProvider provider) => _items.SelectMany(x => x.Transform(null));
+		public override void Transform(int lineIndex, StringBuilder textBuilder, List<RubySpecifier> rubySpecifiers, KeyStore keyStore)
+		{
+			foreach (var item in _items)
+				item.Transform(lineIndex, textBuilder, rubySpecifiers, null);
+		}
 
 		public override IEnumerable<HighlightToken> Tokens => Enumerable.Repeat(new HighlightToken(StartIndex, Length, Color.Green, Color.Empty), 1);
 	}
@@ -302,21 +310,28 @@ namespace Lyriser
 			_text = string.Concat(rawText.Select(x => x.Text));
 			RawTextStartIndex = rawText.First().StartIndex;
 			_rawTextLength = rawText.Sum(x => x.Length);
-			_phonetic = phonetic.ToArray();
+			_ruby = phonetic.ToArray();
 		}
 
 		readonly string _text;
 		readonly int _rawTextLength;
-		SimpleNode[] _phonetic;
+		readonly SimpleNode[] _ruby;
 
-		public override IEnumerable<LyricsItem> Transform(SyllableIdProvider provider) => Enumerable.Repeat(new LyricsCompositeItem(_text, _phonetic.SelectMany(x => x.Transform(provider)).Cast<LyricsCharacterItem>()), 1);
+		public override void Transform(int lineIndex, StringBuilder textBuilder, List<RubySpecifier> rubySpecifiers, KeyStore keyStore)
+		{
+			var rubyTextBuilder = new StringBuilder();
+			foreach (var rubyNode in _ruby)
+				rubyNode.Transform(lineIndex, rubyTextBuilder, rubySpecifiers.Count, keyStore);
+			rubySpecifiers.Add(new RubySpecifier(new TextRange(textBuilder.Length, _text.Length), rubyTextBuilder.ToString()));
+			textBuilder.Append(_text);
+		}
 
 		public override IEnumerable<HighlightToken> Tokens
 		{
 			get
 			{
 				yield return new HighlightToken(RawTextStartIndex, _rawTextLength, Color.Red, Color.Empty);
-				foreach (var phonetic in _phonetic)
+				foreach (var phonetic in _ruby)
 				{
 					var phtokens = phonetic.Tokens.ToArray();
 					if (phtokens.Length > 0)
@@ -332,7 +347,7 @@ namespace Lyriser
 
 		public int RawTextStartIndex { get; }
 
-		public override string ToString() => _text + "(" + string.Concat(_phonetic.Select(x => x.Text)) + ")";
+		public override string ToString() => _text + "(" + string.Concat(_ruby.Select(x => x.Text)) + ")";
 	}
 
 	enum CharacterState

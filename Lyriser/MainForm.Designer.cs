@@ -34,8 +34,7 @@
 			this.lstErrors = new System.Windows.Forms.ListBox();
 			this.tcMain = new System.Windows.Forms.TabControl();
 			this.tpView = new System.Windows.Forms.TabPage();
-			this.picViewer = new Lyriser.FocusablePictureBox();
-			this.scrLineScroll = new System.Windows.Forms.VScrollBar();
+			this.lvMain = new Lyriser.LyricsViewer();
 			this.tpEdit = new System.Windows.Forms.TabPage();
 			this.msMain = new System.Windows.Forms.MenuStrip();
 			this.miFile = new System.Windows.Forms.ToolStripMenuItem();
@@ -78,7 +77,6 @@
 			this.splMain.SuspendLayout();
 			this.tcMain.SuspendLayout();
 			this.tpView.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.picViewer)).BeginInit();
 			this.tpEdit.SuspendLayout();
 			this.msMain.SuspendLayout();
 			this.tsMain.SuspendLayout();
@@ -122,27 +120,16 @@
 			// 
 			// tpView
 			// 
-			this.tpView.Controls.Add(this.picViewer);
-			this.tpView.Controls.Add(this.scrLineScroll);
+			this.tpView.Controls.Add(this.lvMain);
 			resources.ApplyResources(this.tpView, "tpView");
 			this.tpView.Name = "tpView";
 			this.tpView.UseVisualStyleBackColor = true;
 			// 
-			// picViewer
+			// lvMain
 			// 
-			resources.ApplyResources(this.picViewer, "picViewer");
-			this.picViewer.Name = "picViewer";
-			this.picViewer.TabStop = false;
-			this.picViewer.KeyDown += new System.Windows.Forms.KeyEventHandler(this.picViewer_KeyDown);
-			this.picViewer.Paint += new System.Windows.Forms.PaintEventHandler(this.picViewer_Paint);
-			this.picViewer.MouseDown += new System.Windows.Forms.MouseEventHandler(this.picViewer_MouseDown);
-			this.picViewer.Resize += new System.EventHandler(this.picViewer_Resize);
-			// 
-			// scrLineScroll
-			// 
-			resources.ApplyResources(this.scrLineScroll, "scrLineScroll");
-			this.scrLineScroll.Name = "scrLineScroll";
-			this.scrLineScroll.ValueChanged += new System.EventHandler(this.scrLineScroll_ValueChanged);
+			this.lvMain.BackColor = System.Drawing.Color.White;
+			resources.ApplyResources(this.lvMain, "lvMain");
+			this.lvMain.Name = "lvMain";
 			// 
 			// tpEdit
 			// 
@@ -402,14 +389,12 @@
 			this.Controls.Add(this.tsMain);
 			this.Controls.Add(this.msMain);
 			this.Name = "MainForm";
-			this.Load += new System.EventHandler(this.MainForm_Load);
 			this.splMain.Panel1.ResumeLayout(false);
 			this.splMain.Panel2.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.splMain)).EndInit();
 			this.splMain.ResumeLayout(false);
 			this.tcMain.ResumeLayout(false);
 			this.tpView.ResumeLayout(false);
-			((System.ComponentModel.ISupportInitialize)(this.picViewer)).EndInit();
 			this.tpEdit.ResumeLayout(false);
 			this.msMain.ResumeLayout(false);
 			this.msMain.PerformLayout();
@@ -426,8 +411,6 @@
 		private System.Windows.Forms.TabPage tpView;
 		private System.Windows.Forms.TabPage tpEdit;
 		private Controls.WindowsForms.SyntaxHighlightingTextBox txtLyrics;
-		private Lyriser.FocusablePictureBox picViewer;
-		private System.Windows.Forms.VScrollBar scrLineScroll;
 		private System.Windows.Forms.MenuStrip msMain;
 		private System.Windows.Forms.ToolStripMenuItem miFile;
 		private System.Windows.Forms.ToolStripMenuItem miNew;
@@ -465,6 +448,7 @@
 		private System.Windows.Forms.ListBox lstErrors;
 		private System.Windows.Forms.ToolStripMenuItem miHighlightNextLine;
 		private System.Windows.Forms.ToolStripMenuItem miHighlightPreviousLine;
+		private LyricsViewer lvMain;
 	}
 }
 

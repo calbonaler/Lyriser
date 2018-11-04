@@ -144,7 +144,7 @@
     <value>ForcedBoth</value>
   </data>
   <data name="txtLyrics.Size" type="System.Drawing.Size, System.Drawing">
-    <value>423, 197</value>
+    <value>423, 211</value>
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="txtLyrics.TabIndex" type="System.Int32, mscorlib">
@@ -223,10 +223,10 @@
     <value>1</value>
   </data>
   <data name="splMain.Size" type="System.Drawing.Size, System.Drawing">
-    <value>423, 299</value>
+    <value>423, 313</value>
   </data>
   <data name="splMain.SplitterDistance" type="System.Int32, mscorlib">
-    <value>197</value>
+    <value>211</value>
   </data>
   <data name="splMain.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -243,59 +243,32 @@
   <data name="&gt;&gt;splMain.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <data name="picViewer.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+  <data name="lvMain.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Fill</value>
   </data>
-  <data name="picViewer.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
+  <data name="lvMain.Font" type="System.Drawing.Font, System.Drawing">
+    <value>メイリオ, 14.25pt</value>
   </data>
-  <data name="picViewer.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="lvMain.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 0</value>
   </data>
-  <data name="picViewer.Size" type="System.Drawing.Size, System.Drawing">
-    <value>406, 313</value>
+  <data name="lvMain.Size" type="System.Drawing.Size, System.Drawing">
+    <value>423, 313</value>
   </data>
-  <data name="picViewer.TabIndex" type="System.Int32, mscorlib">
+  <data name="lvMain.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
   </data>
-  <data name="&gt;&gt;picViewer.Name" xml:space="preserve">
-    <value>picViewer</value>
+  <data name="&gt;&gt;lvMain.Name" xml:space="preserve">
+    <value>lvMain</value>
   </data>
-  <data name="&gt;&gt;picViewer.Type" xml:space="preserve">
-    <value>Lyriser.FocusablePictureBox, Lyriser, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</value>
+  <data name="&gt;&gt;lvMain.Type" xml:space="preserve">
+    <value>Lyriser.LyricsViewer, Lyriser, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
-  <data name="&gt;&gt;picViewer.Parent" xml:space="preserve">
+  <data name="&gt;&gt;lvMain.Parent" xml:space="preserve">
     <value>tpView</value>
   </data>
-  <data name="&gt;&gt;picViewer.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;lvMain.ZOrder" xml:space="preserve">
     <value>0</value>
-  </data>
-  <data name="scrLineScroll.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
-    <value>Right</value>
-  </data>
-  <data name="scrLineScroll.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="scrLineScroll.Location" type="System.Drawing.Point, System.Drawing">
-    <value>406, 0</value>
-  </data>
-  <data name="scrLineScroll.Size" type="System.Drawing.Size, System.Drawing">
-    <value>17, 313</value>
-  </data>
-  <data name="scrLineScroll.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;scrLineScroll.Name" xml:space="preserve">
-    <value>scrLineScroll</value>
-  </data>
-  <data name="&gt;&gt;scrLineScroll.Type" xml:space="preserve">
-    <value>System.Windows.Forms.VScrollBar, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;scrLineScroll.Parent" xml:space="preserve">
-    <value>tpView</value>
-  </data>
-  <data name="&gt;&gt;scrLineScroll.ZOrder" xml:space="preserve">
-    <value>1</value>
   </data>
   <data name="tpView.Location" type="System.Drawing.Point, System.Drawing">
     <value>4, 27</value>
@@ -331,7 +304,7 @@
     <value>0, 0, 0, 0</value>
   </data>
   <data name="tpEdit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>423, 299</value>
+    <value>423, 313</value>
   </data>
   <data name="tpEdit.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
