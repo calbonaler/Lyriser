@@ -34,6 +34,7 @@
 			this.lstErrors = new System.Windows.Forms.ListBox();
 			this.tcMain = new System.Windows.Forms.TabControl();
 			this.tpView = new System.Windows.Forms.TabPage();
+			this.picViewer = new Lyriser.FocusablePictureBox();
 			this.scrLineScroll = new System.Windows.Forms.VScrollBar();
 			this.tpEdit = new System.Windows.Forms.TabPage();
 			this.msMain = new System.Windows.Forms.MenuStrip();
@@ -71,17 +72,16 @@
 			this.btnCut = new System.Windows.Forms.ToolStripButton();
 			this.btnCopy = new System.Windows.Forms.ToolStripButton();
 			this.btnPaste = new System.Windows.Forms.ToolStripButton();
-			this.picViewer = new Lyriser.FocusablePictureBox();
 			((System.ComponentModel.ISupportInitialize)(this.splMain)).BeginInit();
 			this.splMain.Panel1.SuspendLayout();
 			this.splMain.Panel2.SuspendLayout();
 			this.splMain.SuspendLayout();
 			this.tcMain.SuspendLayout();
 			this.tpView.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.picViewer)).BeginInit();
 			this.tpEdit.SuspendLayout();
 			this.msMain.SuspendLayout();
 			this.tsMain.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.picViewer)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// splMain
@@ -127,6 +127,16 @@
 			resources.ApplyResources(this.tpView, "tpView");
 			this.tpView.Name = "tpView";
 			this.tpView.UseVisualStyleBackColor = true;
+			// 
+			// picViewer
+			// 
+			resources.ApplyResources(this.picViewer, "picViewer");
+			this.picViewer.Name = "picViewer";
+			this.picViewer.TabStop = false;
+			this.picViewer.KeyDown += new System.Windows.Forms.KeyEventHandler(this.picViewer_KeyDown);
+			this.picViewer.Paint += new System.Windows.Forms.PaintEventHandler(this.picViewer_Paint);
+			this.picViewer.MouseDown += new System.Windows.Forms.MouseEventHandler(this.picViewer_MouseDown);
+			this.picViewer.Resize += new System.EventHandler(this.picViewer_Resize);
 			// 
 			// scrLineScroll
 			// 
@@ -326,6 +336,7 @@
 			// 
 			// tsMain
 			// 
+			resources.ApplyResources(this.tsMain, "tsMain");
 			this.tsMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnNew,
             this.btnOpen,
@@ -334,7 +345,6 @@
             this.btnCut,
             this.btnCopy,
             this.btnPaste});
-			resources.ApplyResources(this.tsMain, "tsMain");
 			this.tsMain.Name = "tsMain";
 			// 
 			// btnNew
@@ -384,20 +394,10 @@
 			this.btnPaste.Name = "btnPaste";
 			this.btnPaste.Click += new System.EventHandler(this.miPaste_Click);
 			// 
-			// picViewer
-			// 
-			resources.ApplyResources(this.picViewer, "picViewer");
-			this.picViewer.Name = "picViewer";
-			this.picViewer.TabStop = false;
-			this.picViewer.KeyDown += new System.Windows.Forms.KeyEventHandler(this.picViewer_KeyDown);
-			this.picViewer.Paint += new System.Windows.Forms.PaintEventHandler(this.picViewer_Paint);
-			this.picViewer.MouseDown += new System.Windows.Forms.MouseEventHandler(this.picViewer_MouseDown);
-			this.picViewer.Resize += new System.EventHandler(this.picViewer_Resize);
-			// 
 			// MainForm
 			// 
 			resources.ApplyResources(this, "$this");
-			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
 			this.Controls.Add(this.tcMain);
 			this.Controls.Add(this.tsMain);
 			this.Controls.Add(this.msMain);
@@ -409,12 +409,12 @@
 			this.splMain.ResumeLayout(false);
 			this.tcMain.ResumeLayout(false);
 			this.tpView.ResumeLayout(false);
+			((System.ComponentModel.ISupportInitialize)(this.picViewer)).EndInit();
 			this.tpEdit.ResumeLayout(false);
 			this.msMain.ResumeLayout(false);
 			this.msMain.PerformLayout();
 			this.tsMain.ResumeLayout(false);
 			this.tsMain.PerformLayout();
-			((System.ComponentModel.ISupportInitialize)(this.picViewer)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

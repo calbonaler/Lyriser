@@ -144,7 +144,7 @@
     <value>ForcedBoth</value>
   </data>
   <data name="txtLyrics.Size" type="System.Drawing.Size, System.Drawing">
-    <value>423, 211</value>
+    <value>423, 197</value>
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="txtLyrics.TabIndex" type="System.Int32, mscorlib">
@@ -223,10 +223,10 @@
     <value>1</value>
   </data>
   <data name="splMain.Size" type="System.Drawing.Size, System.Drawing">
-    <value>423, 313</value>
+    <value>423, 299</value>
   </data>
   <data name="splMain.SplitterDistance" type="System.Int32, mscorlib">
-    <value>211</value>
+    <value>197</value>
   </data>
   <data name="splMain.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -331,7 +331,7 @@
     <value>0, 0, 0, 0</value>
   </data>
   <data name="tpEdit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>423, 313</value>
+    <value>423, 299</value>
   </data>
   <data name="tpEdit.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -698,6 +698,9 @@
   <metadata name="tsMain.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>123, 17</value>
   </metadata>
+  <data name="tsMain.AutoSize" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
   <data name="btnNew.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
@@ -869,16 +872,13 @@
     <value>True</value>
   </metadata>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
-    <value>7, 18</value>
+    <value>96, 96</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
     <value>431, 393</value>
   </data>
   <data name="$this.Font" type="System.Drawing.Font, System.Drawing">
     <value>メイリオ, 9pt</value>
-  </data>
-  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
   </data>
   <data name="$this.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 4, 3, 4</value>

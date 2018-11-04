@@ -30,6 +30,17 @@ namespace Lyriser
 			miNew_Click(sender, e);
 		}
 
+		protected override void OnDpiChanged(DpiChangedEventArgs e)
+		{
+			base.OnDpiChanged(e);
+			using (var oldMenuFont = msMain.Font)
+				msMain.Font = new Font(oldMenuFont.FontFamily, oldMenuFont.SizeInPoints * e.DeviceDpiNew / e.DeviceDpiOld, oldMenuFont.Style, GraphicsUnit.Point);
+			using (var oldToolFont = tsMain.Font)
+				tsMain.Font = new Font(oldToolFont.FontFamily, oldToolFont.SizeInPoints * e.DeviceDpiNew / e.DeviceDpiOld, oldToolFont.Style, GraphicsUnit.Point);
+			msMain.ImageScalingSize = new Size(msMain.ImageScalingSize.Width * e.DeviceDpiNew / e.DeviceDpiOld, msMain.ImageScalingSize.Height * e.DeviceDpiNew / e.DeviceDpiOld);
+			tsMain.ImageScalingSize = new Size(tsMain.ImageScalingSize.Width * e.DeviceDpiNew / e.DeviceDpiOld, tsMain.ImageScalingSize.Height * e.DeviceDpiNew / e.DeviceDpiOld);
+		}
+
 		void picViewer_MouseWheel(object sender, MouseEventArgs e)
 		{
 			var newValue = scrLineScroll.Value - e.Delta / SystemInformation.MouseWheelScrollDelta;
