@@ -317,7 +317,26 @@ namespace Lyriser
 				node.Transform(lineIndex, textBuilder, rubySpecifiers, null);
 		}
 
-		public override IEnumerable<HighlightToken> Tokens => Enumerable.Repeat(new HighlightToken(StartIndex, Length, Color.Green, Color.Empty), 1);
+		public override IEnumerable<HighlightToken> Tokens
+		{
+			get
+			{
+				var first = StartIndex;
+				foreach (var node in _nodes)
+				{
+					foreach (var token in node.Tokens)
+					{
+						if (first < token.First)
+							yield return new HighlightToken(first, token.First - first, Color.Empty, Color.Gainsboro);
+						yield return new HighlightToken(token.First, token.Length, token.ForeColor, System.Windows.Media.Colors.Gainsboro);
+						first = token.First + token.Length;
+					}
+				}
+				var last = StartIndex + Length;
+				if (first < last)
+					yield return new HighlightToken(first, last - first, Color.Empty, Color.Gainsboro);
+			}
+		}
 	}
 
 	class CompositeNode : LyricsNode
