@@ -51,6 +51,7 @@ namespace Lyriser
 		{
 			base.OnLoad(e);
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
+			txtLyrics.DetectUrls = false;
 			txtLyrics.HighlightTokenizer = new LyricsParser(new ListBoxBoundErrorSink(lstErrors));
 			miNew_Click(this, e);
 		}
@@ -79,7 +80,6 @@ namespace Lyriser
 			if (!ConfirmSaveChanges()) return;
 			savedFilePath = null;
 			txtLyrics.Clear();
-			txtLyrics.ClearUndo();
 			isDirty = false;
 			miRenew_Click(sender, e);
 			Text = string.Format(CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Properties.Resources.Untitled);
@@ -94,8 +94,6 @@ namespace Lyriser
 				dialog.DefaultExtension = Properties.Resources.LyricsFileDefaultExtension;
 				if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
 				{
-					txtLyrics.Clear();
-					txtLyrics.ClearUndo();
 					txtLyrics.LoadFile(dialog.FileName, RichTextBoxStreamType.PlainText);
 					isDirty = false;
 					savedFilePath = dialog.FileName;
@@ -130,10 +128,6 @@ namespace Lyriser
 		}
 
 		void miExit_Click(object sender, EventArgs e) => Close();
-
-		void miUndo_Click(object sender, EventArgs e) => txtLyrics.Undo();
-
-		void miRedo_Click(object sender, EventArgs e) => txtLyrics.Redo();
 
 		void miCut_Click(object sender, EventArgs e) => txtLyrics.Cut();
 

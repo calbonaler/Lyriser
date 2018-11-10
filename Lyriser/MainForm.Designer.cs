@@ -46,13 +46,10 @@
 			this.sepFile2 = new System.Windows.Forms.ToolStripSeparator();
 			this.miExit = new System.Windows.Forms.ToolStripMenuItem();
 			this.miEdit = new System.Windows.Forms.ToolStripMenuItem();
-			this.miUndo = new System.Windows.Forms.ToolStripMenuItem();
-			this.miRedo = new System.Windows.Forms.ToolStripMenuItem();
-			this.sepEdit1 = new System.Windows.Forms.ToolStripSeparator();
 			this.miCut = new System.Windows.Forms.ToolStripMenuItem();
 			this.miCopy = new System.Windows.Forms.ToolStripMenuItem();
 			this.miPaste = new System.Windows.Forms.ToolStripMenuItem();
-			this.sepEdit2 = new System.Windows.Forms.ToolStripSeparator();
+			this.sepEdit = new System.Windows.Forms.ToolStripSeparator();
 			this.miSelectAll = new System.Windows.Forms.ToolStripMenuItem();
 			this.miParse = new System.Windows.Forms.ToolStripMenuItem();
 			this.miRenew = new System.Windows.Forms.ToolStripMenuItem();
@@ -205,33 +202,13 @@
 			// miEdit
 			// 
 			this.miEdit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miUndo,
-            this.miRedo,
-            this.sepEdit1,
             this.miCut,
             this.miCopy,
             this.miPaste,
-            this.sepEdit2,
+            this.sepEdit,
             this.miSelectAll});
 			this.miEdit.Name = "miEdit";
 			resources.ApplyResources(this.miEdit, "miEdit");
-			// 
-			// miUndo
-			// 
-			this.miUndo.Name = "miUndo";
-			resources.ApplyResources(this.miUndo, "miUndo");
-			this.miUndo.Click += new System.EventHandler(this.miUndo_Click);
-			// 
-			// miRedo
-			// 
-			this.miRedo.Name = "miRedo";
-			resources.ApplyResources(this.miRedo, "miRedo");
-			this.miRedo.Click += new System.EventHandler(this.miRedo_Click);
-			// 
-			// sepEdit1
-			// 
-			this.sepEdit1.Name = "sepEdit1";
-			resources.ApplyResources(this.sepEdit1, "sepEdit1");
 			// 
 			// miCut
 			// 
@@ -251,10 +228,10 @@
 			this.miPaste.Name = "miPaste";
 			this.miPaste.Click += new System.EventHandler(this.miPaste_Click);
 			// 
-			// sepEdit2
+			// sepEdit
 			// 
-			this.sepEdit2.Name = "sepEdit2";
-			resources.ApplyResources(this.sepEdit2, "sepEdit2");
+			this.sepEdit.Name = "sepEdit";
+			resources.ApplyResources(this.sepEdit, "sepEdit");
 			// 
 			// miSelectAll
 			// 
@@ -422,13 +399,10 @@
 		private System.Windows.Forms.ToolStripSeparator sepFile2;
 		private System.Windows.Forms.ToolStripMenuItem miExit;
 		private System.Windows.Forms.ToolStripMenuItem miEdit;
-		private System.Windows.Forms.ToolStripMenuItem miUndo;
-		private System.Windows.Forms.ToolStripMenuItem miRedo;
-		private System.Windows.Forms.ToolStripSeparator sepEdit1;
 		private System.Windows.Forms.ToolStripMenuItem miCut;
 		private System.Windows.Forms.ToolStripMenuItem miCopy;
 		private System.Windows.Forms.ToolStripMenuItem miPaste;
-		private System.Windows.Forms.ToolStripSeparator sepEdit2;
+		private System.Windows.Forms.ToolStripSeparator sepEdit;
 		private System.Windows.Forms.ToolStripMenuItem miSelectAll;
 		private System.Windows.Forms.ToolStrip tsMain;
 		private System.Windows.Forms.ToolStripButton btnNew;
