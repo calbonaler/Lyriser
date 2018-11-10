@@ -19,7 +19,7 @@ namespace Lyriser.Properties {
     // または Visual Studio のようなツールを使用して自動生成されました。
     // メンバーを追加または削除するには、.ResX ファイルを編集して、/str オプションと共に
     // ResGen を実行し直すか、または VS プロジェクトをビルドし直します。
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -47,7 +47,7 @@ namespace Lyriser.Properties {
         }
         
         /// <summary>
-        ///   厳密に型指定されたこのリソース クラスを使用して、すべての検索リソースに対し、
+        ///   すべてについて、現在のスレッドの CurrentUICulture プロパティをオーバーライドします
         ///   現在のスレッドの CurrentUICulture プロパティをオーバーライドします。
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
@@ -61,11 +61,65 @@ namespace Lyriser.Properties {
         }
         
         /// <summary>
-        ///   テキストファイル|*.txt に類似しているローカライズされた文字列を検索します。
+        ///   キャンセル に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        internal static string LyricsFileFilter {
+        internal static string CancelButtonText {
             get {
-                return ResourceManager.GetString("LyricsFileFilter", resourceCulture);
+                return ResourceManager.GetString("CancelButtonText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   {0} への変更内容を保存しますか? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ConfirmSaveChangesMessageFormat {
+            get {
+                return ResourceManager.GetString("ConfirmSaveChangesMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   保存しない(&amp;N) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DoNotSaveButtonText {
+            get {
+                return ResourceManager.GetString("DoNotSaveButtonText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   txt に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LyricsFileDefaultExtension {
+            get {
+                return ResourceManager.GetString("LyricsFileDefaultExtension", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   *.txt に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LyricsFileFilterExtensionList {
+            get {
+                return ResourceManager.GetString("LyricsFileFilterExtensionList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   テキストファイル に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LyricsFileFilterName {
+            get {
+                return ResourceManager.GetString("LyricsFileFilterName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   保存する(&amp;S) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string SaveButtonText {
+            get {
+                return ResourceManager.GetString("SaveButtonText", resourceCulture);
             }
         }
         

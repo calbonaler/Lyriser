@@ -102,6 +102,7 @@
 			resources.ApplyResources(this.txtLyrics, "txtLyrics");
 			this.txtLyrics.HighlightTokenizer = null;
 			this.txtLyrics.Name = "txtLyrics";
+			this.txtLyrics.TextChanged += new System.EventHandler(this.txtLyrics_TextChanged);
 			// 
 			// lstErrors
 			// 

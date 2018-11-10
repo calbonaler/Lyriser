@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Drawing;
+using System.Globalization;
+using System.IO;
 using System.Windows.Forms;
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace Lyriser
 {
@@ -9,13 +12,53 @@ namespace Lyriser
 		public MainForm() => InitializeComponent();
 
 		string savedFilePath;
-		
+		bool isDirty;
+
+		void Save()
+		{
+			txtLyrics.SaveFile(savedFilePath, RichTextBoxStreamType.PlainText);
+			isDirty = false;
+		}
+
+		bool ConfirmSaveChanges()
+		{
+			if (!isDirty)
+				return true;
+			using (var dialog = new TaskDialog())
+			{
+				dialog.Caption = Application.ProductName;
+				dialog.InstructionText = string.Format(CultureInfo.CurrentCulture, Properties.Resources.ConfirmSaveChangesMessageFormat, savedFilePath != null ? Path.GetFileName(savedFilePath) : Properties.Resources.Untitled);
+				dialog.OwnerWindowHandle = Handle;
+				TaskDialogButton SaveButton = new TaskDialogButton(nameof(SaveButton), Properties.Resources.SaveButtonText);
+				SaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Yes);
+				TaskDialogButton DoNotSaveButton = new TaskDialogButton(nameof(DoNotSaveButton), Properties.Resources.DoNotSaveButtonText);
+				DoNotSaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.No);
+				TaskDialogButton CancelButton = new TaskDialogButton(nameof(CancelButton), Properties.Resources.CancelButtonText);
+				CancelButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Cancel);
+				dialog.Controls.Add(SaveButton);
+				dialog.Controls.Add(DoNotSaveButton);
+				dialog.Controls.Add(CancelButton);
+				dialog.Cancelable = true;
+				dialog.StartupLocation = TaskDialogStartupLocation.CenterOwner;
+				var result = dialog.Show();
+				if (result == TaskDialogResult.Yes)
+					miSave_Click(miSave, EventArgs.Empty);
+				return result == TaskDialogResult.No;
+			}
+		}
+
 		protected override void OnLoad(EventArgs e)
 		{
 			base.OnLoad(e);
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
 			txtLyrics.HighlightTokenizer = new LyricsParser(new ListBoxBoundErrorSink(lstErrors));
 			miNew_Click(this, e);
+		}
+
+		protected override void OnFormClosing(FormClosingEventArgs e)
+		{
+			base.OnFormClosing(e);
+			e.Cancel = !ConfirmSaveChanges();
 		}
 
 		protected override void OnDpiChanged(DpiChangedEventArgs e)
@@ -33,26 +76,31 @@ namespace Lyriser
 
 		void miNew_Click(object sender, EventArgs e)
 		{
+			if (!ConfirmSaveChanges()) return;
 			savedFilePath = null;
 			txtLyrics.Clear();
 			txtLyrics.ClearUndo();
+			isDirty = false;
 			miRenew_Click(sender, e);
-			Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Properties.Resources.Untitled);
+			Text = string.Format(CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Properties.Resources.Untitled);
 		}
 
 		void miOpen_Click(object sender, EventArgs e)
 		{
-			using (var dialog = new OpenFileDialog())
+			if (!ConfirmSaveChanges()) return;
+			using (var dialog = new CommonOpenFileDialog())
 			{
-				dialog.Filter = Properties.Resources.LyricsFileFilter;
-				if (dialog.ShowDialog() == DialogResult.OK)
+				dialog.Filters.Add(new CommonFileDialogFilter(Properties.Resources.LyricsFileFilterName, Properties.Resources.LyricsFileFilterExtensionList));
+				dialog.DefaultExtension = Properties.Resources.LyricsFileDefaultExtension;
+				if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
 				{
 					txtLyrics.Clear();
 					txtLyrics.ClearUndo();
 					txtLyrics.LoadFile(dialog.FileName, RichTextBoxStreamType.PlainText);
+					isDirty = false;
 					savedFilePath = dialog.FileName;
 					miRenew_Click(sender, e);
-					Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, System.IO.Path.GetFileName(savedFilePath));
+					Text = string.Format(CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Path.GetFileName(savedFilePath));
 				}
 			}
 		}
@@ -62,19 +110,21 @@ namespace Lyriser
 			if (string.IsNullOrEmpty(savedFilePath))
 				miSaveAs_Click(sender, e);
 			else
-				txtLyrics.SaveFile(savedFilePath, RichTextBoxStreamType.PlainText);
+				Save();
 		}
 
 		void miSaveAs_Click(object sender, EventArgs e)
 		{
-			using (var dialog = new SaveFileDialog())
+			using (var dialog = new CommonSaveFileDialog())
 			{
-				dialog.Filter = Properties.Resources.LyricsFileFilter;
-				if (dialog.ShowDialog() == DialogResult.OK)
+				dialog.Filters.Add(new CommonFileDialogFilter(Properties.Resources.LyricsFileFilterName, Properties.Resources.LyricsFileFilterExtensionList));
+				dialog.DefaultExtension = Properties.Resources.LyricsFileDefaultExtension;
+				dialog.AlwaysAppendDefaultExtension = true;
+				if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
 				{
-					txtLyrics.SaveFile(dialog.FileName, RichTextBoxStreamType.PlainText);
+					Save();
 					savedFilePath = dialog.FileName;
-					Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, System.IO.Path.GetFileName(savedFilePath));
+					Text = string.Format(CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Path.GetFileName(savedFilePath));
 				}
 			}
 		}
@@ -102,6 +152,8 @@ namespace Lyriser
 		void miHighlightPreviousLine_Click(object sender, EventArgs e) => lvMain.HighlightNextLine(false);
 
 		void miHighlightFirst_Click(object sender, EventArgs e) => lvMain.HighlightFirst();
+
+		void txtLyrics_TextChanged(object sender, EventArgs e) => isDirty = true;
 
 		void lstErrors_DoubleClick(object sender, EventArgs e)
 		{

@@ -117,8 +117,26 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="LyricsFileFilter" xml:space="preserve">
-    <value>テキストファイル|*.txt</value>
+  <data name="CancelButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="ConfirmSaveChangesMessageFormat" xml:space="preserve">
+    <value>{0} への変更内容を保存しますか?</value>
+  </data>
+  <data name="DoNotSaveButtonText" xml:space="preserve">
+    <value>保存しない(&amp;N)</value>
+  </data>
+  <data name="LyricsFileDefaultExtension" xml:space="preserve">
+    <value>txt</value>
+  </data>
+  <data name="LyricsFileFilterExtensionList" xml:space="preserve">
+    <value>*.txt</value>
+  </data>
+  <data name="LyricsFileFilterName" xml:space="preserve">
+    <value>テキストファイル</value>
+  </data>
+  <data name="SaveButtonText" xml:space="preserve">
+    <value>保存する(&amp;S)</value>
   </data>
   <data name="TitleFormat" xml:space="preserve">
     <value>{0} - Lyriser</value>

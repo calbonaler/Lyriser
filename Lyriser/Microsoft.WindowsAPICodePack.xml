@@ -1,0 +1,1754 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.WindowsAPICodePack</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager">
+            <summary>
+            Windows Vista 以上で利用可能な「アプリケーションの回復と再起動」へのアクセスを提供します。
+            「アプリケーションの回復と再起動」はアプリケーションにプロセスが終了する前にデータを保存するための回復作業を提供します。
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager.RegisterForApplicationRecovery(Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings)">
+            <summary>「アプリケーションの回復と再起動」にアプリケーション回復を登録します。</summary>
+            <param name="settings">コールバック関数とそれに渡す省略可能な引数、および時間間隔を定義するオブジェクトを指定します。</param>
+            <exception cref="T:System.ArgumentException">無効な引数によって登録は失敗しました。</exception>
+            <exception cref="T:System.ComponentModel.Win32Exception">登録は失敗しました。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager.UnregisterApplicationRecovery">
+            <summary>アプリケーション回復登録を解除します。</summary>
+            <exception cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException">登録解除は失敗しました。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager.UnregisterApplicationRestart">
+            <summary>アプリケーション再起動登録を解除します。</summary>
+            <exception cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException">再起動用の登録解除は失敗しました。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager.ApplicationRecoveryInProgress">
+            <summary>アプリケーションの <see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryCallback"/> メソッドによって回復作業中を表すために呼び出されます。</summary>
+            <exception cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException">このメソッドは登録されたコールバック関数から呼び出される必要があります。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager.ApplicationRecoveryFinished(System.Boolean)">
+            <summary>アプリケーションの <see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryCallback"/> メソッドによって、回復作業の完了を表すために呼び出されます。</summary>
+            <param name="success">プログラムが終了前に回復作業を完了することができた場合は <b>true</b>。それ以外の場合は <b>false</b>。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager.RegisterForApplicationRestart(Microsoft.WindowsAPICodePack.ApplicationServices.RestartSettings)">
+            <summary>アプリケーションが Windows エラー報告によって終了された場合に、アプリケーションを自動的な再起動のために登録します。</summary>
+            <param name="settings">アプリケーションの再起動に使われるコマンドライン引数と、再起動されるべきでない状態を定義するオブジェクトを指定します。</param>
+            <exception cref="T:System.ArgumentException">無効な引数によって登録が失敗しました。</exception>
+            <exception cref="T:System.InvalidOperationException">登録は失敗しました。</exception>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException">
+            <summary>「アプリケーションの回復と再起動」を利用してのアプリケーションの登録、登録解除、アップデートの際に問題が発生した場合にスローされる例外。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException.#ctor(System.String)">
+            <summary>指定したエラーメッセージを使用して、<see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="message">例外の原因を説明するエラー メッセージ。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException.#ctor(System.String,System.Exception)">
+            <summary>指定したエラー メッセージと、この例外の原因である内部例外への参照を使用して、<see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="message">例外の原因を説明するエラー メッセージ。</param>
+            <param name="innerException">現在の例外の原因である例外。inner パラメータが null でない場合は、内部例外を処理する catch ブロックで現在の例外が発生します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException.#ctor(System.String,System.Int32)">
+            <summary>指定したエラーメッセージと、エラーの HRESULT を使用して、<see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="message">例外の原因を説明するエラー メッセージ。</param>
+            <param name="errorCode">エラーの HRESULT。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>シリアル化データから、<see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRecoveryException"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="info">シリアル化されたオブジェクト データを保持するオブジェクト。</param>
+            <param name="context">転送元または転送先に関するコンテキスト情報。</param>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryCallback">
+            <summary>アプリケーションがアプリケーション回復に登録されているとき、システムによって呼ばれるコールバック関数を表す <see cref="T:System.Delegate"/>。</summary>
+            <param name="state">コールバック関数に渡されるアプリケーション定義のオブジェクト</param>
+            <seealso cref="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager.RegisterForApplicationRecovery(Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings)"/>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryData">
+            <summary>ユーザー定義のアプリケーションのコールバックデリゲートやプロパティを含むクラスを定義します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryData.#ctor(Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryCallback,System.Object)">
+            <summary>コールバック関数と現在のアプリケーションの状態を使用して、<see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryData"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="callback">コールバックデリゲート</param>
+            <param name="state">現在のアプリケーションの状態</param>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryData.Callback">
+            <summary>回復コールバック関数を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryData.State">
+            <summary>アプリケーションの状態を取得または設定します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryData.Invoke">
+            <summary>回復コールバック関数を実行します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings">
+            <summary>
+            回復の設定のためのメソッドやプロパティを定義し、ハンドルされていない例外のような致命的なイベント後に
+            最終アクションを実行しようとするアプリケーションのためのオプションを指定します。
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings.#ctor(Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryData,System.Int64)">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="data">Windows エラー報告がアプリケーションを終了する前に実行されるコールバック関数と
+            省略可能な状態オブジェクトを含む <see cref="P:Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings.RecoveryData"/> インスタンス指定します。</param>
+            <param name="interval">Windows エラー報告がアプリケーションを終了するのを防ぐために
+            コールバック関数が <see cref="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager.ApplicationRecoveryInProgress"/> を実行する時間間隔です。</param>
+            <seealso cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager"/>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings.RecoveryData">
+            <summary>
+            コールバック関数とコールバック関数に渡される通常アプリケーションの状態を表す
+            省略可能な引数を含む <see cref="P:Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings.RecoveryData"/> クラスのインスタンスを取得します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings.PingInterval">
+            <summary>
+            Windows エラー報告への通知の時間間隔を取得します。
+            <see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.RecoveryCallback"/> メソッドは Windows エラー報告がアプリケーションを終了するのを防ぐためには 
+            <see cref="M:Microsoft.WindowsAPICodePack.ApplicationServices.ApplicationRestartRecoveryManager.ApplicationRecoveryInProgress"/> をこの間隔以内で実行する必要があります。
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.RecoverySettings.ToString">
+            <summary>オブジェクトの現在の状態の文字列表現を返します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.RestartRestrictions">
+            <summary>自動的な再起動のために登録されたアプリケーションを Windows エラー報告が再起動しない条件を表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.RestartRestrictions.None">
+            <summary>アプリケーションはいつでも再起動できます。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.RestartRestrictions.NotOnCrash">
+            <summary>アプリケーションがクラッシュした場合は再起動しません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.RestartRestrictions.NotOnHang">
+            <summary>アプリケーションがハングした場合は再起動しません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.RestartRestrictions.NotOnPatch">
+            <summary>システムアップデートによってアプリケーションが終了した場合は再起動しません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.RestartRestrictions.NotOnReboot">
+            <summary>システムの再起動によってアプリケーションが終了した場合は再起動しません。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.RestartSettings">
+            <summary>アプリケーションが Windows エラー報告によって自動的に再起動する場合のオプションを指定します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.RestartSettings.#ctor(System.String,Microsoft.WindowsAPICodePack.ApplicationServices.RestartRestrictions)">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.RestartSettings"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="command">アプリケーションの再起動に使用されるコマンドライン引数を指定します。</param>
+            <param name="restrictions">アプリケーションが再起動しない条件を表す <see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.RestartRestrictions"/> 列挙体のビットごとの値の組み合わせを指定します。</param>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.RestartSettings.Command">
+            <summary>アプリケーションの再起動に使用されるコマンドライン引数を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.RestartSettings.Restrictions">
+            <summary>アプリケーションが再起動されない条件の組み合わせを取得します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.RestartSettings.ToString">
+            <summary>現在のオブジェクトの状態の文字列表現を返します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManagerException">
+            <summary>PowerManager のデータの一部を取得するときに問題が発生した場合にスローされる例外。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManagerException.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManagerException"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManagerException.#ctor(System.String)">
+            <summary>指定したエラーメッセージを使用して、<see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManagerException"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="message">例外の原因を説明するエラーメッセージ</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManagerException.#ctor(System.String,System.Exception)">
+            <summary>指定したエラーメッセージと、この例外の原因である内部例外への参照を使用して、<see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManagerException"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="message">例外の原因を説明するエラーメッセージ</param>
+            <param name="innerException">現在の例外の原因である例外。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManagerException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>シリアル化データから、<see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManagerException"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="info">シリアル化されたオブジェクト データを保持するオブジェクト。</param>
+            <param name="context">転送元または転送先に関するコンテキスト情報。</param>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState">
+            <summary>バッテリーの状態のスナップショットを表します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState.ACOnline">
+            <summary>バッテリー充電器が外部電源上で作動しているかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState.MaxCharge">
+            <summary>バッテリーの最大充電量を mW で取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState.CurrentCharge">
+            <summary>バッテリーの現在の充電量を mW で取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState.ChargeRate">
+            <summary>バッテリーの充電率を mW で取得します。</summary>
+            <remarks>
+            外部電源に接続されていてバッテリーが最大の場合、0
+            外部電源に接続されていて充電中の場合、正
+            外部電源に接続されていない場合、負
+            </remarks>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState.EstimatedTimeRemaining">
+            <summary>バッテリーが空になるまでの予想残り時間を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState.SuggestedCriticalBatteryCharge">
+            <summary>製品が示すユーザーに警告を発生させる必要のあるバッテリー充電レベルを取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState.SuggestedBatteryWarningCharge">
+            <summary>製品が示すユーザーに注意を示す必要のあるバッテリー充電レベルを取得します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState.ToString">
+            <summary>この <see cref="T:Microsoft.WindowsAPICodePack.ApplicationServices.BatteryState"/> オブジェクトを表す文字列を生成します。</summary>	 
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.ExecutionStates">
+            <summary>実行状態を表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.ExecutionStates.None">
+            <summary>どの状態も設定されていません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.ExecutionStates.SystemRequired">
+            <summary>システムをシステムアイドルタイマーをリセットして作業状態にします。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.ExecutionStates.DisplayRequired">
+            <summary>ディスプレイをディスプレイアイドルタイマーをリセットしてオンにします。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.ExecutionStates.AwayModeRequired">
+            <summary>退席中モードを有効にします。この値は ES_CONTINUOUS とともに設定してください。
+            退席中モードはスリープモードのように見える場合でも、デスクトップコンピュータ上のバックグラウンド処理を
+            高パフォーマンスで行わなければならないメディア録画やメディア配置アプリケーションのみで使用されるべきです。
+            Windows Server 2003、Windows XP/2000:  ES_AWAYMODE_REQUIRED はサポートされていません。
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.ExecutionStates.Continuous">
+            <summary>ES_CONTINUOUS を使用してそれ以外のフラグがすべてクリアされた次の呼び出しまでシステムに設定されている状態を保持するよう通知します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.MessageManager.PowerRegWindow.WndProc(System.Windows.Forms.Message@)">
+            <summary>このメソッドは Windows メッセージがこのウィンドウに送信されたときに呼ばれます。メソッドは登録されたイベントハンドラーを呼びます。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager">
+            <summary>電源に関連したイベント通知の登録を有効にして電源設定へのアクセスを提供します。</summary>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.PowerPersonalityChanged">
+            <summary>アクティブな電源スキームが変更された場合に発生します。</summary>
+            <exception cref="T:System.InvalidOperationException">削除のため指定されたイベントハンドらは登録されていません。</exception>
+            <exception cref="T:System.PlatformNotSupportedException">Vista/Windows Server 2008 が必要です。</exception>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.PowerSourceChanged">
+            <summary>電源が変更された場合に発生します。</summary>
+            <exception cref="T:System.InvalidOperationException">削除のため指定されたイベントハンドらは登録されていません。</exception>
+            <exception cref="T:System.PlatformNotSupportedException">Vista/Windows Server 2008 が必要です。</exception>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.BatteryLifePercentChanged">
+            <summary>残りバッテリー寿命が変更された場合に発生します。</summary>
+            <exception cref="T:System.InvalidOperationException">削除のため指定されたイベントハンドらは登録されていません。</exception>
+            <exception cref="T:System.PlatformNotSupportedException">Vista/Windows Server 2008 が必要です。</exception>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.IsMonitorOnChanged">
+            <summary>モニター状態が変更された場合に発生します。</summary>
+            <exception cref="T:System.InvalidOperationException">削除のため指定されたイベントハンドらは登録されていません。</exception>
+            <exception cref="T:System.PlatformNotSupportedException">Vista/Windows Server 2008 が必要です。</exception>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.SystemBusyChanged">
+            <summary>コンピューターがアイドル状態になるのを妨げるタスクをアプリケーションが実行しているためシステムがアイドル状態に移行できない場合に発生します。</summary>
+            <exception cref="T:System.InvalidOperationException">削除のため指定されたイベントハンドらは登録されていません。</exception>
+            <exception cref="T:System.PlatformNotSupportedException">Vista/Windows Server 2008 が必要です。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.GetCurrentBatteryState">
+            <summary>現在のバッテリーの状態のスナップショットを取得します。</summary>
+            <exception cref="T:System.InvalidOperationException">システムにバッテリーがありません。</exception>
+            <exception cref="T:System.PlatformNotSupportedException">XP/Windows Server 2003 以上が必要です。</exception>		
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.MonitorRequired">
+            <summary>モニターがアクティブのままに設定されているかどうかを示す値を取得または設定します。</summary>
+            <exception cref="T:System.PlatformNotSupportedException">XP/Windows Server 2003 以上が必要です。</exception>
+            <exception cref="T:System.Security.SecurityException">呼び出し元にはこのプロパティを設定するのに十分な権限がありません。</exception>
+            <permission cref="T:System.Security.Permissions.SecurityPermission"> このプロパティを設定するには以下の許可が必要です: 
+            <see cref="F:System.Security.Permissions.SecurityAction.Demand"/>; 許可セット: <b>FullTrust</b></permission>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.RequestBlockSleep">
+            <summary>システムが作業状態になることを要求されているかどうかを示す値を取得または設定します。</summary>
+            <exception cref="T:System.PlatformNotSupportedException">XP/Windows Server 2003 以上が必要です。</exception>
+            <exception cref="T:System.Security.SecurityException">呼び出し元にはこのプロパティを設定するのに十分な権限がありません。</exception>
+            <permission cref="T:System.Security.Permissions.SecurityPermission"> このプロパティを設定するには以下の許可が必要です: 
+            <see cref="F:System.Security.Permissions.SecurityAction.Demand"/>; 許可セット: <b>FullTrust</b></permission>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.IsBatteryPresent">
+            <summary>バッテリーが存在するかどうかを示す値を取得します。バッテリーは短期間バッテリーでも可能です。</summary>
+            <exception cref="T:System.PlatformNotSupportedException">XP/Windows Server 2003 以上が必要です。</exception>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.IsBatteryShortTerm">
+            <summary>バッテリーが短期間バッテリーかどうかを示す値を取得します。</summary>
+            <exception cref="T:System.PlatformNotSupportedException">XP/Windows Server 2003 以上が必要です。</exception>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.IsUpsPresent">
+            <summary>急な電源喪失を防ぐための UPS が存在するかどうかを示す値を取得します。</summary>
+            <exception cref="T:System.PlatformNotSupportedException">XP/Windows Server 2003 以上が必要です。</exception>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.PowerPersonality">
+            <summary>現在の電源スキームを取得します。</summary>
+            <exception cref="T:System.PlatformNotSupportedException">Vista/Windows Server 2008 が必要です。</exception>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.BatteryLifePercent">
+            <summary>残りバッテリー寿命を取得します。この値は 0 から 100 の範囲で、0 は充電されていないことを、100 は完全に充電されたことを示します。</summary>
+            <exception cref="T:System.InvalidOperationException">システムにバッテリーがありません。</exception>
+            <exception cref="T:System.PlatformNotSupportedException">Vista/Windows Server 2008 が必要です。</exception>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.IsMonitorOn">
+            <summary>モニターがオンになっているかどうかを示す値を取得します。</summary>
+            <exception cref="T:System.PlatformNotSupportedException">Vista/Windows Server 2008 が必要です。</exception>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.PowerSource">
+            <summary>現在の電源を取得します。</summary>
+            <exception cref="T:System.PlatformNotSupportedException">Vista/Windows Server 2008 が必要です。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.ApplicationServices.PowerManager.SetThreadExecutionState(Microsoft.WindowsAPICodePack.ApplicationServices.ExecutionStates)">
+            <summary>アプリケーションが実行中システムに使用中であることを通知して、スリープモードに入ることやディスプレイの電源を切ることを防げるようにします。</summary>
+            <param name="executionStateOptions">スレッド実行の要求を指定します。</param>
+            <exception cref="T:System.ComponentModel.Win32Exception">SetThreadExecutionState 呼び出しが失敗しました。</exception>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.PowerPersonality">
+            <summary>サポートされている電源特性を表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.PowerPersonality.Unknown">
+            <summary>不明な電源特性。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.PowerPersonality.HighPerformance">
+            <summary>電源設定は電源の保存を犠牲にして高パフォーマンスを発揮できるようにされています。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.PowerPersonality.PowerSaver">
+            <summary>電源設定はシステムパフォーマンスや応答性を犠牲にして電源消費を最小に設計されています。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.PowerPersonality.Automatic">
+            <summary>電源設定はパフォーマンスと電源消費のバランスです。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.ApplicationServices.PowerSource">
+            <summary>現在システムに供給されている電源を表します。</summary>
+            <remarks>有限の電力を供給する電源もあるため、アプリケーションは電源に気をつけておく必要があります。
+            アプリケーションはシステムがそのような電源を使用している場合に電力を保持するようにします。</remarks>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.PowerSource.AC">
+            <summary>コンピューターは AC 電源あるいはラップトップの 12V 自動アダプターのような類似の電源で駆動しています。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.PowerSource.Battery">
+            <summary>コンピューターは組み込みのバッテリーで駆動しています。電力の総量が限られているため、アプリケーションは電力をできる限り保持する必要があります。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.ApplicationServices.PowerSource.Ups">
+            <summary>コンピューターは UPS のような短期間電源によって駆動しています。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.DialogControl">
+            <summary>すべてのダイアログコントロールの抽象基本クラスです。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.DialogControl.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.DialogControl"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.DialogControl.#ctor(System.String)">
+            <summary>指定された名前を使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.DialogControl"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="name">ダイアログの名前を指定します。</param>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.DialogControl.HostingDialog">
+            <summary>
+            このコントロールをホストしているネイティブダイアログを取得します。
+            このプロパティが null の場合、関連付けられたダイアログはありません。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.DialogControl.Name">
+            <summary>このコントロールの名前を取得または設定します。</summary>	
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.DialogControl.Id">
+            <summary>このコントロールの ID を取得します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.DialogControl.CheckPropertyChangeAllowed(System.String)">
+            <summary>
+             ホストしているダイアログがあれば、ダイアログの現在の状態をプロパティが設定できるかを判断するようホストしているダイアログを呼び出します。
+             ホストはその変更がサポートされていない場合は例外を発生させます。
+             ダイアログが設定されていない場合はプロパティの設定には何の制約もありません。
+             </summary>
+             <param name="propName">変更されるプロパティの名前を指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.DialogControl.ApplyPropertyChange(System.String)">
+            <summary>
+             ホストしているダイアログがあればプロパティが変更されたことを示し、
+             ネイティブコントロールに変更を通知するようダイアログが必要な操作を実行するために
+             ホストしているダイアログを呼び出します。
+             ダイアログが設定されていない場合はプロパティの設定には何の制約もありません。
+             </summary>
+             <param name="propName">変更するプロパティの名前を指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.DialogControl.Equals(System.Object)">
+            <summary>二つのオブジェクトを比較して二つが等しいかどうかを調べます。</summary>
+            <param name="obj">比較するオブジェクトを指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.DialogControl.GetHashCode">
+            <summary>特定の型に対するハッシュ関数を提供します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.DialogControlCollection`1">
+            <summary>厳密に型指定されたダイアログコントロールのコレクションを表します。</summary>
+            <typeparam name="T">ダイアログコントロール</typeparam>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.DialogControlCollection`1.InsertItem(System.Int32,`0)">
+            <summary>ダイアログコントロールを指定されたインデックスに挿入します。</summary>
+            <param name="index">コントロールを挿入するインデックスを指定します。</param>
+            <param name="control">挿入するアイテムを指定します。</param>
+            <exception cref="T:System.InvalidOperationException">同じ名前のコントロールが既にコレクションにあるか、
+            コントロールが別のダイアログによってホストされているか、関連付けられたダイアログが表示されていて編集できません。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.DialogControlCollection`1.RemoveItem(System.Int32)">
+            <summary>指定されたインデックスのコントロールを削除します。</summary>
+            <param name="index">コントロールを削除するインデックスを指定します。</param>
+            <exception cref="T:System.InvalidOperationException">関連付けられたダイアログが表示されていて編集できません。</exception>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.DialogControlCollection`1.Item(System.String)">
+             <summary>指定された名前の要素を取得します。</summary>
+            <exception cref="T:System.ArgumentException">名前は null または空にすることはできません。</exception>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.IDialogControlHost">
+            <summary>実装されたコントロールがカスタマイズ可能なダイアログコントロールをホストするダイアログであることを表します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.IDialogControlHost.IsCollectionChangeAllowed">
+            <summary>コレクションに対する変更が許可されているかどうかを返します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.IDialogControlHost.ApplyCollectionChanged">
+            <summary>コレクションに対する変更を適用します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.IDialogControlHost.IsControlPropertyChangeAllowed(System.String,Microsoft.WindowsAPICodePack.Dialogs.DialogControl)">
+            <summary>
+            独立した疑似子コントロールのプロパティ変更通知をハンドルします。
+            ダイアログの現在の状態でプロパティが設定できない場合は事前フィルターは例外を発生させる必要があります。
+            適切な場合は事後処理で変更をネイティブコントロールに渡す必要があります。
+            </summary>
+            <param name="propertyName">プロパティの名前を指定します。</param>
+            <param name="control">プロパティ名を適用するコントロールを指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.IDialogControlHost.ApplyControlPropertyChange(System.String,Microsoft.WindowsAPICodePack.Dialogs.DialogControl)">
+            <summary>コレクション内のコントロールに現在プロパティ変更がある場合に呼ばれます。</summary>
+            <param name="propertyName">変更されたプロパティの名前を指定します。</param>
+            <param name="control">プロパティが変更されたコントロールを指定します。</param>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.DialogShowState">
+            <summary>ダイアログの表示状態を表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.DialogShowState.PreShow">
+            <summary>表示前</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.DialogShowState.Showing">
+            <summary>表示中</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.DialogShowState.Closing">
+            <summary>終了中</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.DialogShowState.Closed">
+            <summary>終了</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.NativeTaskDialogSettings">
+            <summary>TASKDIALOGCONFIG 構造体から得ることのできない <see cref="T:Microsoft.WindowsAPICodePack.Dialogs.NativeTaskDialog"/> に必要な追加構成をカプセル化します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog">
+            <summary>
+            Vista の新コントロールである Win32 タスクダイアログをカプセル化します。
+            以前の Windows バージョンで使用されてきたメッセージボックスの強力な後継コントロールです。
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Show(System.String,System.String,System.String,Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons,Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardIcon,Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons,System.Nullable{System.IntPtr})">
+            <summary>指定されたウィンドウの前に指示テキスト、メッセージ、キャプション、ボタン、アイコンおよび既定のボタンを表示するタスクダイアログを表示します。</summary>
+            <param name="ownerWindowHandle">タスクダイアログのオーナーウィンドウのハンドルを指定します。</param>
+            <param name="instructionText">タスクダイアログに表示される指示テキストを指定します。</param>
+            <param name="text">タスクダイアログに表示されるメッセージを指定します。</param>
+            <param name="caption">タスクダイアログのタイトルバーに表示されるテキストを指定します。</param>
+            <param name="buttons">タスクダイアログに表示されるボタンを表す <see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons"/> を指定します。</param>
+            <param name="icon">タスクダイアログに表示されるアイコンを表す <see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardIcon"/> を指定します。</param>
+            <param name="defaultButton">タスクダイアログの既定のボタンを表す <see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons"/> 値の 1 つを指定します。</param>
+            <returns>選択された標準ボタンを表す <see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult"/>。</returns>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Tick">
+            <summary>タスクダイアログの表示から約 200ms 経過するごとに発生します。</summary>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.HyperlinkClick">
+            <summary>ユーザーがハイパーリンクをクリックしたときに発生します。</summary>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Closing">
+            <summary>タスクダイアログが閉じられたときに発生します。</summary>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.HelpInvoked">
+            <summary>ユーザーがヘルプをクリックしたときに発生します。</summary>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Opened">
+            <summary>タスクダイアログが開いたときに発生します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.OwnerWindowHandle">
+            <summary>オーナーウィンドウハンドルを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Text">
+            <summary>メッセージを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.InstructionText">
+            <summary>指示を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Caption">
+            <summary>キャプションを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.FooterText">
+            <summary>フッターのテキストを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.FooterCheckBoxText">
+            <summary>フッターのチェックボックスのテキストを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.DetailsExpandedText">
+            <summary>詳細領域のテキストを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.DetailsExpanded">
+            <summary>詳細領域が表示されているかどうかを示す値を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.DetailsExpandedLabel">
+            <summary>展開されたコントロールのテキストを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.DetailsCollapsedLabel">
+            <summary>折りたたまれたコントロールのテキストを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Cancelable">
+            <summary>キャンセルできるかどうかを示す値を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Minimizable">
+            <summary>最小化できるかどうかを示す値を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Icon">
+            <summary>タスクダイアログのメインアイコンを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.FooterIcon">
+            <summary>フッターアイコンを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.StandardButtons">
+            <summary>標準ボタンを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.DefaultStandardButton">
+            <summary>既定の標準ボタンを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Controls">
+            <summary>タスクダイアログのコントロールのコレクションを取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.HyperlinksEnabled">
+            <summary>ハイパーリンクが有効かどうかを示す値を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.FooterCheckBoxChecked">
+            <summary>フッターのチェックボックスがチェックされているかどうかを示す値を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.ExpansionMode">
+            <summary>このダイアログの展開モードを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.StartupLocation">
+            <summary>ダイアログの開始位置を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.ProgressBar">
+            <summary>タスクダイアログ上のプログレスバーを取得または設定します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Show">
+            <summary>タスクダイアログを表示します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Close">
+            <summary>ダイアログを閉じます。</summary>
+            <exception cref="T:System.InvalidOperationException">ダイアログが表示されていません。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Close(Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult)">
+            <summary>結果を指定してタスクダイアログを閉じます。</summary>
+            <param name="closingResult">TaskDialog.Show() メソッドから返す 
+            <see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult"/> 列挙体。</param>
+            <exception cref="T:System.InvalidOperationException">タスクダイアログが表示されていません。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Close(Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton)">
+            <summary>選択されたボタンを指定してタスクダイアログを閉じます。</summary>
+            <param name="selectedButotn">ダイアログの終了時に選択されたと示されるボタンを指定します。</param>
+            <exception cref="T:System.InvalidOperationException">タスクダイアログが表示されていません。</exception>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Dispose">
+            <summary>タスクダイアログのリソースを解放します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.IsPlatformSupported">
+            <summary>この機能が現在のプラットフォームでサポートされているかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogBar">
+            <summary>プログレスバーのようなすべてのタスクダイアログのバーコントロール共通のクラスを定義します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogBar.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogBar"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogBar.#ctor(System.String)">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogBar"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="name">コントロールの名前を指定します。</param>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogBar.State">
+            <summary>プログレスバーの状態を取得または設定します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogBar.Reset">
+            <summary>コントロールの状態をリセットします。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton">
+            <summary>タスクダイアログにホストされたボタンを表します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton.#ctor(System.String,System.String)">
+            <summary>名前とテキストを使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="name">ボタンの名前を指定します。</param>
+            <param name="text">ボタンのラベルを指定します。</param>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton.UseElevationIcon">
+            <summary>コントロールが昇格アイコンを表示するかどうかを示す値を取得または設定します。</summary>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton.Click">
+            <summary>タスクダイアログ上でこのラジオボタンがクリックされたときに発生します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton.RaiseClickEventCore">
+            <summary>このボタンのクリック イベントを発生させ、イベント ハンドラの処理終了後にダイアログを閉じるかどうかを示す値を返します。</summary>
+            <returns>すべてのイベント ハンドラの処理後にダイアログを閉じる場合は true。それ以外の場合は false。</returns>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonClickEventArgs">
+            <summary><see cref="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButton.Click"/> イベントに関するデータを格納します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonClickEventArgs.CloseAfterProcess">
+            <summary>すべてのイベント ハンドラの処理が終了した後にこのタスクダイアログを閉じるかどうかを示す値を取得または設定します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase">
+            <summary>タスクダイアログボタンの抽象基本クラスです。このクラスを継承したクラスは Text プロパティも定義されます。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase.#ctor(System.String,System.String)">
+            <summary>名前とテキストを使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="name">ボタンの名前を指定します。</param>
+            <param name="text">ボタンのラベルを指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase.RaiseClickEventCore">
+            <summary>このボタンのクリック イベントを発生させ、イベント ハンドラの処理終了後にダイアログを閉じるかどうかを示す値を返します。</summary>
+            <returns>すべてのイベント ハンドラの処理後にダイアログを閉じる場合は true。それ以外の場合は false。</returns>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase.Text">
+            <summary>ボタンのテキストを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase.Enabled">
+            <summary>ボタンが有効かどうかを示す値を取得または設定します。有効状態はダイアログの表示前に変更できません。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase.Default">
+            <summary>ボタンが既定のボタンかどうかを示す値を取得または設定します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogButtonBase.ToString">
+            <summary>このボタンの Text プロパティの値を返します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogClosingEventArgs">
+            <summary><see cref="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Closing"/> イベントに関連付けられたデータを表します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogClosingEventArgs.TaskDialogResult">
+            <summary>クリックされた標準のボタンを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogClosingEventArgs.CustomButton">
+            <summary>クリックされたカスタムボタンのテキストを取得または設定します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogCommandLink">
+            <summary>タスクダイアログのコマンドリンクを表します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogCommandLink.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogCommandLink"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogCommandLink.#ctor(System.String,System.String)">
+            <summary>名前とテキストを使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogCommandLink"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="name">ボタンの名前を指定します。</param>
+            <param name="text">ボタンのラベルを指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogCommandLink.#ctor(System.String,System.String,System.String)">
+            <summary>名前、テキスト、指示を使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogCommandLink"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="name">ボタンの名前を指定します。</param>
+            <param name="text">ボタンのラベルを指定します。</param>
+            <param name="instruction">コマンドリンクの指示を指定します。</param>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogCommandLink.Instruction">
+            <summary>コマンドリンクに関連付けられた指示を取得または設定します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogCommandLink.ToString">
+            <summary>このオブジェクトの文字列表現を返します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogControl">
+            <summary>すべてのカスタムタスクダイアログコントロールの抽象基本クラスです。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogControl.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogControl"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogControl.#ctor(System.String)">
+            <summary>名前を使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogControl"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="name">コントロールの名前を指定します。</param>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogExpandedDetailsLocation">
+            <summary>ダイアログの拡張領域のオプションを指定します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogExpandedDetailsLocation.Hide">
+            <summary>内容を表示しません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogExpandedDetailsLocation.ExpandContent">
+            <summary>内容を表示します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogExpandedDetailsLocation.ExpandFooter">
+            <summary>フッターの内容を展開します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogHyperlinkClickedEventArgs">
+            <summary><see cref="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.HyperlinkClick"/> イベントに関連付けられたデータを表します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogHyperlinkClickedEventArgs.#ctor(System.String)">
+            <summary>ハイパーリンクのテキストを使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogHyperlinkClickedEventArgs"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="linkText">クリックされたハイパーリンクのテキストを指定します。</param>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogHyperlinkClickedEventArgs.LinkText">
+            <summary>クリックされたハイパーリンクのテキストを取得または設定します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar">
+            <summary>時間のかかる処理に対する進捗の視覚的表現を提供します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar.#ctor(System.String)">
+            <summary>名前を使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="name">コントロールの名前を指定します。</param>		
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>最小値、最大値、現在の値を使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="minimum">このコントロールの最小値を指定します。</param>
+            <param name="maximum">このコントロールの最大値を指定します。</param>
+            <param name="value">このコントロールの現在の値を指定します。</param>		
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar.Minimum">
+            <summary>コントロールの最小値を取得または設定します。</summary>				
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar.Maximum">
+            <summary>コントロールの最大値を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar.Value">
+            <summary>コントロールの現在の値を取得または設定します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBar.Reset">
+            <summary>コントロールを最小値にリセットします。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBarState">
+            <summary>タスクダイアログプログレスバーの状態を表します。</summary>		
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBarState.None">
+            <summary>初期化されていない状態。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBarState.Normal">
+            <summary>通常の状態。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBarState.Error">
+            <summary>エラーが発生した状態。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBarState.Paused">
+            <summary>進捗が一時停止した状態。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogProgressBarState.Marquee">
+            <summary>マーキースタイルのプログレスバー。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogRadioButton">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog"/> がホストできるラジオボタンを表します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogRadioButton.#ctor">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogRadioButton"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogRadioButton.#ctor(System.String,System.String)">
+            <summary>名前とテキストを使用して、<see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogRadioButton"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="name">コントロールの名前を指定します。</param>
+            <param name="text">コントロールの値を指定します。</param>
+        </member>
+        <member name="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogRadioButton.Click">
+            <summary>タスクダイアログ上でこのラジオボタンがクリックされたときに発生します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogRadioButton.RaiseClickEventCore">
+            <summary>このボタンのクリック イベントを発生させ、イベント ハンドラの処理終了後にダイアログを閉じるかどうかを示す値を返します。</summary>
+            <returns>すべてのイベント ハンドラの処理後にダイアログを閉じる場合は true。それ以外の場合は false。</returns>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult">
+            <summary>タスクダイアログでクリックされたボタンやオプションを示します。</summary>		
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult.None">
+            <summary>どのボタンも選択されていません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult.Ok">
+            <summary>「OK」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult.Yes">
+            <summary>「はい」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult.No">
+            <summary>「いいえ」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult.Cancel">
+            <summary>「キャンセル」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult.Retry">
+            <summary>「再試行」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult.Close">
+            <summary>「閉じる」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogResult.CustomButtonClicked">
+            <summary>カスタムボタン</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons">
+            <summary>タスクダイアログを通して表示される標準ボタンを表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons.None">
+            <summary>どのボタンもありません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons.Ok">
+            <summary>「OK」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons.Yes">
+            <summary>「はい」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons.No">
+            <summary>「いいえ」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons.Cancel">
+            <summary>「キャンセル」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons.Retry">
+            <summary>「再試行」ボタン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardButtons.Close">
+            <summary>「閉じる」ボタン</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardIcon">
+            <summary>タスクダイアログに表示されるアイコンを表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardIcon.None">
+            <summary>どのアイコンもありません。(既定値)</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardIcon.Warning">
+            <summary>「警告」アイコン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardIcon.Error">
+            <summary>「エラー」アイコン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardIcon.Information">
+            <summary>「情報」アイコン</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStandardIcon.Shield">
+            <summary>「ユーザーアカウント制御シールド」アイコン</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStartupLocation">
+            <summary>タスクダイアログの開始位置を表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStartupLocation.CenterScreen">
+            <summary>スクリーンの中央</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogStartupLocation.CenterOwner">
+            <summary>ダイアログを開始したウィンドウの中央</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogTickEventArgs">
+            <summary><see cref="E:Microsoft.WindowsAPICodePack.Dialogs.TaskDialog.Tick"/> イベントに関連付けられたデータを表します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogTickEventArgs.#ctor(System.Int32)">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogTickEventArgs"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="ticks">コントロールがアクティブ化されてからの経過時間を指定します。</param>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Dialogs.TaskDialogTickEventArgs.Ticks">
+            <summary>現在の経過時間を取得します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Net.Network">
+            <summary>
+            ローカルマシン上のネットワークを表します。 
+            類似したネットワークシグネチャのネットワーク接続のコレクションも表すことができます。
+            </summary>
+            <remarks>このクラスのインスタンスは <see cref="T:Microsoft.WindowsAPICodePack.Net.NetworkListManager"/> クラスによって取得します。</remarks>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.Category">
+            <summary>このネットワークのカテゴリを取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.ConnectedTime">
+            <summary>このネットワークが接続されたローカルの日付と時刻を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.Connections">
+            <summary>このネットワーク接続のコレクションを取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.Connectivity">
+            <summary>このネットワークの接続性を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.CreatedTime">
+            <summary>このネットワークが作成されたローカルの日付と時刻を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.Description">
+            <summary>このネットワークの説明を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.DomainType">
+            <summary>このネットワークのドメインタイプを取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.IsConnected">
+            <summary>ネットワーク接続が存在するかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.IsConnectedToInternet">
+            <summary>インターネット接続が存在するかどうかを示す値を取得しますj。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.Name">
+            <summary>このネットワークの名前を取得または設定します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.Network.NetworkId">
+            <summary>このネットワークの一意識別子を取得します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Net.NetworkCollection">
+            <summary>
+            <see cref="T:Microsoft.WindowsAPICodePack.Net.Network"/> オブジェクトの列挙可能なコレクションを表します。
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Net.NetworkCollection.GetEnumerator">
+            <summary>厳密に型指定されたコレクションの列挙子を返します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Net.NetworkConnection">
+            <summary>ネットワークへの接続を表します</summary>
+            <remarks>このクラスのインスタンスを格納するコレクションを取得するには <see cref="P:Microsoft.WindowsAPICodePack.Net.Network.Connections"/> プロパティを利用します。</remarks>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkConnection.Network">
+            <summary>この接続に関連付けられたネットワークを取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkConnection.AdapterId">
+            <summary>この接続のアダプター識別子を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkConnection.ConnectionId">
+            <summary>この接続の一意識別子を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkConnection.Connectivity">
+            <summary>この接続の接続性を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkConnection.DomainType">
+            <summary>この接続に関連付けられたネットワークが Active Directory ネットワークか、マシンが Active Directory によって認証されたかを示す値を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkConnection.IsConnectedToInternet">
+            <summary>この接続にインターネットアクセスがあるかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkConnection.IsConnected">
+            <summary>この接続にネットワーク接続性があるかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Net.NetworkConnectionCollection">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Net.NetworkConnection"/> オブジェクトの列挙可能なコレクションを表します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Net.NetworkConnectionCollection.GetEnumerator">
+            <summary>厳密に型指定されたコレクションの列挙子を返します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Net.ConnectivityStates">
+            <summary>ネットワークの接続性を表します。</summary>	
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.ConnectivityStates.None">
+            <summary>基底のネットワークインターフェースにはどのような接続性もありません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.ConnectivityStates.IPv4Internet">
+            <summary>IPv4 プロトコルを使用したネットワークへの接続性があります。</summary>		
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.ConnectivityStates.IPv4LocalNetwork">
+            <summary>IPv4 プロトコルを使用したルーティングネットワークへの接続性があります。</summary>		
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.ConnectivityStates.IPv4NoTraffic">
+            <summary>ネットワークへの接続性はありますが、サービスは IPv4 ネットワークトラフィックを探知できません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.ConnectivityStates.IPv4Subnet">
+            <summary>IPv4 プロトコルを使用したローカルサブネットへの接続性があります。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.ConnectivityStates.IPv6Internet">
+            <summary>IPv6 プロトコルを使用したインターネットへの接続性があります。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.ConnectivityStates.IPv6LocalNetwork">
+            <summary>IPv6 プロトコルを使用したローカルネットワークへの接続性があります。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.ConnectivityStates.IPv6NoTraffic">
+            <summary>ネットワークへの接続性はあるが、サービスは IPv6 ネットワークトラフィックを探知できません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.ConnectivityStates.IPv6Subnet">
+            <summary>IPv6を使用したローカルサブネットへの接続性があります。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Net.DomainType">
+            <summary>ネットワークのドメインタイプを表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.DomainType.NonDomainNetwork">
+            <summary>ネットワークは Active Directory ネットワークではありません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.DomainType.DomainNetwork">
+            <summary>ネットワークは Active Directoryネットワークですが、マシンは認証されていません。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.DomainType.DomainAuthenticated">
+            <summary>ネットワークは Active Directory ネットワークで、マシンも認証されています。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Net.NetworkCategory">
+            <summary>ネットワークの信頼性レベルを表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.NetworkCategory.Public">
+            <summary>ネットワークはパブリック (信頼されていない) ネットワークです。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.NetworkCategory.Private">
+            <summary>ネットワークはプライベート (信頼済み) ネットワークです。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.NetworkCategory.Authenticated">
+            <summary>ネットワークは Active Directory ドメインによって認証されています。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Net.NetworkConnectivityLevels">
+            <summary><see cref="T:Microsoft.WindowsAPICodePack.Net.NetworkListManager"/> クラスによって返されたネットワークの接続性レベルを表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.NetworkConnectivityLevels.Connected">
+            <summary>マシンが接続されているネットワークを表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.NetworkConnectivityLevels.Disconnected">
+            <summary>マシンが接続されていないネットワークを表します。</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAPICodePack.Net.NetworkConnectivityLevels.All">
+            <summary>すべてのネットワークを表します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Net.NetworkListManager">
+            <summary>ネットワークやネットワーク接続を表すオブジェクトへのアクセスを提供します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Net.NetworkListManager.GetNetworks(Microsoft.WindowsAPICodePack.Net.NetworkConnectivityLevels)">
+            <summary>このマシンで定義されたネットワークを表す <see cref="T:Microsoft.WindowsAPICodePack.Net.Network"/> クラスのコレクションを取得します。</summary>
+            <param name="level"><see cref="T:Microsoft.WindowsAPICodePack.Net.Network"/> クラスによって返されたネットワーク接続性を表す <see cref="T:Microsoft.WindowsAPICodePack.Net.NetworkConnectivityLevels"/> インスタンスを指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Net.NetworkListManager.GetNetwork(System.Guid)">
+            <summary>指定されたネットワーク識別子によって識別される <see cref="T:Microsoft.WindowsAPICodePack.Net.Network"/> オブジェクトを取得します。</summary>
+            <param name="networkId">ネットワークの一意識別子を指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Net.NetworkListManager.GetNetworkConnections">
+            <summary>このマシンの接続を表す <see cref="T:Microsoft.WindowsAPICodePack.Net.NetworkConnection"/> クラスのコレクションを取得します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Net.NetworkListManager.GetNetworkConnection(System.Guid)">
+            <summary>指定された接続識別子で識別される <see cref="T:Microsoft.WindowsAPICodePack.Net.NetworkConnection"/> オブジェクトを取得します。</summary>
+            <param name="networkConnectionId">ネットワーク接続の一意識別子を指定します。</param>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkListManager.IsConnectedToInternet">
+            <summary>このマシンがインターネットに接続されているかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkListManager.IsConnected">
+            <summary>このマシンがネットワークに接続されているかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Net.NetworkListManager.Connectivity">
+            <summary>このマシンの接続性を取得します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey">
+            <summary>シェルプロパティに対する一意のキーを表します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.FormatId">
+            <summary>プロパティに対する <see cref="T:System.Guid"/> を取得します。</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.PropertyId">
+            <summary>プロパティ識別子 (PID) を取得します。</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.#ctor(System.Guid,System.Int32)">
+            <summary>指定した一意 GUID とプロパティ識別子を使用して、<see cref="T:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="formatId">一意 GUID を指定します。</param>
+            <param name="propertyId">プロパティ識別子 (PID) を指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.#ctor(System.String,System.Int32)">
+            <summary>指定した一意 GUID とプロパティ識別子を使用して、<see cref="T:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="formatId">一意 GUID の文字列表現を指定します。</param>
+            <param name="propertyId">プロパティ識別子 (PID) を指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.Equals(Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey)">
+            <summary>このオブジェクトが他のオブジェクトと等しいかどうかを返します。</summary>
+            <param name="other">等しいかどうかを判断するオブジェクトを指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.GetHashCode">
+            <summary>オブジェクトのハッシュコードを返します。</summary>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.Equals(System.Object)">
+            <summary>このオブジェクトが他のオブジェクトと等しいかどうかを返します。</summary>
+            <param name="obj">等しいかどうかを判断するオブジェクトを指定します。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.op_Equality(Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey,Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey)">
+            <summary>2 つの <see cref="T:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey"/> 構造体が等しいかどうかを比較します。。</summary>
+            <param name="propKey1">等値演算子の左側の <see cref="T:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey"/> 構造体。</param>
+            <param name="propKey2">等値演算子の右側の <see cref="T:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey"/> 構造体。</param>	
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.op_Inequality(Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey,Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey)">
+            <summary>2 つの <see cref="T:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey"/> 構造体が等しくないかどうかを比較します。。</summary>
+            <param name="propKey1">非等値演算子の左側の <see cref="T:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey"/> 構造体。</param>
+            <param name="propKey2">非等値演算子の右側の <see cref="T:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey"/> 構造体。</param>
+        </member>
+        <member name="M:Microsoft.WindowsAPICodePack.Shell.PropertySystem.PropertyKey.ToString">
+            <summary>このオブジェクトの文字列表現を提供します。</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages">
+            <summary>
+              ローカライズされた文字列などを検索するための、厳密に型指定されたリソース クラスです。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ResourceManager">
+            <summary>
+              このクラスで使用されているキャッシュされた ResourceManager インスタンスを返します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.Culture">
+            <summary>
+              厳密に型指定されたこのリソース クラスを使用して、すべての検索リソースに対し、
+              現在のスレッドの CurrentUICulture プロパティをオーバーライドします。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ApplicationRecoverFailedToRegisterForRestartBadParameters">
+            <summary>
+              引数が不正であるためアプリケーションの再起動登録に失敗しました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ApplicationRecoveryBadParameters">
+            <summary>
+              引数が不正であるためアプリケーションの回復登録に失敗しました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ApplicationRecoveryFailedToRegister">
+            <summary>
+              アプリケーションは回復登録に失敗しました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ApplicationRecoveryFailedToRegisterForRestart">
+            <summary>
+              アプリケーションは再起動登録に失敗しました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ApplicationRecoveryFailedToUnregister">
+            <summary>
+              回復の登録解除は失敗しました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ApplicationRecoveryFailedToUnregisterForRestart">
+            <summary>
+              再起動の登録解除は失敗しました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ApplicationRecoveryMustBeCalledFromCallback">
+            <summary>
+              このメソッドは登録されたコールバック関数から呼ばれる必要があります。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.BatteryStateStringRepresentation">
+            <summary>
+              ACOnline: {1}{0}Max Charge: {2} mWh{0}Current Charge: {3} mWh{0}Discharge Rate: {4} mWh{0}Estimated Time Remaining: {5}{0}Suggested Critical Battery Charge: {6} mWh{0}Suggested Battery Warning Charge: {7} mWh{0} に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.CancelableCannotBeChanged">
+            <summary>
+              ダイアログの表示中は Cancelable を変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.CaptionCannotBeChanged">
+            <summary>
+              ダイアログの表示中はダイアログのキャプションを変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.CheckBoxCannotBeChanged">
+            <summary>
+              ダイアログの表示中はチェックボックスのテキストを変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.CollapsedTextCannotBeChanged">
+            <summary>
+              ダイアログの表示中は折りたたみコントロールのテキストを変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.CoreHelpersRunningOn7">
+            <summary>
+              Windows 7 以降でのみサポートされています。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.CoreHelpersRunningOnVista">
+            <summary>
+              Windows Vista 以降でのみサポートされています。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.CoreHelpersRunningOnXp">
+            <summary>
+              Windows XP 以降でのみサポートされています。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DefaultStandardButtonCannotBeChanged">
+            <summary>
+              ダイアログの表示中は既定の標準ボタンを変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DialogCollectionCannotHaveDuplicateNames">
+            <summary>
+              同じ名前のコントロールを 2 つ以上登録することはできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DialogCollectionControlAlreadyHosted">
+            <summary>
+              ダイアログコントロールは最初に現在のコレクションから削除される必要があります。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DialogCollectionControlNameNull">
+            <summary>
+              コントロールの名前は null や空にすることはできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DialogCollectionModifyShowingDialog">
+            <summary>
+              ダイアログ表示中のコントロールの変更はサポートされていません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DialogControlNameCannotBeEmpty">
+            <summary>
+              ダイアログコントロールの名前は null や空にすることはできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DialogControlsCannotBeRenamed">
+            <summary>
+              ダイアログコントロールの名前を変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DialogDefaultCaption">
+            <summary>
+              Application に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DialogDefaultContent">
+            <summary>
+               に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.DialogDefaultMainInstruction">
+            <summary>
+               に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ExpandedDetailsCannotBeChanged">
+            <summary>
+              ダイアログの表示中は拡張情報モードの変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ExpandedLabelCannotBeChanged">
+            <summary>
+              ダイアログの表示中は折りたたみコントロールのラベルは変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ExpandingStateCannotBeChanged">
+            <summary>
+              ダイアログの表示中はダイアログの折りたたみの状態を変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.HyperlinksCannotBetSet">
+            <summary>
+              ダイアログの表示中はハイパーリンクの有効/無効を変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.InvalidReferencePath">
+            <summary>
+              参照パスは有効ではありません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.MessageManagerHandlerNotRegistered">
+            <summary>
+              指定されたイベントハンドラーは登録されていません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.MinimizableCannotBeChanged">
+            <summary>
+              ダイアログの表示中は Minimizable を変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.NativeTaskDialogConfigurationError">
+            <summary>
+              ダイアログの設定で例外が発生しました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.NativeTaskDialogInternalErrorArgs">
+            <summary>
+              Win32 呼び出しで無効な引数が使用されました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.NativeTaskDialogInternalErrorComplex">
+            <summary>
+              ダイアログの内容が複雑すぎます。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.NativeTaskDialogInternalErrorUnexpected">
+            <summary>
+              Win32 呼び出しで予期しない例外が発生しました: {0:x} に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.NativeTaskDialogVersionError">
+            <summary>
+              タスクダイアログは comctl32.dll バージョン 6 を必要としていますが異なるバージョンがメモリーにロードされています。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.OwnerCannotBeChanged">
+            <summary>
+              ダイアログの表示中はダイアログのオーナーを変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PowerExecutionStateFailed">
+            <summary>
+              SetThreadExecutionState の呼び出しが失敗しました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PowerInsufficientAccessBatteryState">
+            <summary>
+              呼び出し元にはシステムのバッテリー状態を取得するのに十分なアクセス権がありません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PowerInsufficientAccessCapabilities">
+            <summary>
+              呼び出し元にはシステムの電源特性を取得するのに十分なアクセス権がありません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PowerManagerActiveSchemeFailed">
+            <summary>
+              現在の電源スキームの取得が失敗しました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PowerManagerBatteryNotPresent">
+            <summary>
+              このシステムにバッテリーがありません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ProgressBarCannotBeChanged">
+            <summary>
+              ダイアログの表示中はプログレスバーを変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.ProgressBarCannotBeHostedInMultipleDialogs">
+            <summary>
+              プログレスバーは複数のダイアログがホストすることはできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PropertyKeyFormatString">
+            <summary>
+              {0}, {1} に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PropVariantInitializationError">
+            <summary>
+              PropVariant を初期化できませんでした。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PropVariantMultiDimArray">
+            <summary>
+              多次元配列はサポートされていません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PropVariantNullString">
+            <summary>
+              文字列の引数は null や空にすることはできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PropVariantTypeNotSupported">
+            <summary>
+              この値の型はサポートされていません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.PropVariantUnsupportedType">
+            <summary>
+              サポートされていない型にキャストできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.RecoverySettingsFormatString">
+            <summary>
+              デリゲート: {0}, 状態: {1}, ピング: {2} に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.RestartSettingsFormatString">
+            <summary>
+              コマンド: {0} 規約: {1} に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.StandardButtonsCannotBeChanged">
+            <summary>
+              ダイアログの表示中は標準のボタンを変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.StartupLocationCannotBeChanged">
+            <summary>
+              ダイアログの表示中はダイアログの開始位置を変更できません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogBadButtonId">
+            <summary>
+              終了中の不正なボタン ID です。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogButtonTextEmpty">
+            <summary>
+              ボタンのテキストを空にすることはできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogCheckBoxTextRequiredToEnableCheckBox">
+            <summary>
+              チェックボックスの値はダイアログチェックボックスに提供される必要があります。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogCloseNonShowing">
+            <summary>
+              表示されていないダイアログを閉じようとしました。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogDefaultCaption">
+            <summary>
+              Application に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogDefaultContent">
+            <summary>
+               に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogDefaultMainInstruction">
+            <summary>
+               に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogOnlyOneDefaultControl">
+            <summary>
+              その型に対して 2 つ以上の既定のボタンを設定することはできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogProgressBarMaxValueGreaterThanMin">
+            <summary>
+              最大値は最小値よりも大きい必要があります。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogProgressBarMinValueGreaterThanZero">
+            <summary>
+              最小値は正の値である必要があります。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogProgressBarMinValueLessThanMax">
+            <summary>
+              最小値は最大値よりも小さい必要があります。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogProgressBarValueInRange">
+            <summary>
+              値は最小値以上、最大値以下である必要があります。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogSupportedButtonsAndButtons">
+            <summary>
+              ダイアログは両方とも標準のボタンや非標準のボタンを表示することはできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogSupportedButtonsAndLinks">
+            <summary>
+              ダイアログは両方とも非標準のボタンやコマンドリンクを表示することはできません。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAPICodePack.Resources.LocalizedMessages.TaskDialogUnkownControl">
+            <summary>
+              不明なダイアログコントロールの型です。 に類似しているローカライズされた文字列を検索します。
+            </summary>
+        </member>
+        <member name="T:MS.WindowsAPICodePack.Internal.HResult">
+            <summary>HRESULT ラッパーです。</summary>	
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.Ok">
+            <summary>S_OK</summary>	
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.False">
+            <summary>S_FALSE</summary>		
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.InvalidArguments">
+            <summary>E_INVALIDARG</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.OutOfMemory">
+            <summary>E_OUTOFMEMORY</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.NoInterface">
+            <summary>E_NOINTERFACE</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.Fail">
+            <summary>E_FAIL</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.ElementNotFound">
+            <summary>E_ELEMENTNOTFOUND</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.TypeElementNotFound">
+            <summary>TYPE_E_ELEMENTNOTFOUND</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.NoObject">
+            <summary>NO_OBJECT</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.Win32ErrorCanceled">
+            <summary>Win32 Error code: ERROR_CANCELLED</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.Canceled">
+            <summary>ERROR_CANCELLED</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.ResourceInUse">
+            <summary>要求されたリソースは使用中です。</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.HResult.AccessDenied">
+            <summary>要求されたリソースは読み取り専用です。</summary>
+        </member>
+        <member name="F:MS.WindowsAPICodePack.Internal.CoreErrorHelper.Ignored">
+            <summary>
+            This is intended for Library Internal use only.
+            </summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreErrorHelper.HResultFromWin32(System.Int32)">
+            <summary>指定された Windows API エラーコードと等価な HRESULT を取得します。</summary>
+            <param name="win32ErrorCode">Windows API エラーコードを指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreErrorHelper.Succeeded(System.Int32)">
+            <summary>結果が成功しているかどうかを判断します。</summary>
+            <param name="result">エラーコードを指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreErrorHelper.Succeeded(MS.WindowsAPICodePack.Internal.HResult)">
+            <summary>結果が成功しているかどうかを判断します。</summary>
+            <param name="result">エラーコードを指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreErrorHelper.Failed(MS.WindowsAPICodePack.Internal.HResult)">
+            <summary>結果が失敗しているかどうかを判断します。</summary>
+            <param name="result">エラーコードを指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreErrorHelper.Failed(System.Int32)">
+            <summary>結果が失敗しているかどうかを判断します。</summary>
+            <param name="result">エラーコードを指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreErrorHelper.Matches(System.Int32,System.Int32)">
+            <summary>COM エラーコードが Win32 エラーコードと等価かどうかを調べます。</summary>
+            <param name="result">COM エラーコードを指定します。</param>
+            <param name="win32ErrorCode">Win32 エラーコードを指定します。</param>
+        </member>
+        <member name="T:MS.WindowsAPICodePack.Internal.CoreHelpers">
+            <summary>共通のヘルパーメソッドを提供します。</summary>
+        </member>
+        <member name="P:MS.WindowsAPICodePack.Internal.CoreHelpers.RunningOnXP">
+            <summary>アプリケーションが XP で起動しているかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreHelpers.ThrowIfNotXP">
+            <summary>アプリケーションが XP で起動していない場合は <see cref="T:System.PlatformNotSupportedException"/> を発生させます。</summary>
+        </member>
+        <member name="P:MS.WindowsAPICodePack.Internal.CoreHelpers.RunningOnVista">
+            <summary>アプリケーションが Vista で起動しているかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreHelpers.ThrowIfNotVista">
+            <summary>アプリケーションが Vista で起動していない場合は <see cref="T:System.PlatformNotSupportedException"/> を発生させます。</summary>
+        </member>
+        <member name="P:MS.WindowsAPICodePack.Internal.CoreHelpers.RunningOnWin7">
+            <summary>アプリケーションが Windows 7 で起動しているかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreHelpers.ThrowIfNotWin7">
+            <summary>アプリケーションが Windows 7 で起動していない場合は <see cref="T:System.PlatformNotSupportedException"/> を発生させます。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreHelpers.GetStringResource(System.String)">
+            <summary>指定されたリソース ID からリソース文字列を取得します。</summary>
+            <param name="resourceId">リソース ID を指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreNativeMethods.PostMessage(System.IntPtr,MS.WindowsAPICodePack.Internal.WindowMessage,System.IntPtr,System.IntPtr)">
+            <summary>指定されたウィンドウを作成したスレッドに関連付けられたメッセージキューにメッセージをポストして、
+            スレッドがメッセージの処理をするのを待たずに制御を戻します。</summary>
+            <param name="windowHandle">メッセージを処理するウィンドウへのハンドル。
+            HWND_BROADCAST の場合、メッセージは、あらゆるトップレベルウィンドウに送られますが、子ウィンドウには送られません。</param>
+            <param name="message">送られるメッセージを指定します。</param>
+            <param name="wparam">メッセージ固有の追加情報を指定します。</param>
+            <param name="lparam">メッセージ固有の追加情報を指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreNativeMethods.SendMessage(System.IntPtr,MS.WindowsAPICodePack.Internal.WindowMessage,System.IntPtr,System.IntPtr)">
+            <summary>
+            指定されたメッセージを1つまたは複数のウィンドウに送ります。SendMessage 関数は指定されたウィンドウのウィンドウプロシージャを呼び出すため、
+            ウィンドウプロシージャがメッセージを処理するまで制御は戻りません。
+            </summary>
+            <param name="windowHandle">メッセージを処理するウィンドウへのハンドル。
+            HWND_BROADCAST の場合、メッセージは、あらゆるトップレベルウィンドウに送られますが、子ウィンドウには送られません。</param>
+            <param name="message">送られるメッセージを指定します。</param>
+            <param name="wparam">メッセージ固有の追加情報を指定します。</param>
+            <param name="lparam">メッセージ固有の追加情報を指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreNativeMethods.SendMessage(System.IntPtr,System.UInt32,System.IntPtr,System.IntPtr)">
+            <summary>
+            指定されたメッセージを1つまたは複数のウィンドウに送ります。SendMessage 関数は指定されたウィンドウのウィンドウプロシージャを呼び出すため、
+            ウィンドウプロシージャがメッセージを処理するまで制御は戻りません。
+            </summary>
+            <param name="windowHandle">メッセージを処理するウィンドウへのハンドル。
+            HWND_BROADCAST の場合、メッセージは、あらゆるトップレベルウィンドウに送られますが、子ウィンドウには送られません。</param>
+            <param name="message">送られるメッセージを指定します。</param>
+            <param name="wparam">メッセージ固有の追加情報を指定します。</param>
+            <param name="lparam">メッセージ固有の追加情報を指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreNativeMethods.SendMessage(System.IntPtr,System.UInt32,System.IntPtr,System.String)">
+            <summary>
+            指定されたメッセージを1つまたは複数のウィンドウに送ります。SendMessage 関数は指定されたウィンドウのウィンドウプロシージャを呼び出すため、
+            ウィンドウプロシージャがメッセージを処理するまで制御は戻りません。
+            </summary>
+            <param name="windowHandle">メッセージを処理するウィンドウへのハンドル。
+            HWND_BROADCAST の場合、メッセージは、あらゆるトップレベルウィンドウに送られますが、子ウィンドウには送られません。</param>
+            <param name="message">送られるメッセージを指定します。</param>
+            <param name="wparam">メッセージ固有の追加情報を指定します。</param>
+            <param name="lparam">メッセージ固有の追加情報を指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreNativeMethods.SendMessage(System.IntPtr,System.UInt32,System.Int32,System.String)">
+            <summary>
+            指定されたメッセージを1つまたは複数のウィンドウに送ります。SendMessage 関数は指定されたウィンドウのウィンドウプロシージャを呼び出すため、
+            ウィンドウプロシージャがメッセージを処理するまで制御は戻りません。
+            </summary>
+            <param name="windowHandle">メッセージを処理するウィンドウへのハンドル。
+            HWND_BROADCAST の場合、メッセージは、あらゆるトップレベルウィンドウに送られますが、子ウィンドウには送られません。</param>
+            <param name="message">送られるメッセージを指定します。</param>
+            <param name="wparam">メッセージ固有の追加情報を指定します。</param>
+            <param name="lparam">メッセージ固有の追加情報を指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreNativeMethods.SendMessage(System.IntPtr,System.UInt32,System.Int32@,System.Text.StringBuilder)">
+            <summary>
+            指定されたメッセージを1つまたは複数のウィンドウに送ります。SendMessage 関数は指定されたウィンドウのウィンドウプロシージャを呼び出すため、
+            ウィンドウプロシージャがメッセージを処理するまで制御は戻りません。
+            </summary>
+            <param name="windowHandle">メッセージを処理するウィンドウへのハンドル。
+            HWND_BROADCAST の場合、メッセージは、あらゆるトップレベルウィンドウに送られますが、子ウィンドウには送られません。</param>
+            <param name="message">送られるメッセージを指定します。</param>
+            <param name="wparam">メッセージ固有の追加情報を指定します。</param>
+            <param name="lparam">メッセージ固有の追加情報を指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreNativeMethods.GetHiWord(System.Int64,System.Int32)">
+            <summary>HiWord を取得します。</summary>
+            <param name="value">HiWord を取得する値を指定します。</param>
+            <param name="size">サイズを指定します。</param>	  
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.CoreNativeMethods.GetLoWord(System.Int64)">
+            <summary>LoWord を取得します。</summary>
+            <param name="value">LoWord を取得する値を指定します。</param>
+        </member>
+        <member name="T:MS.WindowsAPICodePack.Internal.CoreNativeMethods.Size">
+            <summary>SIZE 構造体のラッパーです。</summary>
+        </member>
+        <member name="P:MS.WindowsAPICodePack.Internal.CoreNativeMethods.Size.Width">
+            <summary>幅を取得または設定します。</summary>
+        </member>
+        <member name="P:MS.WindowsAPICodePack.Internal.CoreNativeMethods.Size.Height">
+            <summary>高さを取得または設定します。</summary>
+        </member>
+        <member name="T:MS.WindowsAPICodePack.Internal.PropVariant">
+            <summary>OLE 構造体の PROPVARIANT を表します。このクラスは内部使用に対して設計されています。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.FromObject(System.Object)">
+            <summary>適切なコンストラクタを検索して <see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> を作成します。</summary>
+            <param name="value">どの <see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> が作成されるかを示す値を指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor">
+            <summary><see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.String)">
+            <summary>指定された <see cref="T:System.String"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.String[])">
+            <summary>指定された <see cref="T:System.String"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Boolean[])">
+            <summary>指定された <see cref="T:System.Boolean"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Int16[])">
+            <summary>指定された <see cref="T:System.Int16"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.UInt16[])">
+            <summary>指定された <see cref="T:System.UInt16"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Int32[])">
+            <summary>指定された <see cref="T:System.Int32"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.UInt32[])">
+            <summary>指定された <see cref="T:System.UInt32"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Int64[])">
+            <summary>指定された <see cref="T:System.Int64"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.UInt64[])">
+            <summary>指定された <see cref="T:System.UInt64"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Double[])">
+            <summary>指定された <see cref="T:System.Double"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.DateTime[])">
+            <summary>指定された <see cref="T:System.DateTime"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Boolean)">
+            <summary>指定された <see cref="T:System.Boolean"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.DateTime)">
+            <summary>指定された <see cref="T:System.DateTime"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Byte)">
+            <summary>指定された <see cref="T:System.Byte"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.SByte)">
+            <summary>指定された <see cref="T:System.SByte"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Int16)">
+            <summary>指定された <see cref="T:System.Int16"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.UInt16)">
+            <summary>指定された <see cref="T:System.UInt16"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Int32)">
+            <summary>指定された <see cref="T:System.Int32"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.UInt32)">
+            <summary>指定された <see cref="T:System.UInt32"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Decimal)">
+            <summary>指定された <see cref="T:System.Decimal"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Decimal[])">
+            <summary>指定された <see cref="T:System.Decimal"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+            <param name="value">ラップする <see cref="T:System.Decimal"/> 配列を指定します。</param>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Single)">
+            <summary>指定された <see cref="T:System.Single"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>		
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Single[])">
+            <summary>指定された <see cref="T:System.Single"/> 配列を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>		
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Int64)">
+            <summary>指定された <see cref="T:System.Int64"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.UInt64)">
+            <summary>指定された <see cref="T:System.UInt64"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.#ctor(System.Double)">
+            <summary>指定された <see cref="T:System.Double"/> 値を使用して、<see cref="T:MS.WindowsAPICodePack.Internal.PropVariant"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="P:MS.WindowsAPICodePack.Internal.PropVariant.VarType">
+            <summary>値の型を取得または設定します。</summary>
+        </member>
+        <member name="P:MS.WindowsAPICodePack.Internal.PropVariant.IsNullOrEmpty">
+            <summary>このオブジェクトが空または null 値であるかどうかを示す値を取得します。</summary>
+        </member>
+        <member name="P:MS.WindowsAPICodePack.Internal.PropVariant.Value">
+            <summary>さまざまな値を取得します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.Dispose">
+            <summary>クリア関数を呼び出してこのオブジェクトを破棄します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.Finalize">
+            <summary>ファイナライザー</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.PropVariant.ToString">
+            <summary>含まれているデータと型に対する簡単な文字列表現を提供します。</summary>
+        </member>
+        <member name="T:MS.WindowsAPICodePack.Internal.ZeroInvalidHandle">
+            <summary>Null ポインターが無効である安全なハンドルを表す基底クラスを表します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.ZeroInvalidHandle.#ctor">
+            <summary><see cref="T:MS.WindowsAPICodePack.Internal.ZeroInvalidHandle"/> クラスの新しいインスタンスを初期化します。</summary>
+        </member>
+        <member name="P:MS.WindowsAPICodePack.Internal.ZeroInvalidHandle.IsInvalid">
+            <summary>このハンドルが無効かどうかを示す値を取得します。</summary>
+        </member>
+        <member name="T:MS.WindowsAPICodePack.Internal.SafeIconHandle">
+            <summary>安全なアイコンのハンドルを表します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.SafeIconHandle.ReleaseHandle">
+            <summary>ハンドルを解放します。</summary>
+        </member>
+        <member name="T:MS.WindowsAPICodePack.Internal.SafeRegionHandle">
+            <summary>安全なリージョンのハンドルを表します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.SafeRegionHandle.ReleaseHandle">
+            <summary>ハンドルを解放します。</summary>
+        </member>
+        <member name="T:MS.WindowsAPICodePack.Internal.SafeWindowHandle">
+            <summary>安全なウィンドウハンドルを表します。</summary>
+        </member>
+        <member name="M:MS.WindowsAPICodePack.Internal.SafeWindowHandle.ReleaseHandle">
+            <summary>ハンドルを解放します。</summary>
+        </member>
+    </members>
+</doc>
