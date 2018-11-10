@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -91,79 +90,102 @@ namespace Lyriser
 
 		LyricsNode[] ParseLyricsLine()
 		{
-			var items = new List<LyricsNode>();
+			var nodes = new List<LyricsNode>();
 			_lineIndex = 0;
 			while (_lineIndex < _line.Length)
-				items.Add(ParseLyricsItem());
-			return items.ToArray();
+				nodes.Add(ParseLyricsNode());
+			return nodes.ToArray();
 		}
 
-		LyricsNode ParseLyricsItem()
+		LyricsNode ParseLyricsNode()
 		{
 			var start = Index;
 			if (Accept('('))
 			{
-				var items = new List<LyricsNode>();
-				while (!Accept(')') && _lineIndex < _line.Length)
-					items.Add(ParseLyricsItem());
-				return new SkippedNode(items, start, Index - start);
+				var nodes = new List<LyricsNode>();
+				while (!Accept(')'))
+				{
+					if (_lineIndex >= _line.Length)
+					{
+						ErrorSink.ReportError("非発音領域が適切に終了されていません。", Index);
+						break;
+					}
+					nodes.Add(ParseLyricsNode());
+				}
+				return new SkippedNode(nodes, start, Index - start);
 			}
 			if (Accept('['))
 			{
-				var mainItems = new List<SimpleNode>();
+				var mainNodes = new List<SimpleNode>();
 				while (!Predict('"'))
 				{
 					if (_lineIndex >= _line.Length)
 					{
-						ErrorSink.ReportError("文字 '\"' が予期されましたが、行終端記号が見つかりました。", Index);
+						ErrorSink.ReportError("ルビ領域でルビを省略することはできません。", Index);
 						break;
 					}
-					mainItems.Add(ParseSimpleItem());
+					mainNodes.Add(ParseSimpleNode());
 				}
-				if (mainItems.Count <= 0)
+				if (mainNodes.Count <= 0)
 				{
-					ErrorSink.ReportError("ふりがなのベースを空にすることはできません。", Index);
-					mainItems.Add(new SimpleNode("_", CharacterState.Default, Index, 0));
+					ErrorSink.ReportError("ルビ領域でルビを振る対象を省略することはできません。", Index);
+					mainNodes.Add(new SimpleNode("_", CharacterState.Default, Index, 0));
 				}
-				var items = new List<SimpleNode>();
+				var rubyNodes = new List<SimpleNode>();
+				var rubyStartIndex = Index;
 				if (Accept('"'))
 				{
+					rubyStartIndex = Index;
 					while (!Accept('"'))
 					{
 						if (_lineIndex >= _line.Length)
 						{
-							ErrorSink.ReportError("文字 '\"' が予期されましたが、行終端記号が見つかりました。", Index);
+							ErrorSink.ReportError("ルビが適切に終了されていません。", Index);
 							break;
 						}
-						items.Add(ParseSimpleItem());
+						rubyNodes.Add(ParseSimpleNode());
 					}
 				}
 				if (!Accept(']'))
-				{
-					if (_lineIndex < _line.Length)
-						ErrorSink.ReportError(string.Format(CultureInfo.CurrentCulture, "文字 ']' が予期されましたが、文字 '{0}' が見つかりました。", _line[_lineIndex]), Index);
-					else
-						ErrorSink.ReportError("文字 ']' が予期されましたが、行終端記号が見つかりました。", Index);
-				}
-				return new CompositeNode(mainItems, items, start, Index - start);
+					ErrorSink.ReportError("ルビ領域が適切に終了されていません。", Index);
+				ReportErrorIfRubyIsEmptyOrContainsOnlyWhitespaces(rubyNodes, rubyStartIndex);
+				return new CompositeNode(mainNodes, rubyNodes, start, Index - start);
 			}
-			var item = ParseSimpleItem();
-			if (!Accept('"'))
-				return item;
-			var phoneticItems = new List<SimpleNode>();
-			while (!Accept('"'))
+			var node = ParseSimpleNode();
+			if (Accept('"'))
 			{
-				if (_lineIndex >= _line.Length)
+				var rubyStartIndex = Index;
+				var rubyNodes = new List<SimpleNode>();
+				while (!Accept('"'))
 				{
-					ErrorSink.ReportError("文字 '\"' が予期されましたが、行終端記号が見つかりました。", Index);
-					break;
+					if (_lineIndex >= _line.Length)
+					{
+						ErrorSink.ReportError("ルビが適切に終了されていません。", Index);
+						break;
+					}
+					rubyNodes.Add(ParseSimpleNode());
 				}
-				phoneticItems.Add(ParseSimpleItem());
+				ReportErrorIfRubyIsEmptyOrContainsOnlyWhitespaces(rubyNodes, rubyStartIndex);
+				return new CompositeNode(new[] { node }, rubyNodes, start, Index - start);
 			}
-			return new CompositeNode(new[] { item }, phoneticItems, start, Index - start);
+			return node;
 		}
 
-		SimpleNode ParseSimpleItem()
+		void ReportErrorIfRubyIsEmptyOrContainsOnlyWhitespaces(List<SimpleNode> rubyNodes, int rubyStartIndex)
+		{
+			if (rubyNodes.Count <= 0)
+			{
+				ErrorSink.ReportError("ルビを省略することはできません。", rubyStartIndex);
+				rubyNodes.Add(new SimpleNode("_", CharacterState.Default, rubyStartIndex, 0));
+			}
+			else if (rubyNodes.All(x => string.IsNullOrWhiteSpace(x.Text)))
+			{
+				ErrorSink.ReportError("ルビを空白文字のみとすることはできません。", rubyStartIndex);
+				rubyNodes.Add(new SimpleNode("_", CharacterState.Default, rubyNodes[rubyNodes.Count - 1].StartIndex + rubyNodes[rubyNodes.Count - 1].Length, 0));
+			}
+		}
+
+		SimpleNode ParseSimpleNode()
 		{
 			var start = Index;
 			var escaping = false;
@@ -174,7 +196,7 @@ namespace Lyriser
 				sb.Append(_line[_lineIndex++]);
 			else
 			{
-				ErrorSink.ReportError("文字が予期されましたが、行終端記号が見つかりました。", Index);
+				ErrorSink.ReportError("何らかの文字が必要です。", Index);
 				sb.Append('_');
 			}
 			if (char.IsHighSurrogate(sb[sb.Length - 1]) && _lineIndex < _line.Length && char.IsLowSurrogate(_line[_lineIndex]))
@@ -290,14 +312,14 @@ namespace Lyriser
 
 	class SkippedNode : LyricsNode
 	{
-		public SkippedNode(IEnumerable<LyricsNode> items, int start, int length) : base(start, length) => _items = items.ToArray();
+		public SkippedNode(IEnumerable<LyricsNode> nodes, int start, int length) : base(start, length) => _nodes = nodes.ToArray();
 
-		readonly LyricsNode[] _items;
+		readonly LyricsNode[] _nodes;
 
 		public override void Transform(int lineIndex, StringBuilder textBuilder, List<RubySpecifier> rubySpecifiers, KeyStore keyStore)
 		{
-			foreach (var item in _items)
-				item.Transform(lineIndex, textBuilder, rubySpecifiers, null);
+			foreach (var node in _nodes)
+				node.Transform(lineIndex, textBuilder, rubySpecifiers, null);
 		}
 
 		public override IEnumerable<HighlightToken> Tokens => Enumerable.Repeat(new HighlightToken(StartIndex, Length, Color.Green, Color.Empty), 1);
