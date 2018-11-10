@@ -454,13 +454,12 @@ namespace Lyriser
 		{
 			var rangeMetrics = GetMetricsForRange(baseTextLayout);
 			var nonWhitespaceClusterCount = m_TextLayout.GetClusterMetrics().Count(x => !x.IsWhitespace);
-			var textMetrics = m_TextLayout.Metrics;
-			var spacing = rangeMetrics.Width - textMetrics.Width;
-			m_TextLayout.MaxWidth = textMetrics.Width + spacing * (nonWhitespaceClusterCount - 1) / nonWhitespaceClusterCount;
+			var spacing = rangeMetrics.Width - m_TextLayout.Metrics.Width;
+			m_TextLayout.MaxWidth = rangeMetrics.Width - spacing / nonWhitespaceClusterCount;
 			m_TextLayout.TextAlignment = TextAlignment.Justified;
 			if (m_TextLayout.GetClusterMetrics().Aggregate(0.0f, (x, y) => x + y.Width) < m_TextLayout.MaxWidth)
 			{
-				// it seems that justification cannot be applied, so we use centering instead
+				// text does not seem to be justified, so we use centering instead
 				m_TextLayout.TextAlignment = TextAlignment.Center;
 			}
 			m_Origin = new Vector2(rangeMetrics.Left + spacing / 2 / nonWhitespaceClusterCount, rangeMetrics.Top);
