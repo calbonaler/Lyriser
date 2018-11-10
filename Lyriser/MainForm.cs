@@ -14,7 +14,7 @@ namespace Lyriser
 		{
 			base.OnLoad(e);
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
-			txtLyrics.HighlightTokenizer = new LyricsParser(ErrorSink.Null);
+			txtLyrics.HighlightTokenizer = new LyricsParser(new ListBoxBoundErrorSink(lstErrors));
 			miNew_Click(this, e);
 		}
 
@@ -126,15 +126,15 @@ namespace Lyriser
 			public override string ToString() => Description;
 		}
 
-		class ListBoxBoundErrorSink : ErrorSink
+		class ListBoxBoundErrorSink : IErrorSink
 		{
 			public ListBoxBoundErrorSink(ListBox listBox) => _listBox = listBox;
 
 			ListBox _listBox;
 
-			public override void ReportError(string description, int index) => _listBox.Items.Add(new ErrorInfo(description, index));
+			public void ReportError(string description, int index) => _listBox.Items.Add(new ErrorInfo(description, index));
 
-			public override void Clear() => _listBox.Items.Clear();
+			public void Clear() => _listBox.Items.Clear();
 		}
 	}
 }

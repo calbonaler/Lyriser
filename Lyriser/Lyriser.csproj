@@ -82,7 +82,7 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ErrorSink.cs" />
+    <Compile Include="IErrorSink.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="LyricsParser.cs" />
     <Compile Include="LyricsViewer.cs">

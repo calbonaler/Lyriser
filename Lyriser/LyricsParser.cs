@@ -11,7 +11,7 @@ namespace Lyriser
 {
 	public class LyricsParser : IHighlightTokenizer
 	{
-		public LyricsParser(ErrorSink errorSink) => ErrorSink = errorSink;
+		public LyricsParser(IErrorSink errorSink) => ErrorSink = errorSink;
 
 		string _line;
 		int _baseIndex;
@@ -57,7 +57,7 @@ namespace Lyriser
 
 		int Index => _baseIndex + _lineIndex;
 
-		public ErrorSink ErrorSink { get; }
+		public IErrorSink ErrorSink { get; }
 
 		public IEnumerable<(RubiedLine Line, CharacterIndex[][] Keys)> Transform(string source)
 		{
@@ -114,40 +114,35 @@ namespace Lyriser
 				}
 				return new SkippedNode(nodes, start, Index - start);
 			}
-			if (Accept('['))
+			if (Accept('|'))
 			{
 				var mainNodes = new List<SimpleNode>();
-				while (!Predict('"'))
+				var rubyBaseStartIndex = Index;
+				while (!Accept('"'))
 				{
 					if (_lineIndex >= _line.Length)
 					{
-						ErrorSink.ReportError("ルビ領域でルビを省略することはできません。", Index);
-						break;
+						ErrorSink.ReportError("ルビ領域でのルビの開始位置が見つかりません。", Index);
+						return new CompositeNode(mainNodes, new[] { new SimpleNode("_", CharacterState.Default, Index, 0) }, start, Index - start);
 					}
 					mainNodes.Add(ParseSimpleNode());
 				}
 				if (mainNodes.Count <= 0)
 				{
-					ErrorSink.ReportError("ルビ領域でルビを振る対象を省略することはできません。", Index);
-					mainNodes.Add(new SimpleNode("_", CharacterState.Default, Index, 0));
+					ErrorSink.ReportError("ルビ領域でルビを振る対象を省略することはできません。", rubyBaseStartIndex);
+					mainNodes.Add(new SimpleNode("_", CharacterState.Default, rubyBaseStartIndex, 0));
 				}
 				var rubyNodes = new List<SimpleNode>();
 				var rubyStartIndex = Index;
-				if (Accept('"'))
+				while (!Accept('"'))
 				{
-					rubyStartIndex = Index;
-					while (!Accept('"'))
+					if (_lineIndex >= _line.Length)
 					{
-						if (_lineIndex >= _line.Length)
-						{
-							ErrorSink.ReportError("ルビが適切に終了されていません。", Index);
-							break;
-						}
-						rubyNodes.Add(ParseSimpleNode());
+						ErrorSink.ReportError("ルビが適切に終了されていません。", Index);
+						break;
 					}
+					rubyNodes.Add(ParseSimpleNode());
 				}
-				if (!Accept(']'))
-					ErrorSink.ReportError("ルビ領域が適切に終了されていません。", Index);
 				ReportErrorIfRubyIsEmptyOrContainsOnlyWhitespaces(rubyNodes, rubyStartIndex);
 				return new CompositeNode(mainNodes, rubyNodes, start, Index - start);
 			}
