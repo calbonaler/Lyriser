@@ -118,12 +118,13 @@ namespace Lyriser
 			{
 				var mainNodes = new List<SimpleNode>();
 				var rubyBaseStartIndex = Index;
+				var rubyNotFound = false;
 				while (!Accept('"'))
 				{
 					if (_lineIndex >= _line.Length)
 					{
-						ErrorSink.ReportError("ルビ領域でのルビの開始位置が見つかりません。", Index);
-						return new CompositeNode(mainNodes, new[] { new SimpleNode("_", CharacterState.Default, Index, 0) }, start, Index - start);
+						rubyNotFound = true;
+						break;
 					}
 					mainNodes.Add(ParseSimpleNode());
 				}
@@ -131,6 +132,11 @@ namespace Lyriser
 				{
 					ErrorSink.ReportError("ルビ領域でルビを振る対象を省略することはできません。", rubyBaseStartIndex);
 					mainNodes.Add(new SimpleNode("_", CharacterState.Default, rubyBaseStartIndex, 0));
+				}
+				if (rubyNotFound)
+				{
+					ErrorSink.ReportError("ルビ領域でのルビの開始位置が見つかりません。", Index);
+					return new CompositeNode(mainNodes, new[] { new SimpleNode("_", CharacterState.Default, Index, 0) }, start, Index - start);
 				}
 				var rubyNodes = new List<SimpleNode>();
 				var rubyStartIndex = Index;
