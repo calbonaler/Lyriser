@@ -59,7 +59,7 @@ namespace Lyriser
 
 		public IErrorSink ErrorSink { get; }
 
-		public IEnumerable<(RubiedLine Line, CharacterIndex[][] Keys)> Transform(string source)
+		public IEnumerable<(AttachedLine Line, CharacterIndex[][] Keys)> Transform(string source)
 		{
 			using (var reader = new StringReader(source))
 			{
@@ -67,11 +67,11 @@ namespace Lyriser
 				foreach (var nodes in Parse(reader))
 				{
 					var baseTextBuilder = new StringBuilder();
-					var rubySpecs = new List<RubySpecifier>();
+					var attachedSpecs = new List<AttachedSpecifier>();
 					var keyStore = new KeyStore();
 					foreach (var node in nodes)
-						node.Transform(lineIndex, baseTextBuilder, rubySpecs, keyStore);
-					yield return (new RubiedLine(baseTextBuilder.ToString(), rubySpecs.ToArray()), keyStore.ToArray());
+						node.Transform(lineIndex, baseTextBuilder, attachedSpecs, keyStore);
+					yield return (new AttachedLine(baseTextBuilder.ToString(), attachedSpecs), keyStore.ToArray());
 					lineIndex++;
 				}
 			}
@@ -261,7 +261,7 @@ namespace Lyriser
 			Length = length;
 		}
 
-		public abstract void Transform(int lineIndex, StringBuilder textBuilder, List<RubySpecifier> rubySpecifiers, KeyStore keyStore);
+		public abstract void Transform(int lineIndex, StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, KeyStore keyStore);
 
 		public abstract IEnumerable<HighlightToken> Tokens { get; }
 
@@ -283,9 +283,9 @@ namespace Lyriser
 
 		public string Text => _state == CharacterState.Default ? _text : string.Empty;
 
-		public override void Transform(int lineIndex, StringBuilder textBuilder, List<RubySpecifier> rubySpecifiers, KeyStore keyStore) => Transform(lineIndex, textBuilder, -1, keyStore);
+		public override void Transform(int lineIndex, StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, KeyStore keyStore) => Transform(lineIndex, textBuilder, -1, keyStore);
 
-		public void Transform(int lineIndex, StringBuilder textBuilder, int rubyIndex, KeyStore keyStore)
+		public void Transform(int lineIndex, StringBuilder textBuilder, int attachedIndex, KeyStore keyStore)
 		{
 			if (_state == CharacterState.StartGrouping)
 				keyStore?.StartGrouping();
@@ -294,7 +294,7 @@ namespace Lyriser
 			else
 			{
 				if (keyStore != null && !string.IsNullOrWhiteSpace(Text))
-					keyStore.Add(new CharacterIndex(lineIndex, rubyIndex, textBuilder.Length));
+					keyStore.Add(new CharacterIndex(lineIndex, attachedIndex, textBuilder.Length));
 				textBuilder.Append(Text);
 			}
 		}
@@ -317,10 +317,10 @@ namespace Lyriser
 
 		readonly LyricsNode[] _nodes;
 
-		public override void Transform(int lineIndex, StringBuilder textBuilder, List<RubySpecifier> rubySpecifiers, KeyStore keyStore)
+		public override void Transform(int lineIndex, StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, KeyStore keyStore)
 		{
 			foreach (var node in _nodes)
-				node.Transform(lineIndex, textBuilder, rubySpecifiers, null);
+				node.Transform(lineIndex, textBuilder, attachedSpecifiers, null);
 		}
 
 		public override IEnumerable<HighlightToken> Tokens
@@ -353,18 +353,23 @@ namespace Lyriser
 			RawTextStartIndex = rawText.First().StartIndex;
 			_rawTextLength = rawText.Sum(x => x.Length);
 			_ruby = ruby.ToArray();
+			_syllableDivision = _ruby.All(x => x.Text == "#" || x.Text == string.Empty);
 		}
 
 		readonly string _text;
 		readonly int _rawTextLength;
 		readonly SimpleNode[] _ruby;
+		readonly bool _syllableDivision;
 
-		public override void Transform(int lineIndex, StringBuilder textBuilder, List<RubySpecifier> rubySpecifiers, KeyStore keyStore)
+		public override void Transform(int lineIndex, StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, KeyStore keyStore)
 		{
 			var rubyTextBuilder = new StringBuilder();
 			foreach (var rubyNode in _ruby)
-				rubyNode.Transform(lineIndex, rubyTextBuilder, rubySpecifiers.Count, keyStore);
-			rubySpecifiers.Add(new RubySpecifier(new TextRange(textBuilder.Length, _text.Length), rubyTextBuilder.ToString()));
+				rubyNode.Transform(lineIndex, rubyTextBuilder, attachedSpecifiers.Count, keyStore);
+			if (_syllableDivision)
+				attachedSpecifiers.Add(new SyllableDivisionSpecifier(new TextRange(textBuilder.Length, _text.Length), rubyTextBuilder.Length));
+			else
+				attachedSpecifiers.Add(new RubySpecifier(new TextRange(textBuilder.Length, _text.Length), rubyTextBuilder.ToString()));
 			textBuilder.Append(_text);
 		}
 
@@ -382,7 +387,7 @@ namespace Lyriser
 							yield return token;
 					}
 					else
-						yield return new HighlightToken(ruby.StartIndex, ruby.Length, Color.Blue, Color.Empty);
+						yield return new HighlightToken(ruby.StartIndex, ruby.Length, _syllableDivision ? Color.Purple: Color.Blue, Color.Empty);
 				}
 			}
 		}

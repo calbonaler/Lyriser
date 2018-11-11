@@ -57,20 +57,20 @@ namespace Lyriser
 		int DipToPixel(float dip) => (int)(dip * DeviceDpi / 96f);
 		float PixelToDip(int pixel) => pixel * 96f / DeviceDpi;
 
-		public void Setup(IEnumerable<(RubiedLine Line, CharacterIndex[][] Keys)> lines)
+		public void Setup(IEnumerable<(AttachedLine Line, CharacterIndex[][] Keys)> lines)
 		{
 			if (lines == null)
 				throw new ArgumentNullException(nameof(lines));
 			var keyLines = new List<CharacterIndex[][]>();
-			var rubiedLines = new List<RubiedLine>();
+			var attachedLines = new List<AttachedLine>();
 			foreach (var (line, keys) in lines)
 			{
 				if (keys.Length > 0)
 					keyLines.Add(keys);
-				rubiedLines.Add(line);
+				attachedLines.Add(line);
 			}
 			m_KeyLines = keyLines.ToArray();
-			m_Run.Setup(m_WriteFactory, rubiedLines, Font);
+			m_Run.Setup(m_WriteFactory, attachedLines, Font);
 			UpdateNextLineViewer();
 			UpdateScrollInfo();
 			HighlightFirst();
@@ -128,7 +128,7 @@ namespace Lyriser
 			if (Index.Line + 1 < m_KeyLines.Length)
 				m_NextRun.Setup(m_WriteFactory, new[] { m_Run.GetLine(m_KeyLines[Index.Line + 1][0][0].Line) }, Font);
 			else
-				m_NextRun.Setup(m_WriteFactory, new RubiedLine[0], Font);
+				m_NextRun.Setup(m_WriteFactory, new AttachedLine[0], Font);
 		}
 		void CreateDeviceDependentResources()
 		{
@@ -415,11 +415,34 @@ namespace Lyriser
 		}
 	}
 
-	class Ruby : IDisposable
+	abstract class Attached
 	{
-		public Ruby(DWriteFactory factory, TextRange range, string text, TextFormat format)
+		public Attached(TextRange range) => Range = range;
+
+		public TextRange Range { get; }
+
+		public abstract void Recreate(DWriteFactory factory, TextFormat format);
+		public abstract void Draw(RenderTarget renderTarget, Brush defaultFillBrush);
+		public abstract float Measure(TextLayout baseTextLayout);
+		public abstract void Arrange(TextLayout baseTextLayout);
+		public abstract RectangleF GetCharacterBoundsIncludingBase(TextLayout baseTextLayout, int textPosition);
+		public abstract AttachedSpecifier CreateSpecifier();
+
+		protected HitTestMetrics GetMetricsForRange(TextLayout baseTextLayout)
 		{
-			Range = range;
+			if (baseTextLayout == null)
+				throw new ArgumentNullException(nameof(baseTextLayout));
+			var ranges = baseTextLayout.HitTestTextRange(Range.StartPosition, Range.Length, 0, 0);
+			if (ranges.Length > 1)
+				throw new InvalidOperationException("All base characters specified by single ruby group must be same script.");
+			return ranges[0];
+		}
+	}
+
+	class Ruby : Attached, IDisposable
+	{
+		public Ruby(DWriteFactory factory, TextRange range, string text, TextFormat format) : base(range)
+		{
 			Text = text;
 			m_TextLayout = new TextLayout(factory, text, format, 0f, 0f);
 		}
@@ -437,11 +460,10 @@ namespace Lyriser
 		Vector2 m_Origin;
 		TextLayout m_TextLayout;
 
-		public TextRange Range { get; }
 		public string Text { get; }
 
-		public void Recreate(DWriteFactory factory, TextFormat format) => Utils.AssignWithDispose(ref m_TextLayout, new TextLayout(factory, Text, format, 0f, 0f));
-		public void Draw(RenderTarget renderTarget, Brush defaultFillBrush)
+		public override void Recreate(DWriteFactory factory, TextFormat format) => Utils.AssignWithDispose(ref m_TextLayout, new TextLayout(factory, Text, format, 0f, 0f));
+		public override void Draw(RenderTarget renderTarget, Brush defaultFillBrush)
 		{
 			if (renderTarget == null)
 				throw new ArgumentNullException(nameof(renderTarget));
@@ -449,8 +471,8 @@ namespace Lyriser
 				throw new ArgumentNullException(nameof(defaultFillBrush));
 			renderTarget.DrawTextLayout(m_Origin, m_TextLayout, defaultFillBrush);
 		}
-		public float Measure(TextLayout baseTextLayout) => Math.Max(m_TextLayout.Metrics.Width - GetMetricsForRange(baseTextLayout).Width, 0.0f) / 2;
-		public void Arrange(TextLayout baseTextLayout)
+		public override float Measure(TextLayout baseTextLayout) => Math.Max(m_TextLayout.Metrics.Width - GetMetricsForRange(baseTextLayout).Width, 0.0f) / 2;
+		public override void Arrange(TextLayout baseTextLayout)
 		{
 			var rangeMetrics = GetMetricsForRange(baseTextLayout);
 			var nonWhitespaceClusterCount = m_TextLayout.GetClusterMetrics().Count(x => !x.IsWhitespace);
@@ -464,27 +486,51 @@ namespace Lyriser
 			}
 			m_Origin = new Vector2(rangeMetrics.Left + spacing / 2 / nonWhitespaceClusterCount, rangeMetrics.Top);
 		}
-		public (RectangleF Value, TextRange Range) GetCharacterBounds(int textPosition)
+		public override RectangleF GetCharacterBoundsIncludingBase(TextLayout baseTextLayout, int textPosition)
+		{
+			var metrics = GetMetricsForRange(baseTextLayout);
+			var (bounds, range) = GetCharacterBounds(textPosition);
+			return new RectangleF()
+			{
+				Left = range.StartPosition > 0 ? bounds.Left : metrics.Left,
+				Top = bounds.Top,
+				Right = range.StartPosition + range.Length < Text.Length ? bounds.Right : metrics.Left + metrics.Width,
+				Bottom = metrics.Top + metrics.Height
+			};
+		}
+		public override AttachedSpecifier CreateSpecifier() => new RubySpecifier(new TextRange(Range.StartPosition, Range.Length), Text);
+
+		(RectangleF Value, TextRange Range) GetCharacterBounds(int textPosition)
 		{
 			var metrics = m_TextLayout.HitTestTextPosition(textPosition, false, out var _, out var _);
 			var bounds = new RectangleF(metrics.Left, metrics.Top, metrics.Width, metrics.Height);
 			bounds.Offset(m_Origin);
 			return (bounds, new TextRange(metrics.TextPosition, metrics.Length));
 		}
-		public HitTestMetrics GetMetricsForRange(TextLayout baseTextLayout)
+	}
+
+	class SyllableDivision : Attached
+	{
+		public SyllableDivision(TextRange range, int divisionCount) : base(range) => DivisionCount = divisionCount;
+
+		public int DivisionCount { get; }
+
+		public override void Recreate(DWriteFactory factory, TextFormat format) { }
+		public override void Draw(RenderTarget renderTarget, Brush defaultFillBrush) { }
+		public override float Measure(TextLayout baseTextLayout) => 0.0f;
+		public override void Arrange(TextLayout baseTextLayout) { }
+		public override RectangleF GetCharacterBoundsIncludingBase(TextLayout baseTextLayout, int textPosition)
 		{
-			if (baseTextLayout == null)
-				throw new ArgumentNullException(nameof(baseTextLayout));
-			var ranges = baseTextLayout.HitTestTextRange(Range.StartPosition, Range.Length, 0, 0);
-			if (ranges.Length > 1)
-				throw new InvalidOperationException("All base characters specified by single ruby group must be same script.");
-			return ranges[0];
+			var rangeMetrics = GetMetricsForRange(baseTextLayout);
+			var metrics = baseTextLayout.HitTestTextPosition(Range.StartPosition, false, out var _, out var _);
+			return new RectangleF(rangeMetrics.Left + rangeMetrics.Width * textPosition / DivisionCount, metrics.Top, rangeMetrics.Width / DivisionCount, rangeMetrics.Top + rangeMetrics.Height - metrics.Top);
 		}
+		public override AttachedSpecifier CreateSpecifier() => new SyllableDivisionSpecifier(Range, DivisionCount);
 	}
 
 	class TextRun : IDisposable
 	{
-		public TextRun(DWriteFactory writeFacotry, System.Drawing.Font font) => Setup(writeFacotry, Enumerable.Empty<RubiedLine>(), font);
+		public TextRun(DWriteFactory writeFacotry, System.Drawing.Font font) => Setup(writeFacotry, Enumerable.Empty<AttachedLine>(), font);
 		public void Dispose()
 		{
 			Dispose(true);
@@ -497,13 +543,13 @@ namespace Lyriser
 			m_Text = null;
 			Utils.SafeDispose(ref m_TextLayout);
 			m_LineIndexes = null;
-			CleanupRubies();
+			CleanupAttacheds();
 		}
 
 		string m_Text;
 		TextLayout m_TextLayout;
-		(int Text, int Ruby)[] m_LineIndexes;
-		Ruby[] m_Rubies;
+		(int Text, int Attached)[] m_LineIndexes;
+		Attached[] m_Attacheds;
 
 		public Size2F Size
 		{
@@ -530,25 +576,25 @@ namespace Lyriser
 				return;
 			if (renderTarget == null)
 				throw new ArgumentNullException(nameof(renderTarget));
-			foreach (var it in m_Rubies)
+			foreach (var it in m_Attacheds)
 				it.Draw(renderTarget, defaultFillBrush);
 			renderTarget.DrawTextLayout(default, m_TextLayout, defaultFillBrush);
 		}
-		public void Setup(DWriteFactory writeFactory, IEnumerable<RubiedLine> rubiedLines, System.Drawing.Font font)
+		public void Setup(DWriteFactory writeFactory, IEnumerable<AttachedLine> attachedLines, System.Drawing.Font font)
 		{
-			if (rubiedLines == null)
-				throw new ArgumentNullException(nameof(rubiedLines));
-			var lineIndexes = new List<(int Text, int Ruby)>();
+			if (attachedLines == null)
+				throw new ArgumentNullException(nameof(attachedLines));
+			var lineIndexes = new List<(int Text, int Attached)>();
 			var textBuilder = new StringBuilder();
-			var rubiesList = new List<RubySpecifier>();
+			var attachedList = new List<AttachedSpecifier>();
 			var first = true;
-			foreach (var rubiedLine in rubiedLines)
+			foreach (var attachedLine in attachedLines)
 			{
 				if (!first)
 					textBuilder.Append('\n');
-				lineIndexes.Add((textBuilder.Length, rubiesList.Count));
-				rubiesList.AddRange(rubiedLine.RubySpecifiers.Select(x => new RubySpecifier(new TextRange(textBuilder.Length + x.Range.StartPosition, x.Range.Length), x.Text)));
-				textBuilder.Append(rubiedLine.Text);
+				lineIndexes.Add((textBuilder.Length, attachedList.Count));
+				attachedList.AddRange(attachedLine.AttachedSpecifiers.Select(x => x.Move(textBuilder.Length)));
+				textBuilder.Append(attachedLine.Text);
 				first = false;
 			}
 			var (fontFamilyName, fontWeight, fontStyle, fontStretch, fontSize) = Utils.GetFontFromDrawingFont(writeFactory, font);
@@ -560,17 +606,17 @@ namespace Lyriser
 				format.SetLineSpacing(LineSpacingMethod.Uniform, fontSize * 1.5f * (1.0f / 0.8f), fontSize * 1.5f);
 				Utils.AssignWithDispose(ref m_TextLayout, new TextLayout(writeFactory, m_Text, format, 0f, 0f));
 			}
-			CleanupRubies();
-			m_Rubies = new Ruby[rubiesList.Count];
+			CleanupAttacheds();
+			m_Attacheds = new Attached[attachedList.Count];
 			using (var format = new TextFormat(writeFactory, fontFamilyName, fontWeight, fontStyle, fontStretch, fontSize / 2))
 			{
 				format.WordWrapping = WordWrapping.NoWrap;
-				for (var i = 0; i < rubiesList.Count; i++)
+				for (var i = 0; i < attachedList.Count; i++)
 				{
-					m_Rubies[i] = new Ruby(writeFactory, rubiesList[i].Range, rubiesList[i].Text, format);
-					var spacing = m_Rubies[i].Measure(m_TextLayout);
-					SetRangeSpacing(spacing, spacing, 0, m_Rubies[i].Range);
-					m_Rubies[i].Arrange(m_TextLayout);
+					m_Attacheds[i] = attachedList[i].Create(writeFactory, format);
+					var spacing = m_Attacheds[i].Measure(m_TextLayout);
+					SetRangeSpacing(spacing, spacing, 0, m_Attacheds[i].Range);
+					m_Attacheds[i].Arrange(m_TextLayout);
 				}
 			}
 		}
@@ -586,12 +632,12 @@ namespace Lyriser
 			using (var format = new TextFormat(writeFactory, fontFamilyName, fontWeight, fontStyle, fontStretch, fontSize / 2))
 			{
 				format.WordWrapping = WordWrapping.NoWrap;
-				foreach (var ruby in m_Rubies)
+				foreach (var attached in m_Attacheds)
 				{
-					ruby.Recreate(writeFactory, format);
-					var spacing = ruby.Measure(m_TextLayout);
-					SetRangeSpacing(spacing, spacing, 0, ruby.Range);
-					ruby.Arrange(m_TextLayout);
+					attached.Recreate(writeFactory, format);
+					var spacing = attached.Measure(m_TextLayout);
+					SetRangeSpacing(spacing, spacing, 0, attached.Range);
+					attached.Arrange(m_TextLayout);
 				}
 			}
 		}
@@ -609,35 +655,27 @@ namespace Lyriser
 				return new RectangleF(rangeMetrics[0].Left, metrics.Top, rangeMetrics[0].Width, rangeMetrics[0].Top + rangeMetrics[0].Height - metrics.Top);
 			}
 			else
-			{
-				var it = m_Rubies[m_LineIndexes[index.Line].Ruby + index.Ruby];
-				var metrics = it.GetMetricsForRange(m_TextLayout);
-				var (bounds, range) = it.GetCharacterBounds(index.Character);
-				return new RectangleF()
-				{
-					Left = range.StartPosition > 0 ? bounds.Left : metrics.Left,
-					Top = bounds.Top,
-					Right = range.StartPosition + range.Length < it.Text.Length ? bounds.Right : metrics.Left + metrics.Width,
-					Bottom = metrics.Top + metrics.Height
-				};
-			}
+				return m_Attacheds[m_LineIndexes[index.Line].Attached + index.Attached].GetCharacterBoundsIncludingBase(m_TextLayout, index.Character);
 		}
-		public RubiedLine GetLine(int line)
+		public AttachedLine GetLine(int line)
 		{
-			var (textEndIndex, rubyEndIndex) = line + 1 >= m_LineIndexes.Length ? (m_Text.Length, m_Rubies.Length) : m_LineIndexes[line + 1];
-			return new RubiedLine(
+			var (textEndIndex, attachedEndIndex) = line + 1 >= m_LineIndexes.Length ? (m_Text.Length, m_Attacheds.Length) : m_LineIndexes[line + 1];
+			return new AttachedLine(
 				m_Text.Substring(m_LineIndexes[line].Text, textEndIndex - m_LineIndexes[line].Text).TrimEnd('\n'),
-				m_Rubies.Skip(m_LineIndexes[line].Ruby).Take(rubyEndIndex - m_LineIndexes[line].Ruby).Select(x => new RubySpecifier(new TextRange(x.Range.StartPosition - m_LineIndexes[line].Text, x.Range.Length), x.Text)).ToArray()
+				m_Attacheds.Skip(m_LineIndexes[line].Attached).Take(attachedEndIndex - m_LineIndexes[line].Attached).Select(x => x.CreateSpecifier().Move(-m_LineIndexes[line].Text)).ToArray()
 			);
 		}
 
-		void CleanupRubies()
+		void CleanupAttacheds()
 		{
-			if (m_Rubies != null)
+			if (m_Attacheds != null)
 			{
-				foreach (var item in m_Rubies)
-					item.Dispose();
-				m_Rubies = null;
+				foreach (var item in m_Attacheds)
+				{
+					if (item is IDisposable disposable)
+						disposable.Dispose();
+				}
+				m_Attacheds = null;
 			}
 		}
 		void SetRangeSpacing(float leadingSpacing, float trailingSpacing, float minimumAdvanceWidth, TextRange range)
@@ -683,45 +721,70 @@ namespace Lyriser
 		}
 	}
 
-	public readonly struct RubiedLine
+	public readonly struct AttachedLine
 	{
-		public RubiedLine(string text, RubySpecifier[] rubySpecifiers)
+		[CLSCompliant(false)]
+		public AttachedLine(string text, IEnumerable<AttachedSpecifier> attachedSpecifiers)
 		{
 			Text = text;
-			RubySpecifiers = rubySpecifiers;
+			AttachedSpecifiers = attachedSpecifiers.ToArray();
 		}
 
 		public string Text { get; }
-		public RubySpecifier[] RubySpecifiers { get; }
+
+		[CLSCompliant(false)]
+		public IReadOnlyList<AttachedSpecifier> AttachedSpecifiers { get; }
 	}
 
-	public readonly struct RubySpecifier
+	[CLSCompliant(false)]
+	public abstract class AttachedSpecifier
 	{
-		[CLSCompliant(false)]
-		public RubySpecifier(TextRange range, string text)
-		{
-			Range = range;
-			Text = text;
-		}
+		protected AttachedSpecifier(TextRange range) => Range = range;
 
-		[CLSCompliant(false)]
 		public TextRange Range { get; }
+
+		public abstract AttachedSpecifier Move(int distance);
+
+		internal abstract Attached Create(DWriteFactory writeFactory, TextFormat format);
+	}
+
+	[CLSCompliant(false)]
+	public class RubySpecifier : AttachedSpecifier
+	{
+		public RubySpecifier(TextRange range, string text) : base(range) => Text = text;
+
 		public string Text { get; }
+
+		public override AttachedSpecifier Move(int distance) => new RubySpecifier(new TextRange(Range.StartPosition + distance, Range.Length), Text);
+
+		internal override Attached Create(DWriteFactory writeFactory, TextFormat format) => new Ruby(writeFactory, Range, Text, format);
+	}
+
+	[CLSCompliant(false)]
+	public class SyllableDivisionSpecifier : AttachedSpecifier
+	{
+		public SyllableDivisionSpecifier(TextRange range, int divisionCount) : base(range) => DivisionCount = divisionCount;
+
+		public int DivisionCount { get; }
+
+		public override AttachedSpecifier Move(int distance) => new SyllableDivisionSpecifier(new TextRange(Range.StartPosition + distance, Range.Length), DivisionCount);
+
+		internal override Attached Create(DWriteFactory writeFactory, TextFormat format) => new SyllableDivision(Range, DivisionCount);
 	}
 
 	public readonly struct CharacterIndex
 	{
-		public CharacterIndex(int line, int ruby, int character)
+		public CharacterIndex(int line, int attached, int character)
 		{
 			Line = line;
-			Ruby = ruby;
+			Attached = attached;
 			Character = character;
 		}
 
 		public int Line { get; }
-		public int Ruby { get; }
+		public int Attached { get; }
 		public int Character { get; }
-		public bool IsSimple => Ruby < 0;
+		public bool IsSimple => Attached < 0;
 	}
 
 	static class Utils
