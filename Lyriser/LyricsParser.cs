@@ -347,12 +347,12 @@ namespace Lyriser
 
 	class CompositeNode : LyricsNode
 	{
-		public CompositeNode(IEnumerable<SimpleNode> rawText, IEnumerable<SimpleNode> phonetic, int start, int length) : base(start, length)
+		public CompositeNode(IEnumerable<SimpleNode> rawText, IEnumerable<SimpleNode> ruby, int start, int length) : base(start, length)
 		{
 			_text = string.Concat(rawText.Select(x => x.Text));
 			RawTextStartIndex = rawText.First().StartIndex;
 			_rawTextLength = rawText.Sum(x => x.Length);
-			_ruby = phonetic.ToArray();
+			_ruby = ruby.ToArray();
 		}
 
 		readonly string _text;
@@ -373,16 +373,16 @@ namespace Lyriser
 			get
 			{
 				yield return new HighlightToken(RawTextStartIndex, _rawTextLength, Color.Red, Color.Empty);
-				foreach (var phonetic in _ruby)
+				foreach (var ruby in _ruby)
 				{
-					var phtokens = phonetic.Tokens.ToArray();
+					var phtokens = ruby.Tokens.ToArray();
 					if (phtokens.Length > 0)
 					{
 						foreach (var token in phtokens)
 							yield return token;
 					}
 					else
-						yield return new HighlightToken(phonetic.StartIndex, phonetic.Length, Color.Blue, Color.Empty);
+						yield return new HighlightToken(ruby.StartIndex, ruby.Length, Color.Blue, Color.Empty);
 				}
 			}
 		}
