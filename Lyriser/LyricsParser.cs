@@ -21,15 +21,13 @@ namespace Lyriser
 
 		bool Accept(Scanner scanner, char ch)
 		{
-			if (Predict(scanner, ch))
+			if (scanner.Peek() == ch)
 			{
 				scanner.Read();
 				return true;
 			}
 			return false;
 		}
-
-		bool Predict(Scanner scanner, char ch) => scanner.Peek() == ch;
 
 		public IErrorSink ErrorSink { get; }
 
@@ -66,49 +64,43 @@ namespace Lyriser
 				}
 				return new SkippedNode(nodes, start, scanner.SerialIndex - start);
 			}
-			if (Accept(scanner, '|'))
+			else if (Accept(scanner, '|'))
 			{
-				var mainNodes = new List<SimpleNode>();
+				var rubyBaseBuilder = new StringBuilder();
 				var rubyBaseStartIndex = scanner.SerialIndex;
-				var rubyNotFound = false;
-				while (!Accept(scanner, '"'))
+				while (scanner.Peek() != null && scanner.Peek() != '"')
+					rubyBaseBuilder.Append(ParseSimpleCharacter(scanner).Text);
+				var rubyBaseLength = scanner.SerialIndex - rubyBaseStartIndex;
+				if (rubyBaseBuilder.Length <= 0)
 				{
-					if (scanner.Peek() == null)
-					{
-						rubyNotFound = true;
-						break;
-					}
-					mainNodes.Add(ParseSimpleNode(scanner));
+					ErrorSink.ReportError("ルビを振る対象を省略することはできません。", rubyBaseStartIndex);
+					rubyBaseBuilder.Append("_");
 				}
-				if (mainNodes.Count <= 0)
-				{
-					ErrorSink.ReportError("ルビ領域でルビを振る対象を省略することはできません。", rubyBaseStartIndex);
-					mainNodes.Add(new SimpleNode("_", CharacterState.Default, rubyBaseStartIndex, 0));
-				}
-				if (rubyNotFound)
+				var rubyNodes = ParseRubyNodes(scanner);
+				if (rubyNodes.Count <= 0)
 				{
 					ErrorSink.ReportError("ルビ領域でのルビの開始位置が見つかりません。", scanner.SerialIndex);
-					return new CompositeNode(mainNodes, new[] { new SimpleNode("_", CharacterState.Default, scanner.SerialIndex, 0) }, start, scanner.SerialIndex - start);
+					rubyNodes.Add(new SimpleNode("_", CharacterState.Default, scanner.SerialIndex, 0));
 				}
-				var rubyNodes = new List<SimpleNode>();
-				var rubyStartIndex = scanner.SerialIndex;
-				while (!Accept(scanner, '"'))
-				{
-					if (scanner.Peek() == null)
-					{
-						ErrorSink.ReportError("ルビが適切に終了されていません。", scanner.SerialIndex);
-						break;
-					}
-					rubyNodes.Add(ParseSimpleNode(scanner));
-				}
-				ReportErrorIfRubyIsEmptyOrContainsOnlyWhitespaces(rubyNodes, rubyStartIndex);
-				return new CompositeNode(mainNodes, rubyNodes, start, scanner.SerialIndex - start);
+				return new CompositeNode(rubyBaseBuilder.ToString(), rubyBaseStartIndex, rubyBaseLength, rubyNodes, start, scanner.SerialIndex - start);
 			}
-			var node = ParseSimpleNode(scanner);
+			else
+			{
+				var (text, escaping) = ParseSimpleCharacter(scanner);
+				var length = scanner.SerialIndex - start;
+				var rubyNodes = ParseRubyNodes(scanner);
+				if (rubyNodes.Count > 0)
+					return new CompositeNode(text, start, length, rubyNodes, start, scanner.SerialIndex - start);
+				return CreateSimpleNode(text, escaping, start, length);
+			}
+		}
+
+		List<SimpleNode> ParseRubyNodes(Scanner scanner)
+		{
+			var rubyNodes = new List<SimpleNode>();
 			if (Accept(scanner, '"'))
 			{
 				var rubyStartIndex = scanner.SerialIndex;
-				var rubyNodes = new List<SimpleNode>();
 				while (!Accept(scanner, '"'))
 				{
 					if (scanner.Peek() == null)
@@ -116,31 +108,26 @@ namespace Lyriser
 						ErrorSink.ReportError("ルビが適切に終了されていません。", scanner.SerialIndex);
 						break;
 					}
-					rubyNodes.Add(ParseSimpleNode(scanner));
+					var start = scanner.SerialIndex;
+					var (text, escaping) = ParseSimpleCharacter(scanner);
+					rubyNodes.Add(CreateSimpleNode(text, escaping, start, scanner.SerialIndex - start));
 				}
-				ReportErrorIfRubyIsEmptyOrContainsOnlyWhitespaces(rubyNodes, rubyStartIndex);
-				return new CompositeNode(new[] { node }, rubyNodes, start, scanner.SerialIndex - start);
+				if (rubyNodes.Count <= 0)
+				{
+					ErrorSink.ReportError("ルビを省略することはできません。", rubyStartIndex);
+					rubyNodes.Add(new SimpleNode("_", CharacterState.Default, rubyStartIndex, 0));
+				}
+				else if (rubyNodes.All(x => string.IsNullOrWhiteSpace(x.Text)))
+				{
+					ErrorSink.ReportError("ルビを空白文字のみとすることはできません。", rubyStartIndex);
+					rubyNodes.Add(new SimpleNode("_", CharacterState.Default, rubyNodes[rubyNodes.Count - 1].StartIndex + rubyNodes[rubyNodes.Count - 1].Length, 0));
+				}
 			}
-			return node;
+			return rubyNodes;
 		}
 
-		void ReportErrorIfRubyIsEmptyOrContainsOnlyWhitespaces(List<SimpleNode> rubyNodes, int rubyStartIndex)
+		(string Text, bool Escaping) ParseSimpleCharacter(Scanner scanner)
 		{
-			if (rubyNodes.Count <= 0)
-			{
-				ErrorSink.ReportError("ルビを省略することはできません。", rubyStartIndex);
-				rubyNodes.Add(new SimpleNode("_", CharacterState.Default, rubyStartIndex, 0));
-			}
-			else if (rubyNodes.All(x => string.IsNullOrWhiteSpace(x.Text)))
-			{
-				ErrorSink.ReportError("ルビを空白文字のみとすることはできません。", rubyStartIndex);
-				rubyNodes.Add(new SimpleNode("_", CharacterState.Default, rubyNodes[rubyNodes.Count - 1].StartIndex + rubyNodes[rubyNodes.Count - 1].Length, 0));
-			}
-		}
-
-		SimpleNode ParseSimpleNode(Scanner scanner)
-		{
-			var start = scanner.SerialIndex;
 			var escaping = false;
 			if (Accept(scanner, '`'))
 				escaping = true;
@@ -154,7 +141,11 @@ namespace Lyriser
 			}
 			if (char.IsHighSurrogate(sb[sb.Length - 1]) && scanner.Peek() != null && char.IsLowSurrogate((char)scanner.Peek()))
 				sb.Append(scanner.Read());
-			var text = sb.ToString();
+			return (sb.ToString(), escaping);
+		}
+
+		SimpleNode CreateSimpleNode(string text, bool escaping, int start, int length)
+		{
 			var state = CharacterState.Default;
 			if (!escaping)
 			{
@@ -163,7 +154,7 @@ namespace Lyriser
 				else if (text == "}")
 					state = CharacterState.StopGrouping;
 			}
-			return new SimpleNode(text, state, start, scanner.SerialIndex - start);
+			return new SimpleNode(text, state, start, length);
 		}
 
 		[CLSCompliant(false)]
@@ -376,17 +367,18 @@ namespace Lyriser
 
 	class CompositeNode : LyricsNode
 	{
-		public CompositeNode(IEnumerable<SimpleNode> rawText, IEnumerable<SimpleNode> ruby, int start, int length) : base(start, length)
+		public CompositeNode(string text, int baseStart, int baseLength, IEnumerable<SimpleNode> ruby, int start, int length) : base(start, length)
 		{
-			_text = string.Concat(rawText.Select(x => x.Text));
-			RawTextStartIndex = rawText.First().StartIndex;
-			_rawTextLength = rawText.Sum(x => x.Length);
+			_text = text;
+			_baseTextStartIndex = baseStart;
+			_baseTextLength = baseLength;
 			_ruby = ruby.ToArray();
 			_syllableDivision = _ruby.All(x => x.Text == "#" || x.Text == string.Empty);
 		}
 
 		readonly string _text;
-		readonly int _rawTextLength;
+		readonly int _baseTextStartIndex;
+		readonly int _baseTextLength;
 		readonly SimpleNode[] _ruby;
 		readonly bool _syllableDivision;
 
@@ -406,7 +398,7 @@ namespace Lyriser
 		{
 			get
 			{
-				yield return new HighlightToken(RawTextStartIndex, _rawTextLength, Color.Red, Color.Empty);
+				yield return new HighlightToken(_baseTextStartIndex, _baseTextLength, Color.Red, Color.Empty);
 				foreach (var ruby in _ruby)
 				{
 					var phtokens = ruby.Tokens.ToArray();
@@ -416,12 +408,10 @@ namespace Lyriser
 							yield return token;
 					}
 					else
-						yield return new HighlightToken(ruby.StartIndex, ruby.Length, _syllableDivision ? Color.Purple: Color.Blue, Color.Empty);
+						yield return new HighlightToken(ruby.StartIndex, ruby.Length, _syllableDivision ? Color.Purple : Color.Blue, Color.Empty);
 				}
 			}
 		}
-
-		public int RawTextStartIndex { get; }
 
 		public override string ToString() => _text + "(" + string.Concat(_ruby.Select(x => x.Text)) + ")";
 	}
