@@ -13,49 +13,17 @@ namespace Lyriser
 	{
 		public LyricsParser(IErrorSink errorSink) => ErrorSink = errorSink;
 
-		string _line;
-		int _baseIndex;
-		int _lineIndex;
-
-		bool Accept(char ch)
+		bool Accept(Scanner scanner, char ch)
 		{
-			if (Predict(ch))
+			if (Predict(scanner, ch))
 			{
-				_lineIndex++;
+				scanner.Read();
 				return true;
 			}
 			return false;
 		}
 
-		bool Predict(char ch) => _lineIndex < _line.Length && _line[_lineIndex] == ch;
-
-		static string ReadLineWithLength(TextReader reader, out int length)
-		{
-			var sb = new StringBuilder();
-			length = 0;
-			int ch;
-			while (true)
-			{
-				ch = reader.Read();
-				if (ch == -1)
-				{
-					if (sb.Length > 0)
-						return sb.ToString();
-					return null;
-				}
-				length++;
-				if (ch == 13 && reader.Peek() == 10)
-				{
-					reader.Read();
-					length++;
-				}
-				if (ch == 13 || ch == 10)
-					return sb.ToString();
-				sb.Append((char)ch);
-			}
-		}
-
-		int Index => _baseIndex + _lineIndex;
+		bool Predict(Scanner scanner, char ch) => scanner.Peek() == ch;
 
 		public IErrorSink ErrorSink { get; }
 
@@ -80,53 +48,49 @@ namespace Lyriser
 		IEnumerable<LyricsNode[]> Parse(TextReader reader)
 		{
 			ErrorSink.Clear();
-			_baseIndex = 0;
-			while ((_line = ReadLineWithLength(reader, out var len)) != null)
-			{
-				yield return ParseLyricsLine();
-				_baseIndex += len;
-			}
+			var scanner = new Scanner(reader);
+			while (scanner.MoveNextLine())
+				yield return ParseLyricsLine(scanner);
 		}
 
-		LyricsNode[] ParseLyricsLine()
+		LyricsNode[] ParseLyricsLine(Scanner scanner)
 		{
 			var nodes = new List<LyricsNode>();
-			_lineIndex = 0;
-			while (_lineIndex < _line.Length)
-				nodes.Add(ParseLyricsNode());
+			while (scanner.Peek() != null)
+				nodes.Add(ParseLyricsNode(scanner));
 			return nodes.ToArray();
 		}
 
-		LyricsNode ParseLyricsNode()
+		LyricsNode ParseLyricsNode(Scanner scanner)
 		{
-			var start = Index;
-			if (Accept('('))
+			var start = scanner.SerialIndex;
+			if (Accept(scanner, '('))
 			{
 				var nodes = new List<LyricsNode>();
-				while (!Accept(')'))
+				while (!Accept(scanner, ')'))
 				{
-					if (_lineIndex >= _line.Length)
+					if (scanner.Peek() == null)
 					{
-						ErrorSink.ReportError("非発音領域が適切に終了されていません。", Index);
+						ErrorSink.ReportError("非発音領域が適切に終了されていません。", scanner.SerialIndex);
 						break;
 					}
-					nodes.Add(ParseLyricsNode());
+					nodes.Add(ParseLyricsNode(scanner));
 				}
-				return new SkippedNode(nodes, start, Index - start);
+				return new SkippedNode(nodes, start, scanner.SerialIndex - start);
 			}
-			if (Accept('|'))
+			if (Accept(scanner, '|'))
 			{
 				var mainNodes = new List<SimpleNode>();
-				var rubyBaseStartIndex = Index;
+				var rubyBaseStartIndex = scanner.SerialIndex;
 				var rubyNotFound = false;
-				while (!Accept('"'))
+				while (!Accept(scanner, '"'))
 				{
-					if (_lineIndex >= _line.Length)
+					if (scanner.Peek() == null)
 					{
 						rubyNotFound = true;
 						break;
 					}
-					mainNodes.Add(ParseSimpleNode());
+					mainNodes.Add(ParseSimpleNode(scanner));
 				}
 				if (mainNodes.Count <= 0)
 				{
@@ -135,39 +99,39 @@ namespace Lyriser
 				}
 				if (rubyNotFound)
 				{
-					ErrorSink.ReportError("ルビ領域でのルビの開始位置が見つかりません。", Index);
-					return new CompositeNode(mainNodes, new[] { new SimpleNode("_", CharacterState.Default, Index, 0) }, start, Index - start);
+					ErrorSink.ReportError("ルビ領域でのルビの開始位置が見つかりません。", scanner.SerialIndex);
+					return new CompositeNode(mainNodes, new[] { new SimpleNode("_", CharacterState.Default, scanner.SerialIndex, 0) }, start, scanner.SerialIndex - start);
 				}
 				var rubyNodes = new List<SimpleNode>();
-				var rubyStartIndex = Index;
-				while (!Accept('"'))
+				var rubyStartIndex = scanner.SerialIndex;
+				while (!Accept(scanner, '"'))
 				{
-					if (_lineIndex >= _line.Length)
+					if (scanner.Peek() == null)
 					{
-						ErrorSink.ReportError("ルビが適切に終了されていません。", Index);
+						ErrorSink.ReportError("ルビが適切に終了されていません。", scanner.SerialIndex);
 						break;
 					}
-					rubyNodes.Add(ParseSimpleNode());
+					rubyNodes.Add(ParseSimpleNode(scanner));
 				}
 				ReportErrorIfRubyIsEmptyOrContainsOnlyWhitespaces(rubyNodes, rubyStartIndex);
-				return new CompositeNode(mainNodes, rubyNodes, start, Index - start);
+				return new CompositeNode(mainNodes, rubyNodes, start, scanner.SerialIndex - start);
 			}
-			var node = ParseSimpleNode();
-			if (Accept('"'))
+			var node = ParseSimpleNode(scanner);
+			if (Accept(scanner, '"'))
 			{
-				var rubyStartIndex = Index;
+				var rubyStartIndex = scanner.SerialIndex;
 				var rubyNodes = new List<SimpleNode>();
-				while (!Accept('"'))
+				while (!Accept(scanner, '"'))
 				{
-					if (_lineIndex >= _line.Length)
+					if (scanner.Peek() == null)
 					{
-						ErrorSink.ReportError("ルビが適切に終了されていません。", Index);
+						ErrorSink.ReportError("ルビが適切に終了されていません。", scanner.SerialIndex);
 						break;
 					}
-					rubyNodes.Add(ParseSimpleNode());
+					rubyNodes.Add(ParseSimpleNode(scanner));
 				}
 				ReportErrorIfRubyIsEmptyOrContainsOnlyWhitespaces(rubyNodes, rubyStartIndex);
-				return new CompositeNode(new[] { node }, rubyNodes, start, Index - start);
+				return new CompositeNode(new[] { node }, rubyNodes, start, scanner.SerialIndex - start);
 			}
 			return node;
 		}
@@ -186,22 +150,22 @@ namespace Lyriser
 			}
 		}
 
-		SimpleNode ParseSimpleNode()
+		SimpleNode ParseSimpleNode(Scanner scanner)
 		{
-			var start = Index;
+			var start = scanner.SerialIndex;
 			var escaping = false;
-			if (Accept('`'))
+			if (Accept(scanner, '`'))
 				escaping = true;
 			var sb = new StringBuilder();
-			if (_lineIndex < _line.Length)
-				sb.Append(_line[_lineIndex++]);
+			if (scanner.Peek() != null)
+				sb.Append(scanner.Read());
 			else
 			{
-				ErrorSink.ReportError("何らかの文字が必要です。", Index);
+				ErrorSink.ReportError("何らかの文字が必要です。", scanner.SerialIndex);
 				sb.Append('_');
 			}
-			if (char.IsHighSurrogate(sb[sb.Length - 1]) && _lineIndex < _line.Length && char.IsLowSurrogate(_line[_lineIndex]))
-				sb.Append(_line[_lineIndex++]);
+			if (char.IsHighSurrogate(sb[sb.Length - 1]) && scanner.Peek() != null && char.IsLowSurrogate((char)scanner.Peek()))
+				sb.Append(scanner.Read());
 			var text = sb.ToString();
 			var state = CharacterState.Default;
 			if (!escaping)
@@ -211,7 +175,7 @@ namespace Lyriser
 				else if (text == "}")
 					state = CharacterState.StopGrouping;
 			}
-			return new SimpleNode(text, state, start, Index - start);
+			return new SimpleNode(text, state, start, scanner.SerialIndex - start);
 		}
 
 		[CLSCompliant(false)]
@@ -219,6 +183,64 @@ namespace Lyriser
 		{
 			using (var reader = new StringReader(text))
 				return Parse(reader).SelectMany(x => x.SelectMany(y => y.Tokens)).ToArray();
+		}
+	}
+
+	class Scanner
+	{
+		public Scanner(TextReader reader) => _reader = reader;
+
+		TextReader _reader;
+		string _line;
+		int _baseIndex = 0;
+		int _lineIndex;
+		int _lineLengthIncludingNewLineChars = 0;
+
+		public int SerialIndex => _baseIndex + _lineIndex;
+
+		public bool MoveNextLine()
+		{
+			_baseIndex += _lineLengthIncludingNewLineChars;
+			_line = ReadLineWithLength(out _lineLengthIncludingNewLineChars);
+			_lineIndex = 0;
+			return _line != null;
+		}
+
+		public char? Peek() => _line == null || _lineIndex >= _line.Length ? default(char?) : _line[_lineIndex];
+
+		public char Read()
+		{
+			if (_line == null)
+				throw new InvalidOperationException("Already reached end of file.");
+			if (_lineIndex >= _line.Length)
+				throw new InvalidOperationException("Already reached end of line.");
+			return _line[_lineIndex++];
+		}
+
+		string ReadLineWithLength(out int length)
+		{
+			var sb = new StringBuilder();
+			length = 0;
+			int ch;
+			while (true)
+			{
+				ch = _reader.Read();
+				if (ch == -1)
+				{
+					if (sb.Length > 0)
+						return sb.ToString();
+					return null;
+				}
+				length++;
+				if (ch == 13 && _reader.Peek() == 10)
+				{
+					_reader.Read();
+					length++;
+				}
+				if (ch == 13 || ch == 10)
+					return sb.ToString();
+				sb.Append((char)ch);
+			}
 		}
 	}
 
