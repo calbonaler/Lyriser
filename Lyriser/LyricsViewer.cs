@@ -195,7 +195,13 @@ namespace Lyriser
 			var lineIndex = FindNearestLineIndex(point.Y);
 			return lineIndex < 0 ? (0, 0) : (lineIndex, FindNearestSyllableIndex(lineIndex, point.X));
 		}
-		void ScrollInto((int Line, int Column) index)
+		public void ScrollIntoPhysicalLineHead(int physicalLineIndex)
+		{
+			var index = new CharacterIndex(physicalLineIndex, -1, 0);
+			ScrollInto(index, index);
+		}
+		void ScrollInto((int Line, int Column) index) => ScrollInto(m_KeyLines[index.Line][index.Column][0], m_KeyLines[index.Line][index.Column].Last());
+		void ScrollInto(CharacterIndex leftIndex, CharacterIndex rightIndex)
 		{
 			var clientSize = ClientSize;
 			var transform = ViewTransform;
@@ -203,8 +209,8 @@ namespace Lyriser
 			var topLeft = Matrix3x2.TransformPoint(transform, new Vector2());
 			var bottomRight = Matrix3x2.TransformPoint(transform, new Vector2(PixelToDip(clientSize.Width), PixelToDip(clientSize.Height) - NextLineViewerHeight));
 
-			var mostLeftBounds = m_Run.GetCharacterBounds(m_KeyLines[index.Line][index.Column][0]);
-			var mostRightBounds = m_Run.GetCharacterBounds(m_KeyLines[index.Line][index.Column].Last());
+			var mostLeftBounds = m_Run.GetCharacterBounds(leftIndex);
+			var mostRightBounds = m_Run.GetCharacterBounds(rightIndex);
 			var line = new RectangleF() { Left = mostLeftBounds.Left - s_LeftPadding, Top = mostLeftBounds.Bottom - m_Run.LineSpacing.Height - s_TopPadding, Right = mostRightBounds.Right + s_RightPadding, Bottom = mostLeftBounds.Bottom + s_BottomPadding };
 
 			float offsetX = 0;
@@ -827,7 +833,7 @@ namespace Lyriser
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	struct ScrollInfo
+	struct ScrollInto
 	{
 		public int Size;
 		public ScrollInfoMasks Mask;
@@ -841,14 +847,14 @@ namespace Lyriser
 	static class NativeMethods
 	{
 		[DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
-		static extern bool GetScrollInfo(HandleRef hwnd, ScrollBarKind bar, [In, Out] ref ScrollInfo si);
+		static extern bool GetScrollInfo(HandleRef hwnd, ScrollBarKind bar, [In, Out] ref ScrollInto si);
 		[DllImport("user32.dll", ExactSpelling = true)]
-		static extern int SetScrollInfo(HandleRef hwnd, ScrollBarKind bar, [In] in ScrollInfo si, [MarshalAs(UnmanagedType.Bool)] bool redraw);
+		static extern int SetScrollInfo(HandleRef hwnd, ScrollBarKind bar, [In] in ScrollInto si, [MarshalAs(UnmanagedType.Bool)] bool redraw);
 
-		public static ScrollInfo GetScrollInfo(this Control control, ScrollBarKind bar, ScrollInfoMasks mask = ScrollInfoMasks.All)
+		public static ScrollInto GetScrollInfo(this Control control, ScrollBarKind bar, ScrollInfoMasks mask = ScrollInfoMasks.All)
 		{
-			ScrollInfo si = default;
-			si.Size = Marshal.SizeOf<ScrollInfo>();
+			ScrollInto si = default;
+			si.Size = Marshal.SizeOf<ScrollInto>();
 			si.Mask = mask;
 			if (!GetScrollInfo(new HandleRef(control, control.Handle), bar, ref si))
 				Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
@@ -856,8 +862,8 @@ namespace Lyriser
 		}
 		public static int SetScrollInfo(this Control control, ScrollBarKind bar, bool redraw = true, bool disableNoScroll = false, int? minimum = default, int? maximum = default, int? pageSize = default, int? position = default)
 		{
-			ScrollInfo si = default;
-			si.Size = Marshal.SizeOf<ScrollInfo>();
+			ScrollInto si = default;
+			si.Size = Marshal.SizeOf<ScrollInto>();
 			si.Mask = 0;
 			if (minimum.HasValue || maximum.HasValue)
 			{

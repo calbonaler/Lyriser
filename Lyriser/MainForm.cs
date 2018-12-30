@@ -9,10 +9,22 @@ namespace Lyriser
 {
 	public partial class MainForm : Form
 	{
-		public MainForm() => InitializeComponent();
+		public MainForm()
+		{
+			InitializeComponent();
+			autoSetupTimer = new System.Timers.Timer();
+			autoSetupTimer.SynchronizingObject = this;
+			autoSetupTimer.AutoReset = true;
+			autoSetupTimer.Interval = 1000.0;
+			autoSetupTimer.Elapsed += AutoSetupTimer_Elapsed;
+		}
 
 		string savedFilePath;
 		bool isDirty;
+		System.Timers.Timer autoSetupTimer;
+		(AttachedLine Line, CharacterIndex[][] Keys)[] lastSetupLines;
+		(AttachedLine Line, CharacterIndex[][] Keys)[] lastParsedLines;
+		int lastParsedLineIndex;
 
 		void Save()
 		{
@@ -52,7 +64,7 @@ namespace Lyriser
 			base.OnLoad(e);
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
 			txtLyrics.DetectUrls = false;
-			txtLyrics.HighlightTokenizer = new LyricsParser(new ListBoxBoundErrorSink(lstErrors));
+			txtLyrics.HighlightTokenizer = new LyricsParser(new ListBoxBoundErrorSink(lstErrors), LyricsParser_Parsed);
 			miNew_Click(this, e);
 		}
 
@@ -73,7 +85,34 @@ namespace Lyriser
 			tsMain.ImageScalingSize = new Size(tsMain.ImageScalingSize.Width * e.DeviceDpiNew / e.DeviceDpiOld, tsMain.ImageScalingSize.Height * e.DeviceDpiNew / e.DeviceDpiOld);
 		}
 
-		void miRenew_Click(object sender, EventArgs e) => lvMain.Setup(new LyricsParser(new ListBoxBoundErrorSink(lstErrors)).Transform(txtLyrics.Text));
+		void LyricsParser_Parsed((AttachedLine Line, CharacterIndex[][] Keys)[] lines)
+		{
+			lastParsedLines = lines;
+			lastParsedLineIndex = txtLyrics.GetLineFromCharIndex(txtLyrics.SelectionStart);
+			if (lines.Length <= 0)
+			{
+				lvMain.Setup(lines);
+				lastSetupLines = lines;
+				autoSetupTimer.Stop();
+			}
+			else if (!autoSetupTimer.Enabled)
+			{
+				lvMain.Setup(lines);
+				lvMain.ScrollIntoPhysicalLineHead(Math.Min(lastParsedLineIndex, lastParsedLines.Length - 1));
+				lastSetupLines = lines;
+				autoSetupTimer.Start();
+			}
+		}
+
+		void AutoSetupTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			if (lastParsedLines != lastSetupLines)
+			{
+				lvMain.Setup(lastParsedLines);
+				lvMain.ScrollIntoPhysicalLineHead(Math.Min(lastParsedLineIndex, lastParsedLines.Length - 1));
+				lastSetupLines = lastParsedLines;
+			}
+		}
 
 		void miNew_Click(object sender, EventArgs e)
 		{
@@ -81,7 +120,6 @@ namespace Lyriser
 			savedFilePath = null;
 			txtLyrics.Clear();
 			isDirty = false;
-			miRenew_Click(sender, e);
 			Text = string.Format(CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Properties.Resources.Untitled);
 		}
 
@@ -97,7 +135,6 @@ namespace Lyriser
 					txtLyrics.LoadFile(dialog.FileName, RichTextBoxStreamType.PlainText);
 					isDirty = false;
 					savedFilePath = dialog.FileName;
-					miRenew_Click(sender, e);
 					Text = string.Format(CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Path.GetFileName(savedFilePath));
 				}
 			}

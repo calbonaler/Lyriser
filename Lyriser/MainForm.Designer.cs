@@ -13,9 +13,14 @@
 		/// <param name="disposing">マネージ リソースが破棄される場合 true、破棄されない場合は false です。</param>
 		protected override void Dispose(bool disposing)
 		{
-			if (disposing && (components != null))
+			if (disposing)
 			{
-				components.Dispose();
+				components?.Dispose();
+				if (autoSetupTimer != null)
+				{
+					autoSetupTimer.Dispose();
+					autoSetupTimer = null;
+				}
 			}
 			base.Dispose(disposing);
 		}
@@ -29,13 +34,11 @@
 		private void InitializeComponent()
 		{
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-			this.splMain = new System.Windows.Forms.SplitContainer();
+			this.splEdit = new System.Windows.Forms.SplitContainer();
 			this.txtLyrics = new Controls.WindowsForms.SyntaxHighlightingTextBox();
 			this.lstErrors = new System.Windows.Forms.ListBox();
-			this.tcMain = new System.Windows.Forms.TabControl();
-			this.tpView = new System.Windows.Forms.TabPage();
+			this.splMain = new System.Windows.Forms.SplitContainer();
 			this.lvMain = new Lyriser.LyricsViewer();
-			this.tpEdit = new System.Windows.Forms.TabPage();
 			this.msMain = new System.Windows.Forms.MenuStrip();
 			this.miFile = new System.Windows.Forms.ToolStripMenuItem();
 			this.miNew = new System.Windows.Forms.ToolStripMenuItem();
@@ -51,8 +54,6 @@
 			this.miPaste = new System.Windows.Forms.ToolStripMenuItem();
 			this.sepEdit = new System.Windows.Forms.ToolStripSeparator();
 			this.miSelectAll = new System.Windows.Forms.ToolStripMenuItem();
-			this.miParse = new System.Windows.Forms.ToolStripMenuItem();
-			this.miRenew = new System.Windows.Forms.ToolStripMenuItem();
 			this.miOperation = new System.Windows.Forms.ToolStripMenuItem();
 			this.miHighlightNext = new System.Windows.Forms.ToolStripMenuItem();
 			this.miHighlightPrevious = new System.Windows.Forms.ToolStripMenuItem();
@@ -68,30 +69,31 @@
 			this.btnCut = new System.Windows.Forms.ToolStripButton();
 			this.btnCopy = new System.Windows.Forms.ToolStripButton();
 			this.btnPaste = new System.Windows.Forms.ToolStripButton();
+			((System.ComponentModel.ISupportInitialize)(this.splEdit)).BeginInit();
+			this.splEdit.Panel1.SuspendLayout();
+			this.splEdit.Panel2.SuspendLayout();
+			this.splEdit.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splMain)).BeginInit();
 			this.splMain.Panel1.SuspendLayout();
 			this.splMain.Panel2.SuspendLayout();
 			this.splMain.SuspendLayout();
-			this.tcMain.SuspendLayout();
-			this.tpView.SuspendLayout();
-			this.tpEdit.SuspendLayout();
 			this.msMain.SuspendLayout();
 			this.tsMain.SuspendLayout();
 			this.SuspendLayout();
 			// 
-			// splMain
+			// splEdit
 			// 
-			resources.ApplyResources(this.splMain, "splMain");
-			this.splMain.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
-			this.splMain.Name = "splMain";
+			resources.ApplyResources(this.splEdit, "splEdit");
+			this.splEdit.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
+			this.splEdit.Name = "splEdit";
 			// 
-			// splMain.Panel1
+			// splEdit.Panel1
 			// 
-			this.splMain.Panel1.Controls.Add(this.txtLyrics);
+			this.splEdit.Panel1.Controls.Add(this.txtLyrics);
 			// 
-			// splMain.Panel2
+			// splEdit.Panel2
 			// 
-			this.splMain.Panel2.Controls.Add(this.lstErrors);
+			this.splEdit.Panel2.Controls.Add(this.lstErrors);
 			// 
 			// txtLyrics
 			// 
@@ -108,20 +110,18 @@
 			this.lstErrors.Name = "lstErrors";
 			this.lstErrors.DoubleClick += new System.EventHandler(this.lstErrors_DoubleClick);
 			// 
-			// tcMain
+			// splMain
 			// 
-			this.tcMain.Controls.Add(this.tpView);
-			this.tcMain.Controls.Add(this.tpEdit);
-			resources.ApplyResources(this.tcMain, "tcMain");
-			this.tcMain.Name = "tcMain";
-			this.tcMain.SelectedIndex = 0;
+			resources.ApplyResources(this.splMain, "splMain");
+			this.splMain.Name = "splMain";
 			// 
-			// tpView
+			// splMain.Panel1
 			// 
-			this.tpView.Controls.Add(this.lvMain);
-			resources.ApplyResources(this.tpView, "tpView");
-			this.tpView.Name = "tpView";
-			this.tpView.UseVisualStyleBackColor = true;
+			this.splMain.Panel1.Controls.Add(this.lvMain);
+			// 
+			// splMain.Panel2
+			// 
+			this.splMain.Panel2.Controls.Add(this.splEdit);
 			// 
 			// lvMain
 			// 
@@ -129,19 +129,11 @@
 			resources.ApplyResources(this.lvMain, "lvMain");
 			this.lvMain.Name = "lvMain";
 			// 
-			// tpEdit
-			// 
-			this.tpEdit.Controls.Add(this.splMain);
-			resources.ApplyResources(this.tpEdit, "tpEdit");
-			this.tpEdit.Name = "tpEdit";
-			this.tpEdit.UseVisualStyleBackColor = true;
-			// 
 			// msMain
 			// 
 			this.msMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miFile,
             this.miEdit,
-            this.miParse,
             this.miOperation});
 			resources.ApplyResources(this.msMain, "msMain");
 			this.msMain.Name = "msMain";
@@ -238,19 +230,6 @@
 			this.miSelectAll.Name = "miSelectAll";
 			resources.ApplyResources(this.miSelectAll, "miSelectAll");
 			this.miSelectAll.Click += new System.EventHandler(this.miSelectAll_Click);
-			// 
-			// miParse
-			// 
-			this.miParse.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miRenew});
-			this.miParse.Name = "miParse";
-			resources.ApplyResources(this.miParse, "miParse");
-			// 
-			// miRenew
-			// 
-			this.miRenew.Name = "miRenew";
-			resources.ApplyResources(this.miRenew, "miRenew");
-			this.miRenew.Click += new System.EventHandler(this.miRenew_Click);
 			// 
 			// miOperation
 			// 
@@ -363,17 +342,18 @@
 			// 
 			resources.ApplyResources(this, "$this");
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-			this.Controls.Add(this.tcMain);
+			this.Controls.Add(this.splMain);
 			this.Controls.Add(this.tsMain);
 			this.Controls.Add(this.msMain);
 			this.Name = "MainForm";
+			this.splEdit.Panel1.ResumeLayout(false);
+			this.splEdit.Panel2.ResumeLayout(false);
+			((System.ComponentModel.ISupportInitialize)(this.splEdit)).EndInit();
+			this.splEdit.ResumeLayout(false);
 			this.splMain.Panel1.ResumeLayout(false);
 			this.splMain.Panel2.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.splMain)).EndInit();
 			this.splMain.ResumeLayout(false);
-			this.tcMain.ResumeLayout(false);
-			this.tpView.ResumeLayout(false);
-			this.tpEdit.ResumeLayout(false);
 			this.msMain.ResumeLayout(false);
 			this.msMain.PerformLayout();
 			this.tsMain.ResumeLayout(false);
@@ -384,10 +364,6 @@
 		}
 
 		#endregion
-
-		private System.Windows.Forms.TabControl tcMain;
-		private System.Windows.Forms.TabPage tpView;
-		private System.Windows.Forms.TabPage tpEdit;
 		private Controls.WindowsForms.SyntaxHighlightingTextBox txtLyrics;
 		private System.Windows.Forms.MenuStrip msMain;
 		private System.Windows.Forms.ToolStripMenuItem miFile;
@@ -412,18 +388,17 @@
 		private System.Windows.Forms.ToolStripButton btnCut;
 		private System.Windows.Forms.ToolStripButton btnCopy;
 		private System.Windows.Forms.ToolStripButton btnPaste;
-		private System.Windows.Forms.ToolStripMenuItem miParse;
-		private System.Windows.Forms.ToolStripMenuItem miRenew;
 		private System.Windows.Forms.ToolStripMenuItem miOperation;
 		private System.Windows.Forms.ToolStripMenuItem miHighlightNext;
 		private System.Windows.Forms.ToolStripMenuItem miHighlightPrevious;
 		private System.Windows.Forms.ToolStripSeparator sepOperation;
 		private System.Windows.Forms.ToolStripMenuItem miHighlightFirst;
-		private System.Windows.Forms.SplitContainer splMain;
+		private System.Windows.Forms.SplitContainer splEdit;
 		private System.Windows.Forms.ListBox lstErrors;
 		private System.Windows.Forms.ToolStripMenuItem miHighlightNextLine;
 		private System.Windows.Forms.ToolStripMenuItem miHighlightPreviousLine;
 		private LyricsViewer lvMain;
+		private System.Windows.Forms.SplitContainer splMain;
 	}
 }
 

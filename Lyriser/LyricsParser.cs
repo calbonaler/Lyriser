@@ -11,7 +11,13 @@ namespace Lyriser
 {
 	public class LyricsParser : IHighlightTokenizer
 	{
-		public LyricsParser(IErrorSink errorSink) => ErrorSink = errorSink;
+		public LyricsParser(IErrorSink errorSink, Action<(AttachedLine Line, CharacterIndex[][] Keys)[]> onParsed)
+		{
+			ErrorSink = errorSink;
+			_onParsed = onParsed;
+		}
+
+		readonly Action<(AttachedLine Line, CharacterIndex[][] Keys)[]> _onParsed;
 
 		bool Accept(Scanner scanner, char ch)
 		{
@@ -26,24 +32,6 @@ namespace Lyriser
 		bool Predict(Scanner scanner, char ch) => scanner.Peek() == ch;
 
 		public IErrorSink ErrorSink { get; }
-
-		public IEnumerable<(AttachedLine Line, CharacterIndex[][] Keys)> Transform(string source)
-		{
-			using (var reader = new StringReader(source))
-			{
-				var lineIndex = 0;
-				foreach (var nodes in Parse(reader))
-				{
-					var baseTextBuilder = new StringBuilder();
-					var attachedSpecs = new List<AttachedSpecifier>();
-					var keyStore = new KeyStore();
-					foreach (var node in nodes)
-						node.Transform(lineIndex, baseTextBuilder, attachedSpecs, keyStore);
-					yield return (new AttachedLine(baseTextBuilder.ToString(), attachedSpecs), keyStore.ToArray());
-					lineIndex++;
-				}
-			}
-		}
 
 		IEnumerable<LyricsNode[]> Parse(TextReader reader)
 		{
@@ -182,7 +170,26 @@ namespace Lyriser
 		public IEnumerable<HighlightToken> GetTokens(string text)
 		{
 			using (var reader = new StringReader(text))
-				return Parse(reader).SelectMany(x => x.SelectMany(y => y.Tokens)).ToArray();
+			{
+				var tokens = new List<HighlightToken>();
+				var lines = new List<(AttachedLine Line, CharacterIndex[][] Keys)>();
+				var lineIndex = 0;
+				foreach (var nodes in Parse(reader))
+				{
+					var baseTextBuilder = new StringBuilder();
+					var attachedSpecs = new List<AttachedSpecifier>();
+					var keyStore = new KeyStore();
+					foreach (var node in nodes)
+					{
+						tokens.AddRange(node.Tokens);
+						node.Transform(lineIndex, baseTextBuilder, attachedSpecs, keyStore);
+					}
+					lines.Add((new AttachedLine(baseTextBuilder.ToString(), attachedSpecs), keyStore.ToArray()));
+					lineIndex++;
+				}
+				_onParsed(lines.ToArray());
+				return tokens.ToArray();
+			}
 		}
 	}
 
