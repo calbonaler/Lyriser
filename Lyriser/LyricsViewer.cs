@@ -21,6 +21,7 @@ namespace Lyriser
 			m_WriteFactory = new DWriteFactory();
 			m_Run = new TextRun(m_WriteFactory, Font);
 			m_NextRun = new TextRun(m_WriteFactory, Font);
+			m_KeyLines = new CharacterIndex[0][][];
 		}
 		protected override void Dispose(bool disposing)
 		{
