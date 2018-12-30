@@ -120,8 +120,8 @@ namespace Lyriser
 				dialog.AlwaysAppendDefaultExtension = true;
 				if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
 				{
-					Save();
 					savedFilePath = dialog.FileName;
+					Save();
 					Text = string.Format(CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Path.GetFileName(savedFilePath));
 				}
 			}
