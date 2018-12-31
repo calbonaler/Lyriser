@@ -13,14 +13,9 @@
 		/// <param name="disposing">マネージ リソースが破棄される場合 true、破棄されない場合は false です。</param>
 		protected override void Dispose(bool disposing)
 		{
-			if (disposing)
+			if (disposing && components != null)
 			{
-				components?.Dispose();
-				if (autoSetupTimer != null)
-				{
-					autoSetupTimer.Dispose();
-					autoSetupTimer = null;
-				}
+				components.Dispose();
 			}
 			base.Dispose(disposing);
 		}
@@ -38,7 +33,6 @@
 			this.txtLyrics = new Controls.WindowsForms.SyntaxHighlightingTextBox();
 			this.lstErrors = new System.Windows.Forms.ListBox();
 			this.splMain = new System.Windows.Forms.SplitContainer();
-			this.lvMain = new Lyriser.LyricsViewer();
 			this.msMain = new System.Windows.Forms.MenuStrip();
 			this.miFile = new System.Windows.Forms.ToolStripMenuItem();
 			this.miNew = new System.Windows.Forms.ToolStripMenuItem();
@@ -69,6 +63,7 @@
 			this.btnCut = new System.Windows.Forms.ToolStripButton();
 			this.btnCopy = new System.Windows.Forms.ToolStripButton();
 			this.btnPaste = new System.Windows.Forms.ToolStripButton();
+			this.lvMain = new Lyriser.LyricsViewer();
 			((System.ComponentModel.ISupportInitialize)(this.splEdit)).BeginInit();
 			this.splEdit.Panel1.SuspendLayout();
 			this.splEdit.Panel2.SuspendLayout();
@@ -89,17 +84,20 @@
 			// 
 			// splEdit.Panel1
 			// 
+			resources.ApplyResources(this.splEdit.Panel1, "splEdit.Panel1");
 			this.splEdit.Panel1.Controls.Add(this.txtLyrics);
 			// 
 			// splEdit.Panel2
 			// 
+			resources.ApplyResources(this.splEdit.Panel2, "splEdit.Panel2");
 			this.splEdit.Panel2.Controls.Add(this.lstErrors);
 			// 
 			// txtLyrics
 			// 
-			this.txtLyrics.BorderStyle = System.Windows.Forms.BorderStyle.None;
 			resources.ApplyResources(this.txtLyrics, "txtLyrics");
+			this.txtLyrics.BorderStyle = System.Windows.Forms.BorderStyle.None;
 			this.txtLyrics.HighlightTokenizer = null;
+			this.txtLyrics.HighlightWaitTime = 250D;
 			this.txtLyrics.Name = "txtLyrics";
 			this.txtLyrics.TextChanged += new System.EventHandler(this.txtLyrics_TextChanged);
 			// 
@@ -117,29 +115,26 @@
 			// 
 			// splMain.Panel1
 			// 
+			resources.ApplyResources(this.splMain.Panel1, "splMain.Panel1");
 			this.splMain.Panel1.Controls.Add(this.lvMain);
 			// 
 			// splMain.Panel2
 			// 
+			resources.ApplyResources(this.splMain.Panel2, "splMain.Panel2");
 			this.splMain.Panel2.Controls.Add(this.splEdit);
-			// 
-			// lvMain
-			// 
-			this.lvMain.BackColor = System.Drawing.Color.White;
-			resources.ApplyResources(this.lvMain, "lvMain");
-			this.lvMain.Name = "lvMain";
 			// 
 			// msMain
 			// 
+			resources.ApplyResources(this.msMain, "msMain");
 			this.msMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miFile,
             this.miEdit,
             this.miOperation});
-			resources.ApplyResources(this.msMain, "msMain");
 			this.msMain.Name = "msMain";
 			// 
 			// miFile
 			// 
+			resources.ApplyResources(this.miFile, "miFile");
 			this.miFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miNew,
             this.miOpen,
@@ -149,7 +144,6 @@
             this.sepFile2,
             this.miExit});
 			this.miFile.Name = "miFile";
-			resources.ApplyResources(this.miFile, "miFile");
 			// 
 			// miNew
 			// 
@@ -165,8 +159,8 @@
 			// 
 			// sepFile1
 			// 
-			this.sepFile1.Name = "sepFile1";
 			resources.ApplyResources(this.sepFile1, "sepFile1");
+			this.sepFile1.Name = "sepFile1";
 			// 
 			// miSave
 			// 
@@ -176,23 +170,24 @@
 			// 
 			// miSaveAs
 			// 
-			this.miSaveAs.Name = "miSaveAs";
 			resources.ApplyResources(this.miSaveAs, "miSaveAs");
+			this.miSaveAs.Name = "miSaveAs";
 			this.miSaveAs.Click += new System.EventHandler(this.miSaveAs_Click);
 			// 
 			// sepFile2
 			// 
-			this.sepFile2.Name = "sepFile2";
 			resources.ApplyResources(this.sepFile2, "sepFile2");
+			this.sepFile2.Name = "sepFile2";
 			// 
 			// miExit
 			// 
-			this.miExit.Name = "miExit";
 			resources.ApplyResources(this.miExit, "miExit");
+			this.miExit.Name = "miExit";
 			this.miExit.Click += new System.EventHandler(this.miExit_Click);
 			// 
 			// miEdit
 			// 
+			resources.ApplyResources(this.miEdit, "miEdit");
 			this.miEdit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miCut,
             this.miCopy,
@@ -200,7 +195,6 @@
             this.sepEdit,
             this.miSelectAll});
 			this.miEdit.Name = "miEdit";
-			resources.ApplyResources(this.miEdit, "miEdit");
 			// 
 			// miCut
 			// 
@@ -222,17 +216,18 @@
 			// 
 			// sepEdit
 			// 
-			this.sepEdit.Name = "sepEdit";
 			resources.ApplyResources(this.sepEdit, "sepEdit");
+			this.sepEdit.Name = "sepEdit";
 			// 
 			// miSelectAll
 			// 
-			this.miSelectAll.Name = "miSelectAll";
 			resources.ApplyResources(this.miSelectAll, "miSelectAll");
+			this.miSelectAll.Name = "miSelectAll";
 			this.miSelectAll.Click += new System.EventHandler(this.miSelectAll_Click);
 			// 
 			// miOperation
 			// 
+			resources.ApplyResources(this.miOperation, "miOperation");
 			this.miOperation.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miHighlightNext,
             this.miHighlightPrevious,
@@ -241,41 +236,40 @@
             this.sepOperation,
             this.miHighlightFirst});
 			this.miOperation.Name = "miOperation";
-			resources.ApplyResources(this.miOperation, "miOperation");
 			// 
 			// miHighlightNext
 			// 
-			this.miHighlightNext.Name = "miHighlightNext";
 			resources.ApplyResources(this.miHighlightNext, "miHighlightNext");
+			this.miHighlightNext.Name = "miHighlightNext";
 			this.miHighlightNext.Click += new System.EventHandler(this.miHighlightNext_Click);
 			// 
 			// miHighlightPrevious
 			// 
-			this.miHighlightPrevious.Name = "miHighlightPrevious";
 			resources.ApplyResources(this.miHighlightPrevious, "miHighlightPrevious");
+			this.miHighlightPrevious.Name = "miHighlightPrevious";
 			this.miHighlightPrevious.Click += new System.EventHandler(this.miHighlightPrevious_Click);
 			// 
 			// miHighlightNextLine
 			// 
-			this.miHighlightNextLine.Name = "miHighlightNextLine";
 			resources.ApplyResources(this.miHighlightNextLine, "miHighlightNextLine");
+			this.miHighlightNextLine.Name = "miHighlightNextLine";
 			this.miHighlightNextLine.Click += new System.EventHandler(this.miHighlightNextLine_Click);
 			// 
 			// miHighlightPreviousLine
 			// 
-			this.miHighlightPreviousLine.Name = "miHighlightPreviousLine";
 			resources.ApplyResources(this.miHighlightPreviousLine, "miHighlightPreviousLine");
+			this.miHighlightPreviousLine.Name = "miHighlightPreviousLine";
 			this.miHighlightPreviousLine.Click += new System.EventHandler(this.miHighlightPreviousLine_Click);
 			// 
 			// sepOperation
 			// 
-			this.sepOperation.Name = "sepOperation";
 			resources.ApplyResources(this.sepOperation, "sepOperation");
+			this.sepOperation.Name = "sepOperation";
 			// 
 			// miHighlightFirst
 			// 
-			this.miHighlightFirst.Name = "miHighlightFirst";
 			resources.ApplyResources(this.miHighlightFirst, "miHighlightFirst");
+			this.miHighlightFirst.Name = "miHighlightFirst";
 			this.miHighlightFirst.Click += new System.EventHandler(this.miHighlightFirst_Click);
 			// 
 			// tsMain
@@ -293,50 +287,56 @@
 			// 
 			// btnNew
 			// 
-			this.btnNew.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			resources.ApplyResources(this.btnNew, "btnNew");
+			this.btnNew.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.btnNew.Name = "btnNew";
 			this.btnNew.Click += new System.EventHandler(this.miNew_Click);
 			// 
 			// btnOpen
 			// 
-			this.btnOpen.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			resources.ApplyResources(this.btnOpen, "btnOpen");
+			this.btnOpen.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.btnOpen.Name = "btnOpen";
 			this.btnOpen.Click += new System.EventHandler(this.miOpen_Click);
 			// 
 			// btnSave
 			// 
-			this.btnSave.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			resources.ApplyResources(this.btnSave, "btnSave");
+			this.btnSave.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.btnSave.Name = "btnSave";
 			this.btnSave.Click += new System.EventHandler(this.miSave_Click);
 			// 
 			// sepToolStrip1
 			// 
-			this.sepToolStrip1.Name = "sepToolStrip1";
 			resources.ApplyResources(this.sepToolStrip1, "sepToolStrip1");
+			this.sepToolStrip1.Name = "sepToolStrip1";
 			// 
 			// btnCut
 			// 
-			this.btnCut.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			resources.ApplyResources(this.btnCut, "btnCut");
+			this.btnCut.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.btnCut.Name = "btnCut";
 			this.btnCut.Click += new System.EventHandler(this.miCut_Click);
 			// 
 			// btnCopy
 			// 
-			this.btnCopy.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			resources.ApplyResources(this.btnCopy, "btnCopy");
+			this.btnCopy.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.btnCopy.Name = "btnCopy";
 			this.btnCopy.Click += new System.EventHandler(this.miCopy_Click);
 			// 
 			// btnPaste
 			// 
-			this.btnPaste.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			resources.ApplyResources(this.btnPaste, "btnPaste");
+			this.btnPaste.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.btnPaste.Name = "btnPaste";
 			this.btnPaste.Click += new System.EventHandler(this.miPaste_Click);
+			// 
+			// lvMain
+			// 
+			resources.ApplyResources(this.lvMain, "lvMain");
+			this.lvMain.BackColor = System.Drawing.Color.White;
+			this.lvMain.Name = "lvMain";
 			// 
 			// MainForm
 			// 

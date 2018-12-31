@@ -9,22 +9,10 @@ namespace Lyriser
 {
 	public partial class MainForm : Form
 	{
-		public MainForm()
-		{
-			InitializeComponent();
-			autoSetupTimer = new System.Timers.Timer();
-			autoSetupTimer.SynchronizingObject = this;
-			autoSetupTimer.AutoReset = true;
-			autoSetupTimer.Interval = 1000.0;
-			autoSetupTimer.Elapsed += AutoSetupTimer_Elapsed;
-		}
+		public MainForm() => InitializeComponent();
 
 		string savedFilePath;
 		bool isDirty;
-		System.Timers.Timer autoSetupTimer;
-		(AttachedLine Line, CharacterIndex[][] Keys)[] lastSetupLines;
-		(AttachedLine Line, CharacterIndex[][] Keys)[] lastParsedLines;
-		int lastParsedLineIndex;
 
 		void Save()
 		{
@@ -87,31 +75,8 @@ namespace Lyriser
 
 		void LyricsParser_Parsed((AttachedLine Line, CharacterIndex[][] Keys)[] lines)
 		{
-			lastParsedLines = lines;
-			lastParsedLineIndex = txtLyrics.GetLineFromCharIndex(txtLyrics.SelectionStart);
-			if (lines.Length <= 0)
-			{
-				lvMain.Setup(lines);
-				lastSetupLines = lines;
-				autoSetupTimer.Stop();
-			}
-			else if (!autoSetupTimer.Enabled)
-			{
-				lvMain.Setup(lines);
-				lvMain.ScrollIntoPhysicalLineHead(Math.Min(lastParsedLineIndex, lastParsedLines.Length - 1));
-				lastSetupLines = lines;
-				autoSetupTimer.Start();
-			}
-		}
-
-		void AutoSetupTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-		{
-			if (lastParsedLines != lastSetupLines)
-			{
-				lvMain.Setup(lastParsedLines);
-				lvMain.ScrollIntoPhysicalLineHead(Math.Min(lastParsedLineIndex, lastParsedLines.Length - 1));
-				lastSetupLines = lastParsedLines;
-			}
+			lvMain.Setup(lines);
+			lvMain.ScrollIntoPhysicalLineHead(Math.Min(txtLyrics.GetLineFromCharIndex(txtLyrics.SelectionStart), lines.Length - 1));
 		}
 
 		void miNew_Click(object sender, EventArgs e)

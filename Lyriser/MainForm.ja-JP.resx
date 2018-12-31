@@ -118,12 +118,6 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="miFile.Size" type="System.Drawing.Size, System.Drawing">
-    <value>67, 20</value>
-  </data>
-  <data name="miFile.Text" xml:space="preserve">
-    <value>ファイル(&amp;F)</value>
-  </data>
   <data name="miNew.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
@@ -203,11 +197,11 @@
   <data name="miExit.Text" xml:space="preserve">
     <value>終了(&amp;X)</value>
   </data>
-  <data name="miEdit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>57, 20</value>
+  <data name="miFile.Size" type="System.Drawing.Size, System.Drawing">
+    <value>67, 20</value>
   </data>
-  <data name="miEdit.Text" xml:space="preserve">
-    <value>編集(&amp;E)</value>
+  <data name="miFile.Text" xml:space="preserve">
+    <value>ファイル(&amp;F)</value>
   </data>
   <data name="miCut.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -279,11 +273,11 @@
   <data name="miSelectAll.Text" xml:space="preserve">
     <value>すべて選択(&amp;A)</value>
   </data>
-  <data name="miOperation.Size" type="System.Drawing.Size, System.Drawing">
-    <value>60, 20</value>
+  <data name="miEdit.Size" type="System.Drawing.Size, System.Drawing">
+    <value>57, 20</value>
   </data>
-  <data name="miOperation.Text" xml:space="preserve">
-    <value>操作(&amp;O)</value>
+  <data name="miEdit.Text" xml:space="preserve">
+    <value>編集(&amp;E)</value>
   </data>
   <data name="miHighlightNext.Size" type="System.Drawing.Size, System.Drawing">
     <value>217, 22</value>
@@ -317,6 +311,12 @@
   </data>
   <data name="miHighlightFirst.Text" xml:space="preserve">
     <value>最初をハイライト(&amp;F)</value>
+  </data>
+  <data name="miOperation.Size" type="System.Drawing.Size, System.Drawing">
+    <value>60, 20</value>
+  </data>
+  <data name="miOperation.Text" xml:space="preserve">
+    <value>操作(&amp;O)</value>
   </data>
   <data name="btnNew.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -424,6 +424,6 @@
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>Inherit</value>
+    <value>NoControl</value>
   </data>
 </root>
