@@ -12,17 +12,17 @@ namespace Lyriser
 		public MainForm() => InitializeComponent();
 
 		string savedFilePath;
-		bool isDirty;
+		string lastSavedText;
 
 		void Save()
 		{
 			txtLyrics.SaveFile(savedFilePath, RichTextBoxStreamType.PlainText);
-			isDirty = false;
+			lastSavedText = txtLyrics.Text;
 		}
 
 		bool ConfirmSaveChanges()
 		{
-			if (!isDirty)
+			if (lastSavedText == txtLyrics.Text)
 				return true;
 			using (var dialog = new TaskDialog())
 			{
@@ -53,6 +53,7 @@ namespace Lyriser
 			txtLyrics.LanguageOption = RichTextBoxLanguageOptions.UIFonts;
 			txtLyrics.DetectUrls = false;
 			txtLyrics.HighlightTokenizer = new LyricsParser(new ListBoxBoundErrorSink(lstErrors), LyricsParser_Parsed);
+			lastSavedText = txtLyrics.Text;
 			miNew_Click(this, e);
 		}
 
@@ -76,7 +77,8 @@ namespace Lyriser
 		void LyricsParser_Parsed((AttachedLine Line, CharacterIndex[][] Keys)[] lines)
 		{
 			lvMain.Setup(lines);
-			lvMain.ScrollIntoPhysicalLineHead(Math.Min(txtLyrics.GetLineFromCharIndex(txtLyrics.SelectionStart), lines.Length - 1));
+			if (lines.Length > 0)
+				lvMain.ScrollIntoPhysicalLineHead(Math.Min(txtLyrics.GetLineFromCharIndex(txtLyrics.SelectionStart), lines.Length - 1));
 		}
 
 		void miNew_Click(object sender, EventArgs e)
@@ -84,7 +86,7 @@ namespace Lyriser
 			if (!ConfirmSaveChanges()) return;
 			savedFilePath = null;
 			txtLyrics.Clear();
-			isDirty = false;
+			lastSavedText = txtLyrics.Text;
 			Text = string.Format(CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Properties.Resources.Untitled);
 		}
 
@@ -98,7 +100,7 @@ namespace Lyriser
 				if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
 				{
 					txtLyrics.LoadFile(dialog.FileName, RichTextBoxStreamType.PlainText);
-					isDirty = false;
+					lastSavedText = txtLyrics.Text;
 					savedFilePath = dialog.FileName;
 					Text = string.Format(CultureInfo.CurrentCulture, Properties.Resources.TitleFormat, Path.GetFileName(savedFilePath));
 				}
@@ -148,8 +150,6 @@ namespace Lyriser
 		void miHighlightPreviousLine_Click(object sender, EventArgs e) => lvMain.HighlightNextLine(false);
 
 		void miHighlightFirst_Click(object sender, EventArgs e) => lvMain.HighlightFirst();
-
-		void txtLyrics_TextChanged(object sender, EventArgs e) => isDirty = true;
 
 		void lstErrors_DoubleClick(object sender, EventArgs e)
 		{

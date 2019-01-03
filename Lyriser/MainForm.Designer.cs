@@ -99,7 +99,6 @@
 			this.txtLyrics.HighlightTokenizer = null;
 			this.txtLyrics.HighlightWaitTime = 250D;
 			this.txtLyrics.Name = "txtLyrics";
-			this.txtLyrics.TextChanged += new System.EventHandler(this.txtLyrics_TextChanged);
 			// 
 			// lstErrors
 			// 
