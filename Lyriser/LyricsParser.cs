@@ -188,7 +188,7 @@ namespace Lyriser
 	{
 		public Scanner(TextReader reader) => _reader = reader;
 
-		TextReader _reader;
+		readonly TextReader _reader;
 		string _line;
 		int _baseIndex = 0;
 		int _lineIndex;
@@ -208,10 +208,8 @@ namespace Lyriser
 
 		public char Read()
 		{
-			if (_line == null)
+			if (_line == null || _lineIndex >= _line.Length)
 				throw new InvalidOperationException("Already reached end of file.");
-			if (_lineIndex >= _line.Length)
-				throw new InvalidOperationException("Already reached end of line.");
 			return _line[_lineIndex++];
 		}
 

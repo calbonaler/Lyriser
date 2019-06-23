@@ -141,9 +141,9 @@ namespace Lyriser
 
 		void miSelectAll_Click(object sender, EventArgs e) => txtLyrics.SelectAll();
 
-		void miHighlightNext_Click(object sender, EventArgs e) => lvMain.HighlightNext();
+		void miHighlightNext_Click(object sender, EventArgs e) => lvMain.HighlightNext(true);
 
-		void miHighlightPrevious_Click(object sender, EventArgs e) => lvMain.HighlightPrevious();
+		void miHighlightPrevious_Click(object sender, EventArgs e) => lvMain.HighlightNext(false);
 
 		void miHighlightNextLine_Click(object sender, EventArgs e) => lvMain.HighlightNextLine(true);
 
@@ -178,7 +178,7 @@ namespace Lyriser
 		{
 			public ListBoxBoundErrorSink(ListBox listBox) => _listBox = listBox;
 
-			ListBox _listBox;
+			readonly ListBox _listBox;
 
 			public void ReportError(string description, int index) => _listBox.Items.Add(new ErrorInfo(description, index));
 

@@ -76,21 +76,19 @@ namespace Lyriser
 			UpdateScrollInfo();
 			HighlightFirst();
 		}
-		public void HighlightPrevious()
+		public void HighlightNext(bool forward)
 		{
-			if (Index.Column > 0)
-				Index = (Index.Line, Index.Column - 1);
-			else if (Index.Line > 0)
-				Index = (Index.Line - 1, m_KeyLines[Index.Line - 1].Length - 1);
-			Invalidate();
-			ScrollInto(Index);
-		}
-		public void HighlightNext()
-		{
-			if (Index.Column < m_KeyLines[Index.Line].Length - 1)
-				Index = (Index.Line, Index.Column + 1);
-			else if (Index.Line < m_KeyLines.Length - 1)
-				Index = (Index.Line + 1, 0);
+			var newLineIndex = Index.Line;
+			var newColumnIndex = Index.Column + (forward ? 1 : -1);
+			if (newColumnIndex >= 0 && newColumnIndex < m_KeyLines[newLineIndex].Length)
+				Index = (newLineIndex, newColumnIndex);
+			else
+			{
+				newLineIndex += forward ? 1 : -1;
+				newColumnIndex = forward ? 0 : m_KeyLines[newLineIndex].Length - 1;
+				if (newLineIndex >= 0 && newLineIndex < m_KeyLines.Length)
+					Index = (newLineIndex, newColumnIndex);
+			}
 			Invalidate();
 			ScrollInto(Index);
 		}
@@ -98,16 +96,9 @@ namespace Lyriser
 		{
 			var subKeys = m_KeyLines[Index.Line][Index.Column];
 			var centerX = (m_Run.GetCharacterBounds(subKeys[0]).Left + m_Run.GetCharacterBounds(subKeys.Last()).Right) / 2.0f;
-			if (!forward)
-			{
-				if (Index.Line > 0)
-					Index = (Index.Line - 1, FindNearestSyllableIndex(Index.Line - 1, centerX));
-			}
-			else
-			{
-				if (Index.Line < m_KeyLines.Length - 1)
-					Index = (Index.Line + 1, FindNearestSyllableIndex(Index.Line + 1, centerX));
-			}
+			var newLineIndex = Index.Line + (forward ? 1 : -1);
+			if (newLineIndex >= 0 && newLineIndex < m_KeyLines.Length)
+				Index = (newLineIndex, FindNearestSyllableIndex(newLineIndex, centerX));
 			Invalidate();
 			ScrollInto(Index);
 		}
@@ -115,14 +106,15 @@ namespace Lyriser
 		{
 			Index = (0, 0);
 			Invalidate();
-			ScrollPositionX = 0;
-			ScrollPositionY = 0;
+			ScrollPositionX = this.GetScrollInfo(ScrollBarKind.Horizontal, ScrollInfoMasks.Range).Minimum;
+			ScrollPositionY = this.GetScrollInfo(ScrollBarKind.Vertical, ScrollInfoMasks.Range).Minimum;
 		}
 		public void HighlightLast()
 		{
 			Index = (m_KeyLines.Length - 1, m_KeyLines.Last().Length - 1);
 			Invalidate();
-			ScrollInto(Index);
+			ScrollPositionX = this.GetScrollInfo(ScrollBarKind.Horizontal, ScrollInfoMasks.Range).Maximum;
+			ScrollPositionY = this.GetScrollInfo(ScrollBarKind.Vertical, ScrollInfoMasks.Range).Maximum;
 		}
 		void UpdateNextLineViewer()
 		{
@@ -355,14 +347,14 @@ namespace Lyriser
 				if (e.Control)
 					HighlightFirst();
 				else
-					HighlightPrevious();
+					HighlightNext(false);
 			}
 			else if (e.KeyCode == Keys.Right)
 			{
 				if (e.Control)
 					HighlightLast();
 				else
-					HighlightNext();
+					HighlightNext(true);
 			}
 			else if (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down)
 				HighlightNextLine(e.KeyCode == Keys.Down);
@@ -802,12 +794,6 @@ namespace Lyriser
 			storage = value;
 		}
 		public static void SafeDispose<T>(ref T storage) where T : IDisposable => AssignWithDispose(ref storage, default);
-		public static T Exchange<T>(ref T storage, T value)
-		{
-			var old = storage;
-			storage = value;
-			return old;
-		}
 		public static Color4 ToColor4(this System.Drawing.Color color) => new Color4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
 		public static (string FamilyName, FontWeight Weight, FontStyle Style, FontStretch Stretch, float Size) GetFontFromDrawingFont(DWriteFactory factory, System.Drawing.Font drawingFont)
 		{
@@ -834,7 +820,7 @@ namespace Lyriser
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	struct ScrollInto
+	struct ScrollInfo
 	{
 		public int Size;
 		public ScrollInfoMasks Mask;
@@ -848,14 +834,14 @@ namespace Lyriser
 	static class NativeMethods
 	{
 		[DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
-		static extern bool GetScrollInfo(HandleRef hwnd, ScrollBarKind bar, [In, Out] ref ScrollInto si);
+		static extern bool GetScrollInfo(HandleRef hwnd, ScrollBarKind bar, [In, Out] ref ScrollInfo si);
 		[DllImport("user32.dll", ExactSpelling = true)]
-		static extern int SetScrollInfo(HandleRef hwnd, ScrollBarKind bar, [In] in ScrollInto si, [MarshalAs(UnmanagedType.Bool)] bool redraw);
+		static extern int SetScrollInfo(HandleRef hwnd, ScrollBarKind bar, [In] in ScrollInfo si, [MarshalAs(UnmanagedType.Bool)] bool redraw);
 
-		public static ScrollInto GetScrollInfo(this Control control, ScrollBarKind bar, ScrollInfoMasks mask = ScrollInfoMasks.All)
+		public static ScrollInfo GetScrollInfo(this Control control, ScrollBarKind bar, ScrollInfoMasks mask = ScrollInfoMasks.All)
 		{
-			ScrollInto si = default;
-			si.Size = Marshal.SizeOf<ScrollInto>();
+			ScrollInfo si = default;
+			si.Size = Marshal.SizeOf<ScrollInfo>();
 			si.Mask = mask;
 			if (!GetScrollInfo(new HandleRef(control, control.Handle), bar, ref si))
 				Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
@@ -863,8 +849,8 @@ namespace Lyriser
 		}
 		public static int SetScrollInfo(this Control control, ScrollBarKind bar, bool redraw = true, bool disableNoScroll = false, int? minimum = default, int? maximum = default, int? pageSize = default, int? position = default)
 		{
-			ScrollInto si = default;
-			si.Size = Marshal.SizeOf<ScrollInto>();
+			ScrollInfo si = default;
+			si.Size = Marshal.SizeOf<ScrollInfo>();
 			si.Mask = 0;
 			if (minimum.HasValue || maximum.HasValue)
 			{
