@@ -85,9 +85,11 @@ namespace Lyriser
 			else
 			{
 				newLineIndex += forward ? 1 : -1;
-				newColumnIndex = forward ? 0 : m_KeyLines[newLineIndex].Length - 1;
 				if (newLineIndex >= 0 && newLineIndex < m_KeyLines.Length)
+				{
+					newColumnIndex = forward ? 0 : m_KeyLines[newLineIndex].Length - 1;
 					Index = (newLineIndex, newColumnIndex);
+				}
 			}
 			Invalidate();
 			ScrollInto(Index);
