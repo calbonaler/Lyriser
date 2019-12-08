@@ -3,142 +3,69 @@
 //     このコードはツールによって生成されました。
 //     ランタイム バージョン:4.0.30319.42000
 //
-//     このファイルへの変更は、以下の状況下で不正な動作の原因になったり、
-//     コードが再生成されるときに損失したりします。
+//     このファイルへの変更は、正しくない動作の原因になったり、
+//     コードが再生成されるときに失われたりします。
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Lyriser.Properties {
-    using System;
-    
-    
-    /// <summary>
-    ///   ローカライズされた文字列などを検索するための、厳密に型指定されたリソース クラスです。
-    /// </summary>
-    // このクラスは StronglyTypedResourceBuilder クラスが ResGen
-    // または Visual Studio のようなツールを使用して自動生成されました。
-    // メンバーを追加または削除するには、.ResX ファイルを編集して、/str オプションと共に
-    // ResGen を実行し直すか、または VS プロジェクトをビルドし直します。
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
-        
-        private static global::System.Resources.ResourceManager resourceMan;
-        
-        private static global::System.Globalization.CultureInfo resourceCulture;
-        
-        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Resources() {
-        }
-        
-        /// <summary>
-        ///   このクラスで使用されているキャッシュされた ResourceManager インスタンスを返します。
-        /// </summary>
-        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
-            get {
-                if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Lyriser.Properties.Resources", typeof(Resources).Assembly);
-                    resourceMan = temp;
-                }
-                return resourceMan;
-            }
-        }
-        
-        /// <summary>
-        ///   すべてについて、現在のスレッドの CurrentUICulture プロパティをオーバーライドします
-        ///   現在のスレッドの CurrentUICulture プロパティをオーバーライドします。
-        /// </summary>
-        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
-            get {
-                return resourceCulture;
-            }
-            set {
-                resourceCulture = value;
-            }
-        }
-        
-        /// <summary>
-        ///   キャンセル に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CancelButtonText {
-            get {
-                return ResourceManager.GetString("CancelButtonText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   {0} への変更内容を保存しますか? に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string ConfirmSaveChangesMessageFormat {
-            get {
-                return ResourceManager.GetString("ConfirmSaveChangesMessageFormat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   保存しない(&amp;N) に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DoNotSaveButtonText {
-            get {
-                return ResourceManager.GetString("DoNotSaveButtonText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   txt に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string LyricsFileDefaultExtension {
-            get {
-                return ResourceManager.GetString("LyricsFileDefaultExtension", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   *.txt に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string LyricsFileFilterExtensionList {
-            get {
-                return ResourceManager.GetString("LyricsFileFilterExtensionList", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   テキストファイル に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string LyricsFileFilterName {
-            get {
-                return ResourceManager.GetString("LyricsFileFilterName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   保存する(&amp;S) に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string SaveButtonText {
-            get {
-                return ResourceManager.GetString("SaveButtonText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   {0} - Lyriser に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string TitleFormat {
-            get {
-                return ResourceManager.GetString("TitleFormat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   無題 に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string Untitled {
-            get {
-                return ResourceManager.GetString("Untitled", resourceCulture);
-            }
-        }
-    }
+namespace Lyriser.Properties
+{
+
+
+	/// <summary>
+	///   ローカライズされた文字列などを検索するための、厳密に型指定されたリソース クラスです。
+	/// </summary>
+	// このクラスは StronglyTypedResourceBuilder クラスによって ResGen
+	// または Visual Studio のようなツールを使用して自動生成されました。
+	// メンバーを追加または削除するには、.ResX ファイルを編集して、/str オプションと共に
+	// ResGen を実行し直すか、または VS プロジェクトをリビルドします。
+	[global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+	[global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+	[global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+	internal class Resources
+	{
+
+		private static global::System.Resources.ResourceManager resourceMan;
+
+		private static global::System.Globalization.CultureInfo resourceCulture;
+
+		[global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+		internal Resources()
+		{
+		}
+
+		/// <summary>
+		///   このクラスで使用されるキャッシュされた ResourceManager インスタンスを返します。
+		/// </summary>
+		[global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+		internal static global::System.Resources.ResourceManager ResourceManager
+		{
+			get
+			{
+				if ((resourceMan == null))
+				{
+					global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Lyriser.Properties.Resources", typeof(Resources).Assembly);
+					resourceMan = temp;
+				}
+				return resourceMan;
+			}
+		}
+
+		/// <summary>
+		///   すべてについて、現在のスレッドの CurrentUICulture プロパティをオーバーライドします
+		///   現在のスレッドの CurrentUICulture プロパティをオーバーライドします。
+		/// </summary>
+		[global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+		internal static global::System.Globalization.CultureInfo Culture
+		{
+			get
+			{
+				return resourceCulture;
+			}
+			set
+			{
+				resourceCulture = value;
+			}
+		}
+	}
 }
