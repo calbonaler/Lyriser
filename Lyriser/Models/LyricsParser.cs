@@ -55,7 +55,7 @@ namespace Lyriser.Models
 					}
 					nodes.Add(ParseLyricsNode(scanner));
 				}
-				return new SilentNode(nodes, new SourceSpan(start, scanner.Location));
+				return new SilentNode<LyricsNode>(nodes, new SourceSpan(start, scanner.Location));
 			}
 			else if (Accept(scanner, '|'))
 			{
@@ -88,9 +88,9 @@ namespace Lyriser.Models
 			}
 		}
 
-		List<SimpleNode> ParseRubyNodes(Scanner scanner)
+		List<IRubyNode> ParseRubyNodes(Scanner scanner)
 		{
-			var rubyNodes = new List<SimpleNode>();
+			var rubyNodes = new List<IRubyNode>();
 			if (Accept(scanner, '"'))
 			{
 				var rubyStart = scanner.Location;
@@ -101,9 +101,22 @@ namespace Lyriser.Models
 						ErrorReporter?.Invoke(ErrorRubyImproperlyEnded(scanner.Location));
 						break;
 					}
-					var start = scanner.Location;
-					var (text, escaping) = ParseSimpleCharacter(scanner);
-					rubyNodes.Add(CreateSimpleNode(text, escaping, new SourceSpan(start, scanner.Location)));
+					var silentStart = scanner.Location;
+					if (Accept(scanner, '('))
+					{
+						var nodes = new List<SimpleNode>();
+						while (!Accept(scanner, ')'))
+						{
+							if (scanner.Peek() == null)
+							{
+								ErrorReporter?.Invoke(ErrorSilentImproperlyEnded(scanner.Location));
+								break;
+							}
+							nodes.Add(ParseSimpleNode(scanner));
+						}
+						rubyNodes.Add(new SimpleSilentNode(nodes, new SourceSpan(silentStart, scanner.Location)));
+					}
+					rubyNodes.Add(ParseSimpleNode(scanner));
 				}
 				if (rubyNodes.Count <= 0)
 				{
@@ -117,6 +130,13 @@ namespace Lyriser.Models
 				}
 			}
 			return rubyNodes;
+		}
+
+		SimpleNode ParseSimpleNode(Scanner scanner)
+		{
+			var start = scanner.Location;
+			var (text, escaping) = ParseSimpleCharacter(scanner);
+			return CreateSimpleNode(text, escaping, new SourceSpan(start, scanner.Location));
 		}
 
 		(string Text, bool Escaping) ParseSimpleCharacter(Scanner scanner)
@@ -368,7 +388,18 @@ namespace Lyriser.Models
 		public SourceSpan Span { get; }
 	}
 
-	class SimpleNode : LyricsNode
+	interface IRubyNode
+	{
+		void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore);
+
+		IEnumerable<HighlightToken> Tokens { get; }
+
+		SourceSpan Span { get; }
+
+		string Text { get; }
+	}
+
+	class SimpleNode : LyricsNode, IRubyNode
 	{
 		public SimpleNode(string text, CharacterState state, SourceSpan span) : base(span)
 		{
@@ -381,9 +412,9 @@ namespace Lyriser.Models
 
 		public string Text => _state == CharacterState.Default ? _text : string.Empty;
 
-		public override void Transform(StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore) => Transform(new SubSyllable(textBuilder.Length), textBuilder, syllableStore);
+		public override void Transform(StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore) => Transform(-1, textBuilder, syllableStore);
 
-		public void Transform(SubSyllable subSyllable, StringBuilder textBuilder, SyllableStore syllableStore)
+		public void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore)
 		{
 			if (_state == CharacterState.StartGrouping)
 				syllableStore?.StartGrouping();
@@ -392,7 +423,7 @@ namespace Lyriser.Models
 			else
 			{
 				if (syllableStore != null && !string.IsNullOrWhiteSpace(Text))
-					syllableStore.Add(subSyllable);
+					syllableStore.Add(new SubSyllable(attached, textBuilder.Length));
 				textBuilder.Append(Text);
 			}
 		}
@@ -409,15 +440,15 @@ namespace Lyriser.Models
 		public override string ToString() => _state == CharacterState.Default ? _text : "(" + _state.ToString() + ")";
 	}
 
-	class SilentNode : LyricsNode
+	class SilentNode<T> : LyricsNode where T: LyricsNode
 	{
-		public SilentNode(IEnumerable<LyricsNode> nodes, SourceSpan span) : base(span) => _nodes = nodes.ToArray();
+		public SilentNode(IEnumerable<T> nodes, SourceSpan span) : base(span) => Nodes = nodes.ToArray();
 
-		readonly LyricsNode[] _nodes;
+		protected readonly T[] Nodes;
 
 		public override void Transform(StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore)
 		{
-			foreach (var node in _nodes)
+			foreach (var node in Nodes)
 				node.Transform(textBuilder, attachedSpecifiers, null);
 		}
 
@@ -426,7 +457,7 @@ namespace Lyriser.Models
 			get
 			{
 				yield return new HighlightToken("Silent", Span);
-				foreach (var node in _nodes)
+				foreach (var node in Nodes)
 				{
 					foreach (var token in node.Tokens)
 						yield return token;
@@ -435,9 +466,22 @@ namespace Lyriser.Models
 		}
 	}
 
+	class SimpleSilentNode : SilentNode<SimpleNode>, IRubyNode
+	{
+		public SimpleSilentNode(IEnumerable<SimpleNode> nodes, SourceSpan span) : base(nodes, span) { }
+
+		public string Text => string.Concat(Nodes.Select(x => x.Text));
+
+		public void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore)
+		{
+			foreach (var node in Nodes)
+				node.Transform(attached, textBuilder, null);
+		}
+	}
+
 	class CompositeNode : LyricsNode
 	{
-		public CompositeNode(string text, SourceSpan baseSpan, IEnumerable<SimpleNode> ruby, SourceSpan span) : base(span)
+		public CompositeNode(string text, SourceSpan baseSpan, IEnumerable<IRubyNode> ruby, SourceSpan span) : base(span)
 		{
 			_text = text;
 			_baseSpan = baseSpan;
@@ -447,14 +491,14 @@ namespace Lyriser.Models
 
 		readonly string _text;
 		readonly SourceSpan _baseSpan;
-		readonly SimpleNode[] _ruby;
+		readonly IRubyNode[] _ruby;
 		readonly bool _syllableDivision;
 
 		public override void Transform(StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore)
 		{
 			var rubyTextBuilder = new StringBuilder();
 			foreach (var rubyNode in _ruby)
-				rubyNode.Transform(new SubSyllable(attachedSpecifiers.Count, rubyTextBuilder.Length), rubyTextBuilder, syllableStore);
+				rubyNode.Transform(attachedSpecifiers.Count, rubyTextBuilder, syllableStore);
 			if (_syllableDivision)
 				attachedSpecifiers.Add(new SyllableDivisionSpecifier(new SharpDX.DirectWrite.TextRange(textBuilder.Length, _text.Length), rubyTextBuilder.Length));
 			else
@@ -469,14 +513,9 @@ namespace Lyriser.Models
 				yield return new HighlightToken("AttachedBase", _baseSpan);
 				foreach (var ruby in _ruby)
 				{
-					var phtokens = ruby.Tokens.ToArray();
-					if (phtokens.Length > 0)
-					{
-						foreach (var token in phtokens)
-							yield return token;
-					}
-					else
-						yield return new HighlightToken(_syllableDivision ? "SyllableDivision" : "Ruby", ruby.Span);
+					yield return new HighlightToken(_syllableDivision ? "SyllableDivision" : "Ruby", ruby.Span);
+					foreach (var token in ruby.Tokens)
+						yield return token;
 				}
 			}
 		}

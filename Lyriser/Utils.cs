@@ -40,15 +40,6 @@ namespace Lyriser
 
 		public static IObservable<PropertyChangedEventArgs> AsPropertyChanged(this INotifyPropertyChanged source, string propertyName) => AsPropertyChanged(source).Where(x => x.PropertyName == propertyName);
 
-		public static ReadOnlyDispatcherCollection<T> CreateReadOnlyDispatcherCollection<T>(IList<T> source, Dispatcher dispatcher)
-		{
-			if (source == null) throw new ArgumentNullException(nameof(source));
-			if (dispatcher == null) throw new ArgumentNullException(nameof(dispatcher));
-			if (!(source is INotifyCollectionChanged sourceAsNotifyCollectionChanged))
-				throw new ArgumentException("Source must be INotifyCollectionChanged", nameof(source));
-			return new ReadOnlyDispatcherCollection<T>(new DispatcherCollection<T>(sourceAsNotifyCollectionChanged, dispatcher));
-		}
-
 		public static double Clamp(double value, double min, double max)
 		{
 			if (value < min)

@@ -432,7 +432,7 @@
 					</v:LyricsTextEditor.ContextMenu>
 				</v:LyricsTextEditor>
 				<GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch"/>
-				<ListView Grid.Row="2" ItemsSource="{Binding ParserErrors}" SelectedItem="{Binding SelectedError}">
+				<ListView x:Name="ParserErrorList" Grid.Row="2" ItemsSource="{Binding ParserErrors}" SelectedItem="{Binding SelectedError}">
 					<ListView.View>
 						<GridView>
 							<GridViewColumn Header="コード" DisplayMemberBinding="{Binding Code}"/>

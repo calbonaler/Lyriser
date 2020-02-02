@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -12,14 +13,15 @@ namespace Lyriser.Models
 	{
 		public Model()
 		{
-			m_Parser.ErrorReporter = error => ParserErrors.Add(error);
+			m_Parser.ErrorReporter = error => m_BackingParserErrors.Add(error);
 			this.AsPropertyChanged(nameof(Source))
 				.Do(_ => IsModified = true)
 				.Throttle(TimeSpan.FromMilliseconds(500))
 				.Subscribe(_ =>
 				{
-					ParserErrors.Clear();
+					m_BackingParserErrors.Clear();
 					LyricsSource = m_Parser.Parse(Source);
+					ParserErrors = m_BackingParserErrors.ToArray();
 				});
 		}
 
@@ -53,7 +55,13 @@ namespace Lyriser.Models
 			set => Utils.SetProperty(ref m_LyricsSource, value, PropertyChanged, this);
 		}
 
-		public ObservableCollection<ParserError> ParserErrors { get; } = new ObservableCollection<ParserError>();
+		readonly List<ParserError> m_BackingParserErrors = new List<ParserError>();
+		IReadOnlyList<ParserError> m_ParserErrors = Array.Empty<ParserError>();
+		public IReadOnlyList<ParserError> ParserErrors
+		{
+			get => m_ParserErrors;
+			private set => Utils.SetProperty(ref m_ParserErrors, value, PropertyChanged, this);
+		}
 
 		public void New()
 		{

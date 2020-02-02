@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.ObjectModel;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
+using System.Windows.Data;
 using System.Windows.Input;
 using ICSharpCode.AvalonEdit.Document;
 using Livet;
@@ -16,7 +19,6 @@ namespace Lyriser.ViewModels
 		{
 			SourceDocument = new TextDocument();
 			SourceDocument.TextChanged += OnSourceDocumentTextChanged;
-			ParserErrors = Utils.CreateReadOnlyDispatcherCollection(m_Model.ParserErrors, DispatcherHelper.UIDispatcher);
 			CompositeDisposable.Add(new PropertyChangedEventListener(m_Model, (s, ev) =>
 			{
 				switch (ev.PropertyName)
@@ -36,6 +38,17 @@ namespace Lyriser.ViewModels
 						break;
 				}
 			}));
+			CompositeDisposable.Add(
+				m_Model.AsPropertyChanged(nameof(m_Model.ParserErrors))
+					.Throttle(TimeSpan.FromMilliseconds(1000))
+					.ObserveOn(DispatcherHelper.UIDispatcher)
+					.Subscribe(_ =>
+					{
+						ParserErrors.Clear();
+						foreach (var item in m_Model.ParserErrors)
+							ParserErrors.Add(item);
+					})
+			);
 			CompositeDisposable.Add(new PropertyChangedEventListener(this, async (s, ev) =>
 			{
 				switch (ev.PropertyName)
@@ -78,7 +91,7 @@ namespace Lyriser.ViewModels
 			get => m_Model.LyricsSource;
 			set => m_Model.LyricsSource = value;
 		}
-		public ReadOnlyDispatcherCollection<ParserError> ParserErrors { get; }
+		public ObservableCollection<ParserError> ParserErrors { get; } = new ObservableCollection<ParserError>();
 		public bool IsModified => m_Model.IsModified;
 		public string DocumentName => m_Model.SavedFileInfo?.FileNameWithoutExtension ?? "無題";
 

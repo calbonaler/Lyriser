@@ -64,11 +64,6 @@ namespace Lyriser.Models
 			AttachedIndex = attached;
 			CharacterIndex = character;
 		}
-		public SubSyllable(int character)
-		{
-			AttachedIndex = -1;
-			CharacterIndex = character;
-		}
 
 		public int AttachedIndex { get; }
 		public int CharacterIndex { get; }
