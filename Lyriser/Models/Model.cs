@@ -1,38 +1,70 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Utils;
 
 namespace Lyriser.Models
 {
-	class Model : INotifyPropertyChanged
+	public class Model : INotifyPropertyChanged, IDisposable
 	{
 		public Model()
 		{
 			m_Parser.ErrorReporter = error => m_BackingParserErrors.Add(error);
-			this.AsPropertyChanged(nameof(Source))
-				.Do(_ => IsModified = true)
+			m_OriginalVersion = SourceDocument.Version;
+			Observable.FromEventPattern(x => SourceDocument.TextChanged += x, x => SourceDocument.TextChanged -= x)
+				.Do(_ => PropertyChanged.Raise(this, nameof(IsModified)))
 				.Throttle(TimeSpan.FromMilliseconds(500))
 				.Subscribe(_ =>
 				{
 					m_BackingParserErrors.Clear();
-					LyricsSource = m_Parser.Parse(Source);
+					LyricsSource = new LyricsSource(m_Parser.Parse(SourceDocument.CreateSnapshot().Text).Select(x => x.Line));
 					ParserErrors = m_BackingParserErrors.ToArray();
 				});
 		}
 
-		readonly LyricsParser m_Parser = new LyricsParser();
-
-		bool m_IsModified = false;
-		public bool IsModified
+		public void Dispose()
 		{
-			get => m_IsModified;
-			private set => Utils.SetProperty(ref m_IsModified, value, PropertyChanged, this);
+			Dispose(true);
+			GC.SuppressFinalize(this);
 		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+				if (m_Language != null)
+				{
+					m_Language.Dispose();
+					m_Language = null;
+				}
+			}
+		}
+
+		ImeLanguage m_Language;
+
+		readonly LyricsParser m_Parser = new LyricsParser();
+		ITextSourceVersion m_OriginalVersion;
+		ITextSourceVersion OriginalVersion
+		{
+			get => m_OriginalVersion;
+			set
+			{
+				if (m_OriginalVersion != value)
+				{
+					m_OriginalVersion = value;
+					PropertyChanged?.Raise(this, nameof(IsModified));
+				}
+			}
+		}
+
+		public bool IsModified => SourceDocument.Version != OriginalVersion;
 
 		EncodedFileInfo m_SavedFileInfo;
 		public EncodedFileInfo SavedFileInfo
@@ -41,12 +73,7 @@ namespace Lyriser.Models
 			private set => Utils.SetProperty(ref m_SavedFileInfo, value, PropertyChanged, this);
 		}
 
-		string m_Source = string.Empty;
-		public string Source
-		{
-			get => m_Source;
-			set => Utils.SetProperty(ref m_Source, value, PropertyChanged, this);
-		}
+		public TextDocument SourceDocument { get; } = new TextDocument();
 
 		LyricsSource m_LyricsSource = LyricsSource.Empty;
 		public LyricsSource LyricsSource
@@ -65,9 +92,10 @@ namespace Lyriser.Models
 
 		public void New()
 		{
-			Source = string.Empty;
+			SourceDocument.Remove(0, SourceDocument.TextLength);
+			SourceDocument.UndoStack.ClearAll();
 			SavedFileInfo = null;
-			IsModified = false;
+			OriginalVersion = SourceDocument.Version;
 		}
 
 		public void Open(EncodedFileInfo info)
@@ -77,26 +105,206 @@ namespace Lyriser.Models
 				using (var fs = new FileStream(info.Path, FileMode.Open, FileAccess.Read, FileShare.Read))
 				using (var reader = FileReader.OpenStream(fs, new UTF8Encoding(false)))
 				{
-					Source = reader.ReadToEnd();
+					SourceDocument.Text = reader.ReadToEnd();
 					SavedFileInfo = new EncodedFileInfo(info.Path, reader.CurrentEncoding);
 				}
 			}
 			else
 			{
-				Source = File.ReadAllText(info.Path, info.Encoding);
+				SourceDocument.Text = File.ReadAllText(info.Path, info.Encoding);
+				SourceDocument.UndoStack.ClearAll();
 				SavedFileInfo = info;
 			}
-			IsModified = false;
+			OriginalVersion = SourceDocument.Version;
 		}
 
 		public void Save(EncodedFileInfo info)
 		{
-			File.WriteAllText(info.Path, Source, info.Encoding);
+			using (var fs = new FileStream(info.Path, FileMode.Create, FileAccess.Write, FileShare.Read))
+			using (var writer = new StreamWriter(fs, info.Encoding))
+				SourceDocument.WriteTextTo(writer);
 			SavedFileInfo = info;
-			IsModified = false;
+			OriginalVersion = SourceDocument.Version;
+		}
+
+		public void AutoSetRuby(ISegment segment)
+		{
+			if (m_Language == null)
+			{
+				m_Language = ImeLanguage.Create();
+				if (m_Language == null)
+					return;
+			}
+			// 非発音領域などのルビ以外の構造を保持したままルビの再設定を行う
+			var parsingErrorOccurred = false;
+			var parser = new LyricsParser { ErrorReporter = _ => parsingErrorOccurred = true };
+			var lyricsLines = parser.Parse(SourceDocument.GetText(segment)).ToArray();
+			if (parsingErrorOccurred)
+				return;
+			var newSourceBuilder = new StringBuilder();
+			foreach (var (lyricsLine, lineTerminator) in lyricsLines)
+			{
+				var (baseText, textToNodeMap) = CollectBaseText(lyricsLine);
+				var (output, monoRubyIndexes) = m_Language.GetMonoRuby(baseText);
+				if (output is null)
+				{
+					newSourceBuilder.Append(LyricsNodeBase.GenerateSource(lyricsLine));
+					newSourceBuilder.Append(lineTerminator);
+					continue;
+				}
+				var rubySpecifiers = new Queue<RubySpecifier>();
+				var rubyBaseStart = 0;
+				var rubyStart = 0;
+				for (var i = 0; i <= baseText.Length; i++)
+				{
+					if (monoRubyIndexes[i] == ImeLanguage.UnmatchedPosition)
+						continue;
+					if (i > 0)
+					{
+						// 既存ルビの作成
+						var rubyBase = baseText.Substring(rubyBaseStart, i - rubyBaseStart);
+						var ruby = output.Substring(rubyStart, monoRubyIndexes[i] - rubyStart);
+						// 下記のいずれかに該当する場合はルビを作成しない
+						// ・ルビのベースがすべての文字でひらがな or カタカナ
+						// ・ルビのベースとルビがASCII文字の全角・半角の違いを除いて一致する
+						if (!StringEqualsExceptAsciiZenHan(rubyBase, ruby) && !Regex.IsMatch(rubyBase, "^[\\p{IsHiragana}\\p{IsKatakana}]+$"))
+						{
+							var nodes = new List<SimpleNode>();
+							for (var j = rubyBaseStart; j < i;)
+							{
+								var node = textToNodeMap[j];
+								nodes.Add(node);
+								j += node.PhoneticText.Length;
+							}
+							rubySpecifiers.Enqueue(new RubySpecifier(nodes, ruby));
+						}
+					}
+					// 新規ルビの記録開始
+					rubyBaseStart = i;
+					rubyStart = monoRubyIndexes[i];
+				}
+				newSourceBuilder.Append(LyricsNodeBase.GenerateSource(SetRuby(lyricsLine, rubySpecifiers)));
+				newSourceBuilder.Append(lineTerminator);
+				Debug.Assert(rubySpecifiers.Count == 0);
+			}
+			SourceDocument.Replace(segment, newSourceBuilder.ToString());
+		}
+
+		static (string BaseText, Dictionary<int, SimpleNode> TextToNodeMap) CollectBaseText(IEnumerable<LyricsNode> nodes)
+		{
+			var sb = new StringBuilder();
+			var textToNodeMap = new Dictionary<int, SimpleNode>();
+			foreach (var node in nodes)
+			{
+				if (node is SimpleNode simpleNode)
+				{
+					textToNodeMap.Add(sb.Length, simpleNode);
+					sb.Append(simpleNode.PhoneticText);
+				}
+				else if (node is CompositeNode compositeNode)
+				{
+					foreach (var subNode in compositeNode.Text)
+					{
+						textToNodeMap.Add(sb.Length, subNode);
+						sb.Append(subNode.PhoneticText);
+					}
+				}
+				else
+				{
+					var (baseText, innerTextToNodeMap) = CollectBaseText(((SilentNode)node).Nodes);
+					foreach (var kvp in innerTextToNodeMap)
+						textToNodeMap.Add(sb.Length + kvp.Key, kvp.Value);
+					sb.Append(baseText);
+				}
+			}
+			return (sb.ToString(), textToNodeMap);
+		}
+
+		static LyricsNode[] SetRuby(IEnumerable<LyricsNode> nodes, Queue<RubySpecifier> rubySpecifiers)
+		{
+			var newNodes = new List<LyricsNode>();
+
+			void ProcessSimpleNode(SimpleNode simpleNode)
+			{
+				var nodeIndex = rubySpecifiers.Count <= 0 ? -1 : Array.IndexOf(rubySpecifiers.Peek().Text, simpleNode);
+				if (nodeIndex < 0)
+				{
+					newNodes.Add(simpleNode);
+					return;
+				}
+				if (nodeIndex == rubySpecifiers.Peek().Text.Length - 1)
+				{
+					var rubySpec = rubySpecifiers.Dequeue();
+					var rubyNodes = new List<SimpleNode>();
+					for (var i = 0; i < rubySpec.Ruby.Length;)
+					{
+						var textLength = i + 1 < rubySpec.Ruby.Length && char.IsSurrogatePair(rubySpec.Ruby, i) ? 2 : 1;
+						rubyNodes.Add(new SimpleNode(rubySpec.Ruby.Substring(i, textLength), default));
+						i += textLength;
+					}
+					newNodes.Add(new CompositeNode(rubySpec.Text, rubyNodes, default));
+				}
+			}
+
+			foreach (var node in nodes)
+			{
+				if (node is SimpleNode simpleNode)
+					ProcessSimpleNode(simpleNode);
+				else if (node is CompositeNode compositeNode)
+				{
+					foreach (var subNode in compositeNode.Text)
+						ProcessSimpleNode(subNode);
+				}
+				else
+					newNodes.Add(new SilentNode(SetRuby(((SilentNode)node).Nodes, rubySpecifiers), default));
+			}
+
+			return newNodes.ToArray();
+		}
+
+		static char AsciiZenkakuToHankaku(char source) => source >= '！' && source <= '～' ? (char)(source - '！' + '!') : source;
+
+		static bool StringEqualsExceptAsciiZenHan(string left, string right)
+		{
+			if (ReferenceEquals(left, right))
+				return true;
+			if (left is null || right is null || left.Length != right.Length)
+				return false;
+			for (var i = 0; i < left.Length; i++)
+			{
+				var leftChar = AsciiZenkakuToHankaku(left[i]);
+				var rightChar = AsciiZenkakuToHankaku(right[i]);
+				if (leftChar != rightChar)
+					return false;
+			}
+			return true;
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
+
+		readonly struct RubySpecifier : IEquatable<RubySpecifier>
+		{
+			public RubySpecifier(IEnumerable<SimpleNode> text, string ruby)
+			{
+				Text = (text ?? throw new ArgumentNullException(nameof(text))).ToArray();
+				Ruby = ruby ?? throw new ArgumentNullException(nameof(ruby));
+			}
+
+			public readonly SimpleNode[] Text;
+			public readonly string Ruby;
+
+			public override bool Equals(object obj) => obj is RubySpecifier other && Equals(other);
+			public bool Equals(RubySpecifier other) => Text == other.Text && Ruby == other.Ruby;
+			public override int GetHashCode()
+			{
+				var hashCode = 518592628;
+				hashCode = hashCode * -1521134295 + Text.GetHashCode();
+				hashCode = hashCode * -1521134295 + Ruby.GetHashCode();
+				return hashCode;
+			}
+			public static bool operator ==(RubySpecifier left, RubySpecifier right) => left.Equals(right);
+			public static bool operator !=(RubySpecifier left, RubySpecifier right) => !(left == right);
+		}
 	}
 
 	public class EncodedFileInfo

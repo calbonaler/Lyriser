@@ -105,6 +105,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\ImeLanguage.cs" />
     <Compile Include="Models\LyricsSource.cs" />
     <Compile Include="ViewModels\HotKeyCommand.cs" />
     <Compile Include="Views\LyricsTextEditor.cs" />

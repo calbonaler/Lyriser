@@ -2,6 +2,7 @@
 using System.Windows;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.AvalonEdit.Editing;
 using Microsoft.Xaml.Behaviors;
 
 namespace Lyriser.Views
@@ -29,5 +30,30 @@ namespace Lyriser.Views
 		}
 
 		void OnCaretPositionChanged(object sender, EventArgs e) => Location = AssociatedObject.TextArea.Caret.Location;
+	}
+
+	public class SelectionBindingBehavior : Behavior<TextEditor>
+	{
+		public static readonly DependencyProperty SelectionProperty = DependencyProperty.Register(nameof(Selection), typeof(Selection), typeof(SelectionBindingBehavior));
+
+		public Selection Selection
+		{
+			get => (Selection)GetValue(SelectionProperty);
+			set => SetValue(SelectionProperty, value);
+		}
+
+		protected override void OnAttached()
+		{
+			base.OnAttached();
+			AssociatedObject.TextArea.SelectionChanged += OnSelectionChanged;
+		}
+
+		protected override void OnDetaching()
+		{
+			AssociatedObject.TextArea.SelectionChanged -= OnSelectionChanged;
+			base.OnDetaching();
+		}
+
+		void OnSelectionChanged(object sender, EventArgs e) => Selection = AssociatedObject.TextArea.Selection;
 	}
 }

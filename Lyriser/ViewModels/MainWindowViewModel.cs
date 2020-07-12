@@ -2,9 +2,9 @@
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using System.Windows.Data;
 using System.Windows.Input;
 using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.AvalonEdit.Editing;
 using Livet;
 using Livet.Commands;
 using Livet.EventListeners;
@@ -17,16 +17,10 @@ namespace Lyriser.ViewModels
 	{
 		public MainWindowViewModel()
 		{
-			SourceDocument = new TextDocument();
-			SourceDocument.TextChanged += OnSourceDocumentTextChanged;
 			CompositeDisposable.Add(new PropertyChangedEventListener(m_Model, (s, ev) =>
 			{
 				switch (ev.PropertyName)
 				{
-					case nameof(m_Model.Source):
-						if (SourceDocument.Text != m_Model.Source)
-							SourceDocument.Text = m_Model.Source;
-						break;
 					case nameof(m_Model.LyricsSource):
 						RaisePropertyChanged(nameof(LyricsSource));
 						break;
@@ -75,6 +69,7 @@ namespace Lyriser.ViewModels
 			OpenCommand = new HotKeyCommand(async () => await OpenAsync()) { Gesture = new KeyGesture(Key.O, ModifierKeys.Control) };
 			SaveAsCommand = new ViewModelCommand(async () => await SaveAsAsync());
 			SaveCommand = new HotKeyCommand(async () => await SaveAsync()) { Gesture = new KeyGesture(Key.S, ModifierKeys.Control) };
+			AutoSetRubyInSelectionCommand = new ViewModelCommand(AutoSetRubyInSelection);
 			HighlightFirstCommand = new ViewModelCommand(async () => await HighlightLyricsAsync(LyricsHighlightRequest.First));
 			HighlightNextCommand = new ViewModelCommand(async () => await HighlightLyricsAsync(LyricsHighlightRequest.Next));
 			HighlightPreviousCommand = new ViewModelCommand(async () => await HighlightLyricsAsync(LyricsHighlightRequest.Previous));
@@ -85,7 +80,7 @@ namespace Lyriser.ViewModels
 
 		readonly Model m_Model = new Model();
 
-		public TextDocument SourceDocument { get; }
+		public TextDocument SourceDocument => m_Model.SourceDocument;
 		public LyricsSource LyricsSource
 		{
 			get => m_Model.LyricsSource;
@@ -116,10 +111,18 @@ namespace Lyriser.ViewModels
 			set => RaisePropertyChangedIfSet(ref m_SelectedError, value);
 		}
 
+		Selection m_Selection;
+		public Selection Selection
+		{
+			get => m_Selection;
+			set => RaisePropertyChangedIfSet(ref m_Selection, value);
+		}
+
 		public HotKeyCommand NewCommand { get; }
 		public HotKeyCommand OpenCommand { get; }
 		public ViewModelCommand SaveAsCommand { get; }
 		public HotKeyCommand SaveCommand { get; }
+		public ViewModelCommand AutoSetRubyInSelectionCommand { get; }
 		public ViewModelCommand HighlightFirstCommand { get; }
 		public ViewModelCommand HighlightNextCommand { get; }
 		public ViewModelCommand HighlightPreviousCommand { get; }
@@ -132,7 +135,6 @@ namespace Lyriser.ViewModels
 			if (!await ConfirmSaveAsync())
 				return;
 			m_Model.New();
-			SourceDocument.UndoStack.ClearAll();
 			await HighlightLyricsAsync(LyricsHighlightRequest.First);
 		}
 		public async Task OpenAsync()
@@ -143,7 +145,6 @@ namespace Lyriser.ViewModels
 			if (metadata == null)
 				return;
 			m_Model.Open(metadata);
-			SourceDocument.UndoStack.ClearAll();
 			await HighlightLyricsAsync(LyricsHighlightRequest.First);
 		}
 		public async Task SaveAsAsync()
@@ -174,6 +175,11 @@ namespace Lyriser.ViewModels
 			}
 			return true;
 		}
+		public void AutoSetRubyInSelection()
+		{
+			if (Selection != null)
+				m_Model.AutoSetRuby(Selection.SurroundingSegment);
+		}
 
 		async Task<bool?> WarnUnsavedChangeAsync()
 		{
@@ -198,7 +204,6 @@ namespace Lyriser.ViewModels
 			if (SelectedError != null)
 				await FocusEditorCharacterAsync(SelectedError.Location.Line, SelectedError.Location.Column, true);
 		}
-		void OnSourceDocumentTextChanged(object sender, EventArgs e) => m_Model.Source = SourceDocument.Text;
 	}
 
 	public enum LyricsHighlightRequest

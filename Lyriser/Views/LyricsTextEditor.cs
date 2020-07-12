@@ -220,14 +220,17 @@ namespace Lyriser.Views
 			var lineText = Document.GetText(documentLine);
 			var highlightedLine = new HighlightedLine(Document, documentLine);
 			var parser = new LyricsParser();
-			foreach (var token in parser.ParseLine(lineText))
+			foreach (var node in parser.ParseLine(lineText))
 			{
-				highlightedLine.Sections.Add(new HighlightedSection
+				foreach (var token in node.Tokens)
 				{
-					Offset = token.Span.Start.Index + documentLine.Offset,
-					Length = token.Span.Length,
-					Color = GetNamedColor(token.Label)
-				});
+					highlightedLine.Sections.Add(new HighlightedSection
+					{
+						Offset = token.Span.Start.Index + documentLine.Offset,
+						Length = token.Span.Length,
+						Color = GetNamedColor(token.Label)
+					});
+				}
 			}
 			return highlightedLine;
 		}

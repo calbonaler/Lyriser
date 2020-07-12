@@ -168,6 +168,9 @@
 		</DrawingBrush>
 	</Window.Resources>
 	<i:Interaction.Triggers>
+		<i:EventTrigger EventName="Closed">
+			<l:DataContextDisposeAction/>
+		</i:EventTrigger>
 		<l:InteractionMessageTrigger MessageKey="WarnUnsavedChange" Messenger="{Binding Messenger}">
 			<v:WarnUnsavedChangeAction
 				MessageFormat="{}{0} への変更を保存しますか?"
@@ -267,6 +270,8 @@
 						<Rectangle Fill="{StaticResource SelectAllBrush}"/>
 					</MenuItem.Icon>
 				</MenuItem>
+				<Separator/>
+				<MenuItem Header="選択範囲のルビを自動設定(_S)" Command="{Binding AutoSetRubyInSelectionCommand}"/>
 			</MenuItem>
 			<MenuItem Header="操作(_O)">
 				<MenuItem Header="次をハイライト(_N)" Command="{Binding HighlightNextCommand}" InputGestureText="Right"/>
@@ -371,7 +376,7 @@
 						</Style>
 					</v:LyricsTextEditor.Resources>
 					<v:LyricsTextEditor.Options>
-						<avalonedit:TextEditorOptions EnableEmailHyperlinks="False" EnableHyperlinks="False"/>
+						<avalonedit:TextEditorOptions EnableEmailHyperlinks="False" EnableHyperlinks="False" EnableRectangularSelection="False"/>
 					</v:LyricsTextEditor.Options>
 					<i:Interaction.Triggers>
 						<l:InteractionMessageTrigger MessageKey="FocusEditorCharacter" Messenger="{Binding Messenger}">
@@ -380,6 +385,7 @@
 					</i:Interaction.Triggers>
 					<i:Interaction.Behaviors>
 						<v:CaretPositionBindingBehavior Location="{Binding CaretLocation, Mode=OneWayToSource}"/>
+						<v:SelectionBindingBehavior Selection="{Binding Selection, Mode=OneWayToSource}"/>
 					</i:Interaction.Behaviors>
 					<v:LyricsTextEditor.SyntaxHighlighting>
 						<v:HighlightingDefinition>

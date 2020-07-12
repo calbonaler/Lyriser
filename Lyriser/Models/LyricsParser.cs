@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Numerics;
 using System.Text;
+using System.Windows.Documents;
 
 namespace Lyriser.Models
 {
@@ -18,6 +20,13 @@ namespace Lyriser.Models
 		static ParserError ErrorRubyMustNotBeOnlyWhitespaces(SourceLocation location) => new ParserError("E0006", "ルビを空白文字のみとすることはできません。",   location);
 		static ParserError ErrorAnyCharacterRequired        (SourceLocation location) => new ParserError("E0007", "何らかの文字が必要です。",                     location);
 
+		const char RubyBaseStartChar = '|';
+		const char RubyStartChar = '"';
+		const char RubyEndChar = '"';
+		const char SilentStartChar = '(';
+		const char SilentEndChar = ')';
+		const char EscapeChar = '`';
+
 		bool Accept(Scanner scanner, char ch)
 		{
 			if (scanner.Peek() == ch)
@@ -28,10 +37,15 @@ namespace Lyriser.Models
 			return false;
 		}
 
-		IEnumerable<LyricsNode[]> Parse(Scanner scanner)
+		IEnumerable<(LyricsNode[] Line, string Terminator)> Parse(Scanner scanner)
 		{
-			while (scanner.MoveNextLine())
-				yield return ParseLyricsLine(scanner).ToArray();
+			while (true)
+			{
+				var line = ParseLyricsLine(scanner).ToArray();
+				var result = scanner.MoveNextLine(out var rest);
+				yield return (line, rest);
+				if (!result) break;
+			}
 		}
 
 		IEnumerable<LyricsNode> ParseLyricsLine(Scanner scanner)
@@ -42,107 +56,94 @@ namespace Lyriser.Models
 
 		LyricsNode ParseLyricsNode(Scanner scanner)
 		{
+			var (silentSubNodes, silentSpan) = ParseSilentNode(scanner, ParseLyricsNode);
+			if (silentSubNodes != null)
+				return new SilentNode(silentSubNodes, silentSpan);
 			var start = scanner.Location;
-			if (Accept(scanner, '('))
+			if (Accept(scanner, RubyBaseStartChar))
 			{
-				var nodes = new List<LyricsNode>();
-				while (!Accept(scanner, ')'))
+				var rubyBase = new List<SimpleNode>();
+				while (scanner.Peek() != null && scanner.Peek() != RubyStartChar)
+					rubyBase.Add(ParseSimpleNode(scanner));
+				if (rubyBase.Count <= 0)
 				{
-					if (scanner.Peek() == null)
-					{
-						ErrorReporter?.Invoke(ErrorSilentImproperlyEnded(scanner.Location));
-						break;
-					}
-					nodes.Add(ParseLyricsNode(scanner));
-				}
-				return new SilentNode<LyricsNode>(nodes, new SourceSpan(start, scanner.Location));
-			}
-			else if (Accept(scanner, '|'))
-			{
-				var rubyBaseBuilder = new StringBuilder();
-				var rubyBaseStart = scanner.Location;
-				while (scanner.Peek() != null && scanner.Peek() != '"')
-					rubyBaseBuilder.Append(ParseSimpleCharacter(scanner).Text);
-				var rubyBaseEnd = scanner.Location;
-				if (rubyBaseBuilder.Length <= 0)
-				{
-					ErrorReporter?.Invoke(ErrorRubyBaseRequired(rubyBaseStart));
-					rubyBaseBuilder.Append("_");
+					ErrorReporter?.Invoke(ErrorRubyBaseRequired(scanner.Location));
+					rubyBase.Add(new SimpleNode("_", false, new SourceSpan(scanner.Location, scanner.Location)));
 				}
 				var rubyNodes = ParseRubyNodes(scanner);
 				if (rubyNodes.Count <= 0)
 				{
 					ErrorReporter?.Invoke(ErrorRubyStartNotFound(scanner.Location));
-					rubyNodes.Add(new SimpleNode("_", CharacterState.Default, new SourceSpan(scanner.Location, scanner.Location)));
+					rubyNodes.Add(new SimpleNode("_", false, new SourceSpan(scanner.Location, scanner.Location)));
 				}
-				return new CompositeNode(rubyBaseBuilder.ToString(), new SourceSpan(rubyBaseStart, rubyBaseEnd), rubyNodes, new SourceSpan(start, scanner.Location));
+				return new CompositeNode(rubyBase, rubyNodes, true, new SourceSpan(start, scanner.Location));
 			}
 			else
 			{
-				var (text, escaping) = ParseSimpleCharacter(scanner);
-				var end = scanner.Location;
+				var simpleNode = ParseSimpleNode(scanner);
 				var rubyNodes = ParseRubyNodes(scanner);
 				return rubyNodes.Count > 0
-					? new CompositeNode(text, new SourceSpan(start, end), rubyNodes, new SourceSpan(start, scanner.Location))
-					: (LyricsNode)CreateSimpleNode(text, escaping, new SourceSpan(start, end));
+					? new CompositeNode(Enumerable.Repeat(simpleNode, 1), rubyNodes, false, new SourceSpan(start, scanner.Location))
+					: (LyricsNode)simpleNode;
 			}
 		}
 
-		List<IRubyNode> ParseRubyNodes(Scanner scanner)
+		List<IPhoneticNode> ParseRubyNodes(Scanner scanner)
 		{
-			var rubyNodes = new List<IRubyNode>();
-			if (Accept(scanner, '"'))
+			var rubyNodes = new List<IPhoneticNode>();
+			if (Accept(scanner, RubyStartChar))
 			{
 				var rubyStart = scanner.Location;
-				while (!Accept(scanner, '"'))
+				while (!Accept(scanner, RubyEndChar))
 				{
 					if (scanner.Peek() == null)
 					{
 						ErrorReporter?.Invoke(ErrorRubyImproperlyEnded(scanner.Location));
 						break;
 					}
-					var silentStart = scanner.Location;
-					if (Accept(scanner, '('))
-					{
-						var nodes = new List<SimpleNode>();
-						while (!Accept(scanner, ')'))
-						{
-							if (scanner.Peek() == null)
-							{
-								ErrorReporter?.Invoke(ErrorSilentImproperlyEnded(scanner.Location));
-								break;
-							}
-							nodes.Add(ParseSimpleNode(scanner));
-						}
-						rubyNodes.Add(new SimpleSilentNode(nodes, new SourceSpan(silentStart, scanner.Location)));
-					}
-					rubyNodes.Add(ParseSimpleNode(scanner));
+					var (silentSubNodes, silentSpan) = ParseSilentNode(scanner, ParseSimpleNode);
+					if (silentSubNodes != null)
+						rubyNodes.Add(new RubySilentNode(silentSubNodes, silentSpan));
+					else
+						rubyNodes.Add(ParseSimpleNode(scanner));
 				}
 				if (rubyNodes.Count <= 0)
 				{
 					ErrorReporter?.Invoke(ErrorRubyRequired(rubyStart));
-					rubyNodes.Add(new SimpleNode("_", CharacterState.Default, new SourceSpan(rubyStart, rubyStart)));
+					rubyNodes.Add(new SimpleNode("_", false, new SourceSpan(rubyStart, rubyStart)));
 				}
-				else if (rubyNodes.All(x => string.IsNullOrWhiteSpace(x.Text)))
+				else if (rubyNodes.All(x => string.IsNullOrWhiteSpace(x.PhoneticText)))
 				{
 					ErrorReporter?.Invoke(ErrorRubyMustNotBeOnlyWhitespaces(rubyStart));
-					rubyNodes.Add(new SimpleNode("_", CharacterState.Default, new SourceSpan(rubyNodes[rubyNodes.Count - 1].Span.End, rubyNodes[rubyNodes.Count - 1].Span.End)));
+					rubyNodes.Add(new SimpleNode("_", false, new SourceSpan(rubyNodes[rubyNodes.Count - 1].Span.End, rubyNodes[rubyNodes.Count - 1].Span.End)));
 				}
 			}
 			return rubyNodes;
 		}
 
+		(List<T> Nodes, SourceSpan Span) ParseSilentNode<T>(Scanner scanner, Func<Scanner, T> subParser)
+		{
+			var start = scanner.Location;
+			if (!Accept(scanner, SilentStartChar))
+				return (null, default);
+			var nodes = new List<T>();
+			while (!Accept(scanner, SilentEndChar))
+			{
+				if (scanner.Peek() == null)
+				{
+					ErrorReporter?.Invoke(ErrorSilentImproperlyEnded(scanner.Location));
+					break;
+				}
+				nodes.Add(subParser(scanner));
+			}
+			return (nodes, new SourceSpan(start, scanner.Location));
+		}
+
 		SimpleNode ParseSimpleNode(Scanner scanner)
 		{
 			var start = scanner.Location;
-			var (text, escaping) = ParseSimpleCharacter(scanner);
-			return CreateSimpleNode(text, escaping, new SourceSpan(start, scanner.Location));
-		}
-
-		(string Text, bool Escaping) ParseSimpleCharacter(Scanner scanner)
-		{
 			var escaping = false;
-			if (Accept(scanner, '`'))
+			if (Accept(scanner, EscapeChar))
 				escaping = true;
 			var sb = new StringBuilder();
 			if (scanner.Peek() != null)
@@ -154,60 +155,24 @@ namespace Lyriser.Models
 			}
 			if (char.IsHighSurrogate(sb[sb.Length - 1]) && scanner.Peek() != null && char.IsLowSurrogate((char)scanner.Peek()))
 				sb.Append(scanner.Read());
-			return (sb.ToString(), escaping);
+			return new SimpleNode(sb.ToString(), escaping, new SourceSpan(start, scanner.Location));
 		}
 
-		SimpleNode CreateSimpleNode(string text, bool escaping, SourceSpan span)
-		{
-			var state = CharacterState.Default;
-			if (!escaping)
-			{
-				if (text == "{")
-					state = CharacterState.StartGrouping;
-				else if (text == "}")
-					state = CharacterState.StopGrouping;
-			}
-			return new SimpleNode(text, state, span);
-		}
+		public IEnumerable<(LyricsNode[] Line, string Terminator)> Parse(string source) => Parse(new Scanner(source));
 
-		public LyricsSource Parse(string source)
-		{
-			var attachedSpecs = new List<AttachedSpecifier>();
-			var baseTextBuilder = new StringBuilder();
-			var physicalLines = new List<PhysicalLine>();
-			var logicalToPhysicalMap = new List<int>();
-			var syllableLines = new List<SubSyllable[][]>();
-			var firstLine = true;
-			foreach (var nodes in Parse(new Scanner(source)))
-			{
-				if (!firstLine)
-					baseTextBuilder.Append('\n');
-				var textStart = baseTextBuilder.Length;
-				var attachedStart = attachedSpecs.Count;
-				var syllableStore = new SyllableStore();
-				foreach (var node in nodes)
-					node.Transform(baseTextBuilder, attachedSpecs, syllableStore);
-				physicalLines.Add(new PhysicalLine(textStart, baseTextBuilder.Length - textStart, attachedStart, attachedSpecs.Count - attachedStart));
-				if (syllableStore.HasAnySyllable)
-				{
-					logicalToPhysicalMap.Add(physicalLines.Count - 1);
-					syllableLines.Add(syllableStore.ToArray());
-				}
-				firstLine = false;
-			}
-			return new LyricsSource(baseTextBuilder.ToString(), attachedSpecs, new LineMap(physicalLines, logicalToPhysicalMap), syllableLines);
-		}
+		public IEnumerable<LyricsNode> ParseLine(string line) => ParseLyricsLine(new Scanner(line));
 
-		public HighlightToken[] ParseLine(string line)
+		public static bool IsEscapeRequired(string text)
 		{
-			var tokens = new List<HighlightToken>();
-			var scanner = new Scanner(line);
-			if (scanner.MoveNextLine())
-			{
-				foreach (var node in ParseLyricsLine(scanner))
-					tokens.AddRange(node.Tokens);
-			}
-			return tokens.ToArray();
+			if (text.Length == 0)
+				return false;
+			var ch = char.ConvertToUtf32(text, 0);
+			return ch == RubyBaseStartChar ||
+				ch == RubyStartChar ||
+				ch == RubyEndChar ||
+				ch == SilentStartChar ||
+				ch == SilentEndChar ||
+				ch == EscapeChar;
 		}
 	}
 
@@ -216,33 +181,36 @@ namespace Lyriser.Models
 		public Scanner(string text) => _text = text;
 
 		readonly string _text;
-		int _lineIndex = -1;
-		int _lineStartIndex;
+		int _lineIndex = 0;
+		int _lineStartIndex = 0;
 		int _textIndex = 0;
 
 		public SourceLocation Location => new SourceLocation(_textIndex, _lineIndex + 1, _textIndex - _lineStartIndex + 1);
 
-		public bool MoveNextLine()
+		public bool MoveNextLine(out string rest)
 		{
-			if (_lineIndex >= 0)
+			var sb = new StringBuilder();
+			while (true)
 			{
-				while (true)
+				if (_textIndex >= _text.Length)
 				{
-					if (_textIndex >= _text.Length)
-						return false;
-					var ch = _text[_textIndex++];
-					if (ch == '\r')
-					{
-						if (_textIndex < _text.Length && _text[_textIndex] == '\n')
-							_textIndex++;
-						break;
-					}
-					if (ch == '\n')
-						break;
+					rest = sb.ToString();
+					return false;
 				}
+				var ch = _text[_textIndex++];
+				sb.Append(ch);
+				if (ch == '\r')
+				{
+					if (_textIndex < _text.Length && _text[_textIndex] == '\n')
+						sb.Append(_text[_textIndex++]);
+					break;
+				}
+				if (ch == '\n')
+					break;
 			}
 			_lineIndex++;
 			_lineStartIndex = _textIndex;
+			rest = sb.ToString();
 			return true;
 		}
 
@@ -344,7 +312,7 @@ namespace Lyriser.Models
 		public static bool operator !=(HighlightToken left, HighlightToken right) => !(left == right);
 	}
 
-	class SyllableStore
+	public class SyllableStore
 	{
 		readonly List<SubSyllable[]> _syllables = new List<SubSyllable[]>();
 		List<SubSyllable> _subSyllables;
@@ -377,153 +345,208 @@ namespace Lyriser.Models
 		public SubSyllable[][] ToArray() => _syllables.ToArray();
 	}
 
-	abstract class LyricsNode
+	public interface ILyricsNodeBase
 	{
-		protected LyricsNode(SourceSpan span) => Span = span;
-
-		public abstract void Transform(StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore);
-
-		public abstract IEnumerable<HighlightToken> Tokens { get; }
-
-		public SourceSpan Span { get; }
-	}
-
-	interface IRubyNode
-	{
-		void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore);
+		string GenerateSource();
 
 		IEnumerable<HighlightToken> Tokens { get; }
 
 		SourceSpan Span { get; }
-
-		string Text { get; }
 	}
 
-	class SimpleNode : LyricsNode, IRubyNode
+	public abstract class LyricsNodeBase : ILyricsNodeBase
 	{
-		public SimpleNode(string text, CharacterState state, SourceSpan span) : base(span)
+		protected LyricsNodeBase(SourceSpan span) => Span = span;
+
+		public abstract IEnumerable<HighlightToken> Tokens { get; }
+
+		public SourceSpan Span { get; }
+
+		public abstract string GenerateSource();
+
+		public static string GenerateSource(IEnumerable<ILyricsNodeBase> nodes) => string.Concat(nodes.Select(x => x.GenerateSource()));
+	}
+
+	public abstract class LyricsNode : LyricsNodeBase
+	{
+		protected LyricsNode(SourceSpan span) : base(span) { }
+
+		public abstract void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore);
+	}
+
+	public interface IPhoneticNode : ILyricsNodeBase
+	{
+		void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore);
+
+		string PhoneticText { get; }
+	}
+
+	public class SimpleNode : LyricsNode, IPhoneticNode
+	{
+		public SimpleNode(string text, bool escaped, SourceSpan span) : base(span)
 		{
-			_state = state;
-			_text = text;
+			Text = text;
+			IsEscaped = escaped;
 		}
 
-		readonly CharacterState _state;
-		readonly string _text;
+		public SimpleNode(string text, SourceSpan span) : this(text, LyricsParser.IsEscapeRequired(text) || text == StartGroupingChar || text == StopGroupingChar, span) { }
 
-		public string Text => _state == CharacterState.Default ? _text : string.Empty;
+		const string StartGroupingChar = "{";
+		const string StopGroupingChar = "}";
 
-		public override void Transform(StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore) => Transform(-1, textBuilder, syllableStore);
+		public string Text { get; }
+
+		public bool IsEscaped { get; }
+
+		public (string, CharacterState) PhoneticTextAndState =>
+			!IsEscaped && Text == StartGroupingChar ? (string.Empty, CharacterState.StartGrouping) :
+			!IsEscaped && Text == StopGroupingChar  ? (string.Empty, CharacterState.StopGrouping ) :
+			                                          (Text,         CharacterState.Default      );
+
+		public string PhoneticText => PhoneticTextAndState.Item1;
+
+		public override void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore) => Transform(-1, textBuilder, syllableStore);
 
 		public void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore)
 		{
-			if (_state == CharacterState.StartGrouping)
+			var (phoneticText, state) = PhoneticTextAndState;
+			if (state == CharacterState.StartGrouping)
 				syllableStore?.StartGrouping();
-			else if (_state == CharacterState.StopGrouping)
+			else if (state == CharacterState.StopGrouping)
 				syllableStore?.StopGrouping();
 			else
 			{
-				if (syllableStore != null && !string.IsNullOrWhiteSpace(Text))
+				if (syllableStore != null && !string.IsNullOrWhiteSpace(phoneticText))
 					syllableStore.Add(new SubSyllable(attached, textBuilder.Length));
-				textBuilder.Append(Text);
+				textBuilder.Append(phoneticText);
 			}
 		}
+
+		public override string GenerateSource() => IsEscaped ? $"`{Text}" : Text;
 
 		public override IEnumerable<HighlightToken> Tokens
 		{
 			get
 			{
-				if (_state == CharacterState.StartGrouping || _state == CharacterState.StopGrouping)
+				var (_, state) = PhoneticTextAndState;
+				if (state == CharacterState.StartGrouping || state == CharacterState.StopGrouping)
 					yield return new HighlightToken("SyllableGrouping", Span);
 			}
 		}
-
-		public override string ToString() => _state == CharacterState.Default ? _text : "(" + _state.ToString() + ")";
 	}
 
-	class SilentNode<T> : LyricsNode where T: LyricsNode
+	public class SilentNode : LyricsNode
 	{
-		public SilentNode(IEnumerable<T> nodes, SourceSpan span) : base(span) => Nodes = nodes.ToArray();
+		public SilentNode(IEnumerable<LyricsNode> nodes, SourceSpan span) : base(span) => Nodes = nodes.ToArray();
 
-		protected readonly T[] Nodes;
+		public IReadOnlyList<LyricsNode> Nodes { get; }
 
-		public override void Transform(StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore)
+		public override void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore)
 		{
 			foreach (var node in Nodes)
 				node.Transform(textBuilder, attachedSpecifiers, null);
 		}
 
-		public override IEnumerable<HighlightToken> Tokens
+		public override string GenerateSource() => GenerateSource(Nodes);
+
+		public override IEnumerable<HighlightToken> Tokens => GetTokens(Span, Nodes);
+
+		internal static IEnumerable<HighlightToken> GetTokens(SourceSpan span, IEnumerable<LyricsNode> nodes)
 		{
-			get
+			yield return new HighlightToken("Silent", span);
+			foreach (var node in nodes)
 			{
-				yield return new HighlightToken("Silent", Span);
-				foreach (var node in Nodes)
-				{
-					foreach (var token in node.Tokens)
-						yield return token;
-				}
+				foreach (var token in node.Tokens)
+					yield return token;
 			}
 		}
+
+		internal static string GenerateSource(IEnumerable<LyricsNode> nodes) => $"({LyricsNodeBase.GenerateSource(nodes)})";
 	}
 
-	class SimpleSilentNode : SilentNode<SimpleNode>, IRubyNode
+	public class RubySilentNode : LyricsNodeBase, IPhoneticNode
 	{
-		public SimpleSilentNode(IEnumerable<SimpleNode> nodes, SourceSpan span) : base(nodes, span) { }
+		public RubySilentNode(IEnumerable<SimpleNode> nodes, SourceSpan span) : base(span) => Nodes = nodes.ToArray();
 
-		public string Text => string.Concat(Nodes.Select(x => x.Text));
+		public IReadOnlyList<SimpleNode> Nodes { get; }
+
+		public string PhoneticText => string.Concat(Nodes.Select(x => x.PhoneticText));
 
 		public void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore)
 		{
 			foreach (var node in Nodes)
 				node.Transform(attached, textBuilder, null);
 		}
+
+		public override string GenerateSource() => SilentNode.GenerateSource(Nodes);
+
+		public override IEnumerable<HighlightToken> Tokens => SilentNode.GetTokens(Span, Nodes);
 	}
 
-	class CompositeNode : LyricsNode
+	public class CompositeNode : LyricsNode
 	{
-		public CompositeNode(string text, SourceSpan baseSpan, IEnumerable<IRubyNode> ruby, SourceSpan span) : base(span)
+		public CompositeNode(IEnumerable<SimpleNode> text, IEnumerable<IPhoneticNode> ruby, bool complex, SourceSpan span) : base(span)
 		{
-			_text = text;
-			_baseSpan = baseSpan;
-			_ruby = ruby.ToArray();
-			_syllableDivision = _ruby.All(x => x.Text == "#" || string.IsNullOrEmpty(x.Text));
+			Text = text.ToArray();
+			if (Text.Count <= 0)
+				throw new ArgumentException($"Must contains at least one item", nameof(text));
+			Ruby = ruby.ToArray();
+			IsComplex = complex;
 		}
 
-		readonly string _text;
-		readonly SourceSpan _baseSpan;
-		readonly IRubyNode[] _ruby;
-		readonly bool _syllableDivision;
+		public CompositeNode(IEnumerable<SimpleNode> text, IEnumerable<IPhoneticNode> ruby, SourceSpan span) : this(text, ruby, false, span) => IsComplex = Text.Count > 1;
 
-		public override void Transform(StringBuilder textBuilder, List<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore)
+		public IReadOnlyList<SimpleNode> Text { get; }
+
+		public IReadOnlyList<IPhoneticNode> Ruby { get; }
+
+		public bool IsComplex { get; }
+
+		public override void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore)
 		{
 			var rubyTextBuilder = new StringBuilder();
-			foreach (var rubyNode in _ruby)
+			var syllableDivision = true;
+			foreach (var rubyNode in Ruby)
+			{
+				if (!IsSyllableDivisionComponent(rubyNode))
+					syllableDivision = false;
 				rubyNode.Transform(attachedSpecifiers.Count, rubyTextBuilder, syllableStore);
-			if (_syllableDivision)
-				attachedSpecifiers.Add(new SyllableDivisionSpecifier(new SharpDX.DirectWrite.TextRange(textBuilder.Length, _text.Length), rubyTextBuilder.Length));
+			}
+			var text = string.Concat(Text.Select(x => x.Text));
+			if (syllableDivision)
+				attachedSpecifiers.Add(new SyllableDivisionSpecifier(new SharpDX.DirectWrite.TextRange(textBuilder.Length, text.Length), rubyTextBuilder.Length));
 			else
-				attachedSpecifiers.Add(new RubySpecifier(new SharpDX.DirectWrite.TextRange(textBuilder.Length, _text.Length), rubyTextBuilder.ToString()));
-			textBuilder.Append(_text);
+				attachedSpecifiers.Add(new RubySpecifier(new SharpDX.DirectWrite.TextRange(textBuilder.Length, text.Length), rubyTextBuilder.ToString()));
+			textBuilder.Append(text);
 		}
+
+		public override string GenerateSource() =>
+			IsComplex ? $"|{GenerateSource(Text)}\"{GenerateSource(Ruby)}\"" :
+						$"{GenerateSource(Text)}\"{GenerateSource(Ruby)}\"";
 
 		public override IEnumerable<HighlightToken> Tokens
 		{
 			get
 			{
-				yield return new HighlightToken("AttachedBase", _baseSpan);
-				foreach (var ruby in _ruby)
+				var syllableDivision = Ruby.All(IsSyllableDivisionComponent);
+				yield return new HighlightToken("AttachedBase", new SourceSpan(Text[0].Span.Start, Text[Text.Count - 1].Span.End));
+				foreach (var ruby in Ruby)
 				{
-					yield return new HighlightToken(_syllableDivision ? "SyllableDivision" : "Ruby", ruby.Span);
+					yield return new HighlightToken(syllableDivision ? "SyllableDivision" : "Ruby", ruby.Span);
 					foreach (var token in ruby.Tokens)
 						yield return token;
 				}
 			}
 		}
 
-		public override string ToString() => _text + "(" + string.Concat(_ruby.Select(x => x.Text)) + ")";
+		static bool IsSyllableDivisionComponent(IPhoneticNode node)
+		{
+			var phoneticText = node.PhoneticText;
+			return phoneticText == "#" || string.IsNullOrEmpty(phoneticText);
+		}
 	}
 
-	enum CharacterState
+	public enum CharacterState
 	{
 		Default,
 		StartGrouping,

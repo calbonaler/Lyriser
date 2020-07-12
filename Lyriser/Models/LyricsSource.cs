@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using SharpDX.DirectWrite;
 
 namespace Lyriser.Models
@@ -9,11 +10,36 @@ namespace Lyriser.Models
 	{
 		public static readonly LyricsSource Empty = new LyricsSource();
 
-		public LyricsSource(string text, IEnumerable<AttachedSpecifier> attachedSpecifiers, LineMap lineMap, IEnumerable<SubSyllable[][]> syllableLines)
+		public LyricsSource(IEnumerable<LyricsNode[]> lyrics)
 		{
-			Text = text ?? throw new ArgumentNullException(nameof(text));
-			AttachedSpecifiers = attachedSpecifiers.ToArray();
-			LineMap = lineMap ?? throw new ArgumentNullException(nameof(lineMap));
+			if (lyrics == null)
+				throw new ArgumentNullException(nameof(lyrics));
+			var attachedSpecs = new List<AttachedSpecifier>();
+			var baseTextBuilder = new StringBuilder();
+			var physicalLines = new List<PhysicalLine>();
+			var logicalToPhysicalMap = new List<int>();
+			var syllableLines = new List<SubSyllable[][]>();
+			var firstLine = true;
+			foreach (var nodes in lyrics)
+			{
+				if (!firstLine)
+					baseTextBuilder.Append('\n');
+				var textStart = baseTextBuilder.Length;
+				var attachedStart = attachedSpecs.Count;
+				var syllableStore = new SyllableStore();
+				foreach (var node in nodes)
+					node.Transform(baseTextBuilder, attachedSpecs, syllableStore);
+				physicalLines.Add(new PhysicalLine(textStart, baseTextBuilder.Length - textStart, attachedStart, attachedSpecs.Count - attachedStart));
+				if (syllableStore.HasAnySyllable)
+				{
+					logicalToPhysicalMap.Add(physicalLines.Count - 1);
+					syllableLines.Add(syllableStore.ToArray());
+				}
+				firstLine = false;
+			}
+			Text = baseTextBuilder.ToString();
+			AttachedSpecifiers = attachedSpecs.ToArray();
+			LineMap = new LineMap(physicalLines, logicalToPhysicalMap);
 			SyllableLines = syllableLines.ToArray();
 		}
 		LyricsSource()
