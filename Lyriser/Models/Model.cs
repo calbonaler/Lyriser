@@ -164,10 +164,10 @@ namespace Lyriser.Models
 						// 既存ルビの作成
 						var rubyBase = baseText.Substring(rubyBaseStart, i - rubyBaseStart);
 						var ruby = output.Substring(rubyStart, monoRubyIndexes[i] - rubyStart);
-						// 下記のいずれかに該当する場合はルビを作成しない
-						// ・ルビのベースがすべての文字でひらがな or カタカナ
-						// ・ルビのベースとルビがASCII文字の全角・半角の違いを除いて一致する
-						if (!StringEqualsExceptAsciiZenHan(rubyBase, ruby) && !Regex.IsMatch(rubyBase, "^[\\p{IsHiragana}\\p{IsKatakana}]+$"))
+						// 下記のすべてに該当する場合のみルビを作成する
+						// ・ルビのベースはカテゴリLoのCode Pointのみから生成される
+						// ・ルビのベースにはひらがな、カタカナ、半角・全角形類を含まない
+						if (Regex.IsMatch(rubyBase, "^[\\p{Lo}]+$") && !Regex.IsMatch(rubyBase, "^[\\p{IsHiragana}\\p{IsKatakana}\\p{IsKatakanaPhoneticExtensions}\\p{IsHalfwidthandFullwidthForms}]+$"))
 						{
 							var nodes = new List<SimpleNode>();
 							for (var j = rubyBaseStart; j < i;)
@@ -198,14 +198,14 @@ namespace Lyriser.Models
 			{
 				if (node is SimpleNode simpleNode)
 				{
-					textToNodeMap.Add(sb.Length, simpleNode);
+					textToNodeMap[sb.Length] = simpleNode;
 					sb.Append(simpleNode.PhoneticText);
 				}
 				else if (node is CompositeNode compositeNode)
 				{
 					foreach (var subNode in compositeNode.Text)
 					{
-						textToNodeMap.Add(sb.Length, subNode);
+						textToNodeMap[sb.Length] = subNode;
 						sb.Append(subNode.PhoneticText);
 					}
 				}
@@ -260,24 +260,6 @@ namespace Lyriser.Models
 			}
 
 			return newNodes.ToArray();
-		}
-
-		static char AsciiZenkakuToHankaku(char source) => source >= '！' && source <= '～' ? (char)(source - '！' + '!') : source;
-
-		static bool StringEqualsExceptAsciiZenHan(string left, string right)
-		{
-			if (ReferenceEquals(left, right))
-				return true;
-			if (left is null || right is null || left.Length != right.Length)
-				return false;
-			for (var i = 0; i < left.Length; i++)
-			{
-				var leftChar = AsciiZenkakuToHankaku(left[i]);
-				var rightChar = AsciiZenkakuToHankaku(right[i]);
-				if (leftChar != rightChar)
-					return false;
-			}
-			return true;
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
