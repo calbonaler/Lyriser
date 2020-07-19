@@ -18,12 +18,12 @@ namespace Lyriser.Models
 		static ParserError ErrorRubyMustNotBeOnlyWhitespaces(SourceLocation location) => new ParserError("E0006", "ルビを空白文字のみとすることはできません。",   location);
 		static ParserError ErrorAnyCharacterRequired        (SourceLocation location) => new ParserError("E0007", "何らかの文字が必要です。",                     location);
 
-		const char RubyBaseStartChar = '|';
-		const char RubyStartChar = '"';
-		const char RubyEndChar = '"';
-		const char SilentStartChar = '(';
-		const char SilentEndChar = ')';
-		const char EscapeChar = '`';
+		internal const char RubyBaseStartChar = '|';
+		internal const char RubyStartChar = '(';
+		internal const char RubyEndChar = ')';
+		internal const char SilentStartChar = '[';
+		internal const char SilentEndChar = ']';
+		internal const char EscapeChar = '`';
 
 		bool Accept(Scanner scanner, char ch)
 		{
@@ -420,7 +420,7 @@ namespace Lyriser.Models
 			}
 		}
 
-		public override string GenerateSource() => IsEscaped ? $"`{Text}" : Text;
+		public override string GenerateSource() => IsEscaped ? $"{LyricsParser.EscapeChar}{Text}" : Text;
 
 		public override IEnumerable<HighlightToken> Tokens
 		{
@@ -459,7 +459,7 @@ namespace Lyriser.Models
 			}
 		}
 
-		internal static string GenerateSource(IEnumerable<LyricsNode> nodes) => $"({LyricsNodeBase.GenerateSource(nodes)})";
+		internal static string GenerateSource(IEnumerable<LyricsNode> nodes) => $"{LyricsParser.SilentStartChar}{LyricsNodeBase.GenerateSource(nodes)}{LyricsParser.SilentEndChar}";
 	}
 
 	public class RubySilentNode : LyricsNodeBase, IPhoneticNode
@@ -519,8 +519,8 @@ namespace Lyriser.Models
 		}
 
 		public override string GenerateSource() =>
-			IsComplex ? $"|{GenerateSource(Text)}\"{GenerateSource(Ruby)}\"" :
-						$"{GenerateSource(Text)}\"{GenerateSource(Ruby)}\"";
+			IsComplex ? $"{LyricsParser.RubyBaseStartChar}{GenerateSource(Text)}{LyricsParser.RubyStartChar}{GenerateSource(Ruby)}{LyricsParser.RubyEndChar}" :
+						$"{GenerateSource(Text)}{LyricsParser.RubyStartChar}{GenerateSource(Ruby)}{LyricsParser.RubyEndChar}";
 
 		public override IEnumerable<HighlightToken> Tokens
 		{
