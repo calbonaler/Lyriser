@@ -12,7 +12,7 @@ using ICSharpCode.AvalonEdit.Utils;
 
 namespace Lyriser.Models
 {
-	public class Model : INotifyPropertyChanged, IDisposable
+	public class Model : INotifyPropertyChanged
 	{
 		public Model()
 		{
@@ -28,26 +28,6 @@ namespace Lyriser.Models
 					ParserErrors = m_BackingParserErrors.ToArray();
 				});
 		}
-
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		protected virtual void Dispose(bool disposing)
-		{
-			if (disposing)
-			{
-				if (m_Language != null)
-				{
-					m_Language.Dispose();
-					m_Language = null;
-				}
-			}
-		}
-
-		ImeLanguage m_Language;
 
 		readonly LyricsParser m_Parser = new LyricsParser();
 		ITextSourceVersion m_OriginalVersion;
@@ -129,12 +109,6 @@ namespace Lyriser.Models
 
 		public void AutoSetRuby(ISegment segment)
 		{
-			if (m_Language == null)
-			{
-				m_Language = ImeLanguage.Create();
-				if (m_Language == null)
-					return;
-			}
 			// 非発音領域などのルビ以外の構造を保持したままルビの再設定を行う
 			var parsingErrorOccurred = false;
 			var parser = new LyricsParser { ErrorReporter = _ => parsingErrorOccurred = true };
@@ -145,7 +119,7 @@ namespace Lyriser.Models
 			foreach (var (lyricsLine, lineTerminator) in lyricsLines)
 			{
 				var (baseText, textToNodeMap) = CollectBaseText(lyricsLine);
-				var (output, monoRubyIndexes) = m_Language.GetMonoRuby(baseText);
+				var (output, monoRubyIndexes) = ImeLanguage.GetMonoRuby(baseText);
 				if (output is null)
 				{
 					newSourceBuilder.Append(LyricsNodeBase.GenerateSource(lyricsLine));

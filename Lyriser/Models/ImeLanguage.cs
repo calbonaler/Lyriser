@@ -5,7 +5,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Lyriser.Models
 {
-	public class ImeLanguage : IDisposable
+	public static class ImeLanguage
 	{
 		const int S_OK = 0;
 		const int FELANG_REQ_REV = 0x00030000;
@@ -13,27 +13,7 @@ namespace Lyriser.Models
 
 		public const ushort UnmatchedPosition = 0xffff;
 
-		ImeLanguage() { }
-
-		public static ImeLanguage Create()
-		{
-			var type = Type.GetTypeFromProgID("MSIME.Japan");
-			if (type is null)
-				return null;
-			var language = new ImeLanguage();
-			language.m_Language = Activator.CreateInstance(type) as IFELanguage;
-			if (language.m_Language is null)
-				return null;
-			if (language.m_Language.Open() != S_OK)
-			{
-				Marshal.ReleaseComObject(language.m_Language);
-				language.m_Language = null;
-				return null;
-			}
-			return language;
-		}
-
-		IFELanguage m_Language;
+		static readonly Type s_LanguageType = Type.GetTypeFromProgID("MSIME.Japan");
 
 		static ushort[] CopyToUInt16(IntPtr ptr, int length)
 		{
@@ -46,37 +26,29 @@ namespace Lyriser.Models
 			return finalArray;
 		}
 
-		public (string Output, ushort[] MonoRubyIndexes) GetMonoRuby(string text)
+		public static (string Output, ushort[] MonoRubyIndexes) GetMonoRuby(string text)
 		{
-			var res = m_Language.GetJMorphResult(FELANG_REQ_REV, FELANG_CMODE_MONORUBY, text.Length, text, IntPtr.Zero, out var result);
-			if (res != S_OK || result.IsInvalid)
-				return (null, null);
-			using (result)
+			var language = (IFELanguage)Activator.CreateInstance(s_LanguageType);
+			try
 			{
-				var native = Marshal.PtrToStructure<MORRSLT>(result.DangerousGetHandle());
-				var output = Marshal.PtrToStringUni(native.Output, native.OutputLength);
-				var monoRubyIndexes = CopyToUInt16(native.MonoRubyPos, text.Length + 1);
-				return (output, monoRubyIndexes);
-			}
-		}
-
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		protected virtual void Dispose(bool disposing)
-		{
-			if (disposing)
-			{
-				if (m_Language != null)
+				if (language.Open() != S_OK)
+					return (null, null);
+				try
 				{
-					m_Language.Close();
-					Marshal.ReleaseComObject(m_Language);
-					m_Language = null;
+					var res = language.GetJMorphResult(FELANG_REQ_REV, FELANG_CMODE_MONORUBY, text.Length, text, IntPtr.Zero, out var result);
+					if (res != S_OK || result.IsInvalid)
+						return (null, null);
+					using (result)
+					{
+						var native = Marshal.PtrToStructure<MORRSLT>(result.DangerousGetHandle());
+						var output = Marshal.PtrToStringUni(native.Output, native.OutputLength);
+						var monoRubyIndexes = CopyToUInt16(native.MonoRubyPos, text.Length + 1);
+						return (output, monoRubyIndexes);
+					}
 				}
+				finally { language.Close(); }
 			}
+			finally { Marshal.ReleaseComObject(language); }
 		}
 	}
 
