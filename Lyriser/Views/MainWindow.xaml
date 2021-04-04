@@ -441,17 +441,18 @@
 				<ListView x:Name="ParserErrorList" Grid.Row="2" ItemsSource="{Binding ParserErrors}" SelectedItem="{Binding SelectedError}">
 					<ListView.View>
 						<GridView>
+							<GridView.ColumnHeaderContainerStyle>
+								<Style TargetType="{x:Type GridViewColumnHeader}">
+									<Setter Property="HorizontalContentAlignment" Value="Left"/>
+									<Setter Property="Padding" Value="5,0"/>
+								</Style>
+							</GridView.ColumnHeaderContainerStyle>
 							<GridViewColumn Header="コード" DisplayMemberBinding="{Binding Code}"/>
 							<GridViewColumn Header="説明" DisplayMemberBinding="{Binding Description}"/>
 							<GridViewColumn Header="行" DisplayMemberBinding="{Binding Location.Line}"/>
 							<GridViewColumn Header="列" DisplayMemberBinding="{Binding Location.Column}"/>
 						</GridView>
 					</ListView.View>
-					<ListView.Resources>
-						<Style TargetType="{x:Type GridViewColumnHeader}">
-							<Setter Property="HorizontalContentAlignment" Value="Left"/>
-						</Style>
-					</ListView.Resources>
 					<i:Interaction.Triggers>
 						<l:RoutedEventTrigger RoutedEvent="ListViewItem.MouseDoubleClick">
 							<i:InvokeCommandAction Command="{Binding MoveCaretToSelectedErrorCommand}"/>
