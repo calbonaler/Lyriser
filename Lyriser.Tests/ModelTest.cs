@@ -12,7 +12,7 @@ namespace Lyriser.Tests
 		{
 			public MonoRubyPorviderMock(Func<string, MonoRuby?> implementation) => m_Implementation = implementation;
 
-			Func<string, MonoRuby?> m_Implementation;
+			readonly Func<string, MonoRuby?> m_Implementation;
 
 			public MonoRuby? GetMonoRuby(string text) => m_Implementation(text);
 		}
@@ -42,6 +42,15 @@ namespace Lyriser.Tests
 			model.SourceDocument.Text = "麗らかに咲いてる";
 			model.AutoSetRuby(new TextSegment() { StartOffset = 0, Length = model.SourceDocument.TextLength });
 			Assert.AreEqual("麗(うら)らかに咲(さ)いてる", model.SourceDocument.Text);
+		}
+
+		[TestMethod]
+		public void TestAutoSetRuby_UnicodeカテゴリLo以外のベース文字列()
+		{
+			var model = new Model(new MonoRubyPorviderMock(_ => new MonoRuby("おだやかなひびをすごす", new ushort[] { 0, 2, 3, 4, 5, MonoRuby.UnmatchedPosition, 7, 8, 9, 10, 11 })));
+			model.SourceDocument.Text = "穏やかな日々を過ごす";
+			model.AutoSetRuby(new TextSegment() { StartOffset = 0, Length = model.SourceDocument.TextLength });
+			Assert.AreEqual("穏(おだ)やかな|日々(ひび)を過(す)ごす", model.SourceDocument.Text);
 		}
 	}
 }

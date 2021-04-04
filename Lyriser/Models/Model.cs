@@ -156,9 +156,9 @@ namespace Lyriser.Models
 					var rubyBase = baseText.Substring(rubyBaseStart, i - rubyBaseStart);
 					var ruby = monoRuby.Text.Substring(rubyStart, monoRuby.Indexes[i] - rubyStart);
 					// 下記のすべてに該当する場合のみルビを作成する
-					// ・ルビのベースはカテゴリLoのCode Pointのみから生成される
+					// ・ルビのベースはカテゴリLoのCode Pointまたは文字「々」のみから生成される
 					// ・ルビのベースにはひらがな、カタカナ、半角・全角形類を含まない
-					if (Regex.IsMatch(rubyBase, "^[\\p{Lo}]+$") && !Regex.IsMatch(rubyBase, "^[\\p{IsHiragana}\\p{IsKatakana}\\p{IsKatakanaPhoneticExtensions}\\p{IsHalfwidthandFullwidthForms}]+$"))
+					if (Regex.IsMatch(rubyBase, "^[\\p{Lo}々]+$") && !Regex.IsMatch(rubyBase, "^[\\p{IsHiragana}\\p{IsKatakana}\\p{IsKatakanaPhoneticExtensions}\\p{IsHalfwidthandFullwidthForms}]+$"))
 					{
 						var nodes = new List<SimpleNode>();
 						for (var j = rubyBaseStart; j < i;)
