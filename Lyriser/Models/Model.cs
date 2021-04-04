@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -14,8 +15,9 @@ namespace Lyriser.Models
 {
 	public class Model : INotifyPropertyChanged
 	{
-		public Model()
+		public Model(IMonoRubyProvider monoRubyProvider)
 		{
+			m_MonoRubyProvider = monoRubyProvider;
 			m_Parser.ErrorReporter = error => m_BackingParserErrors.Add(error);
 			m_OriginalVersion = SourceDocument.Version;
 			Observable.FromEventPattern(x => SourceDocument.TextChanged += x, x => SourceDocument.TextChanged -= x)
@@ -28,6 +30,8 @@ namespace Lyriser.Models
 					ParserErrors = m_BackingParserErrors.ToArray();
 				});
 		}
+
+		IMonoRubyProvider m_MonoRubyProvider;
 
 		readonly LyricsParser m_Parser = new LyricsParser();
 		ITextSourceVersion m_OriginalVersion;
@@ -119,49 +123,79 @@ namespace Lyriser.Models
 			foreach (var (lyricsLine, lineTerminator) in lyricsLines)
 			{
 				var (baseText, textToNodeMap) = CollectBaseText(lyricsLine);
-				var (output, monoRubyIndexes) = ImeLanguage.GetMonoRuby(baseText);
-				if (output is null)
+				if (!(m_MonoRubyProvider.GetMonoRuby(baseText) is MonoRuby monoRuby))
 				{
 					newSourceBuilder.Append(LyricsNodeBase.GenerateSource(lyricsLine));
 					newSourceBuilder.Append(lineTerminator);
 					continue;
 				}
+				// GetMonoRubyでモノルビ分割がされない場合の送り仮名向け特殊処理
+				var baseTextElements = GetTextElements(baseText);
+				var rubyTextElements = GetTextElements(monoRuby.Text);
+				for (int i = baseTextElements.Length - 1, j = rubyTextElements.Length - 1; i >= 0 && j >= 0; )
+				{
+					if (baseTextElements[i].Text != rubyTextElements[j].Text)
+					{
+						// ルビとベースで対応する文字が異なる場合はモノルビの対応関係が設定されている箇所まで進める
+						while ((j = monoRuby.Indexes[baseTextElements[i].Index]) == MonoRuby.UnmatchedPosition)
+							i--;
+					}
+					// ルビとベースで対応する文字が同じ場合はモノルビの対応関係を設定する
+					monoRuby.Indexes[baseTextElements[i].Index] = (ushort)rubyTextElements[j].Index;
+					i--;
+					j--;
+				}
 				var rubySpecifiers = new Queue<RubySpecifier>();
 				var rubyBaseStart = 0;
-				var rubyStart = 0;
-				for (var i = 0; i <= baseText.Length; i++)
+				var rubyStart = monoRuby.Indexes[0];
+				for (var i = 1; i <= baseText.Length; i++)
 				{
-					if (monoRubyIndexes[i] == ImeLanguage.UnmatchedPosition)
+					if (monoRuby.Indexes[i] == MonoRuby.UnmatchedPosition)
 						continue;
-					if (i > 0)
+					// 既存ルビの作成
+					var rubyBase = baseText.Substring(rubyBaseStart, i - rubyBaseStart);
+					var ruby = monoRuby.Text.Substring(rubyStart, monoRuby.Indexes[i] - rubyStart);
+					// 下記のすべてに該当する場合のみルビを作成する
+					// ・ルビのベースはカテゴリLoのCode Pointのみから生成される
+					// ・ルビのベースにはひらがな、カタカナ、半角・全角形類を含まない
+					if (Regex.IsMatch(rubyBase, "^[\\p{Lo}]+$") && !Regex.IsMatch(rubyBase, "^[\\p{IsHiragana}\\p{IsKatakana}\\p{IsKatakanaPhoneticExtensions}\\p{IsHalfwidthandFullwidthForms}]+$"))
 					{
-						// 既存ルビの作成
-						var rubyBase = baseText.Substring(rubyBaseStart, i - rubyBaseStart);
-						var ruby = output.Substring(rubyStart, monoRubyIndexes[i] - rubyStart);
-						// 下記のすべてに該当する場合のみルビを作成する
-						// ・ルビのベースはカテゴリLoのCode Pointのみから生成される
-						// ・ルビのベースにはひらがな、カタカナ、半角・全角形類を含まない
-						if (Regex.IsMatch(rubyBase, "^[\\p{Lo}]+$") && !Regex.IsMatch(rubyBase, "^[\\p{IsHiragana}\\p{IsKatakana}\\p{IsKatakanaPhoneticExtensions}\\p{IsHalfwidthandFullwidthForms}]+$"))
+						var nodes = new List<SimpleNode>();
+						for (var j = rubyBaseStart; j < i;)
 						{
-							var nodes = new List<SimpleNode>();
-							for (var j = rubyBaseStart; j < i;)
-							{
-								var node = textToNodeMap[j];
-								nodes.Add(node);
-								j += node.PhoneticText.Length;
-							}
-							rubySpecifiers.Enqueue(new RubySpecifier(nodes, ruby));
+							var node = textToNodeMap[j];
+							nodes.Add(node);
+							j += node.PhoneticText.Length;
 						}
+						rubySpecifiers.Enqueue(new RubySpecifier(nodes, ruby));
 					}
 					// 新規ルビの記録開始
 					rubyBaseStart = i;
-					rubyStart = monoRubyIndexes[i];
+					rubyStart = monoRuby.Indexes[i];
 				}
 				newSourceBuilder.Append(LyricsNodeBase.GenerateSource(SetRuby(lyricsLine, rubySpecifiers)));
 				newSourceBuilder.Append(lineTerminator);
 				Debug.Assert(rubySpecifiers.Count == 0);
 			}
 			SourceDocument.Replace(segment, newSourceBuilder.ToString());
+		}
+
+		static TextElement[] GetTextElements(string text)
+		{
+			var enumerator = StringInfo.GetTextElementEnumerator(text);
+			var indexes = new List<TextElement>();
+			var oldIndex = -1;
+			while (true)
+			{
+				var result = enumerator.MoveNext();
+				if (oldIndex >= 0)
+				{
+					var length = (result ? enumerator.ElementIndex : text.Length) - oldIndex;
+					indexes.Add(new TextElement(text, oldIndex, length));
+				}
+				if (!result) return indexes.ToArray();
+				oldIndex = enumerator.ElementIndex;
+			}
 		}
 
 		static (string BaseText, Dictionary<int, SimpleNode> TextToNodeMap) CollectBaseText(IEnumerable<LyricsNode> nodes)
@@ -237,6 +271,34 @@ namespace Lyriser.Models
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
+
+		readonly struct TextElement : IEquatable<TextElement>
+		{
+			public TextElement(string wholeText, int index, int length)
+			{
+				WholeText = wholeText;
+				Index = index;
+				Length = length;
+			}
+
+			public readonly string WholeText;
+			public readonly int Index;
+			public readonly int Length;
+			public string Text => WholeText.Substring(Index, Length);
+
+			public bool Equals(TextElement other) => WholeText == other.WholeText && Index == other.Index && Length == other.Length;
+			public override bool Equals(object obj) => obj is TextElement other && Equals(other);
+			public override int GetHashCode()
+			{
+				var hashCode = 518592628;
+				hashCode = hashCode * -1521134295 + WholeText.GetHashCode();
+				hashCode = hashCode * -1521134295 + Index.GetHashCode();
+				hashCode = hashCode * -1521134295 + Length.GetHashCode();
+				return hashCode;
+			}
+			public static bool operator ==(TextElement left, TextElement right) => left.Equals(right);
+			public static bool operator !=(TextElement left, TextElement right) => !(left == right);
+		}
 
 		readonly struct RubySpecifier : IEquatable<RubySpecifier>
 		{

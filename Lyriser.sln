@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.29020.237
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyriser", "Lyriser\Lyriser.csproj", "{DB7F1247-8C9C-40F2-BC13-C906523DC6CB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyriser.Tests", "Lyriser.Tests\Lyriser.Tests.csproj", "{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,12 @@ Global
 		{DB7F1247-8C9C-40F2-BC13-C906523DC6CB}.Release|x64.Build.0 = Release|x64
 		{DB7F1247-8C9C-40F2-BC13-C906523DC6CB}.Release|x86.ActiveCfg = Release|x86
 		{DB7F1247-8C9C-40F2-BC13-C906523DC6CB}.Release|x86.Build.0 = Release|x86
+		{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}.Debug|x64.ActiveCfg = Debug|x64
+		{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}.Debug|x64.Build.0 = Debug|x64
+		{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}.Debug|x86.ActiveCfg = Debug|x86
+		{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}.Debug|x86.Build.0 = Debug|x86
+		{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}.Release|x64.ActiveCfg = Release|x64
+		{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}.Release|x86.ActiveCfg = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

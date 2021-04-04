@@ -78,7 +78,7 @@ namespace Lyriser.ViewModels
 			MoveCaretToSelectedErrorCommand = new ViewModelCommand(async () => await MoveCaretToSelectedErrorAsync());
 		}
 
-		readonly Model m_Model = new Model();
+		readonly Model m_Model = new Model(ImeLanguage.Instance);
 
 		public TextDocument SourceDocument => m_Model.SourceDocument;
 		public LyricsSource LyricsSource

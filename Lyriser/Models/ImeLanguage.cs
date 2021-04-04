@@ -5,51 +5,73 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Lyriser.Models
 {
-	public static class ImeLanguage
+	public interface IMonoRubyProvider
 	{
+		MonoRuby? GetMonoRuby(string text);
+	}
+
+	public class ImeLanguage : IMonoRubyProvider
+	{
+		ImeLanguage() { }
+
 		const int S_OK = 0;
 		const int FELANG_REQ_REV = 0x00030000;
 		const int FELANG_CMODE_MONORUBY = 0x00000002;
 
-		public const ushort UnmatchedPosition = 0xffff;
-
 		static readonly Type s_LanguageType = Type.GetTypeFromProgID("MSIME.Japan");
+		public static readonly IMonoRubyProvider Instance = new ImeLanguage();
 
-		static ushort[] CopyToUInt16(IntPtr ptr, int length)
-		{
-			if (ptr == IntPtr.Zero)
-				return null;
-			var array = new short[length];
-			Marshal.Copy(ptr, array, 0, length);
-			var finalArray = new ushort[length];
-			Buffer.BlockCopy(array, 0, finalArray, 0, sizeof(ushort) * length);
-			return finalArray;
-		}
-
-		public static (string Output, ushort[] MonoRubyIndexes) GetMonoRuby(string text)
+		public MonoRuby? GetMonoRuby(string text)
 		{
 			var language = (IFELanguage)Activator.CreateInstance(s_LanguageType);
 			try
 			{
 				if (language.Open() != S_OK)
-					return (null, null);
+					return null;
 				try
 				{
 					var res = language.GetJMorphResult(FELANG_REQ_REV, FELANG_CMODE_MONORUBY, text.Length, text, IntPtr.Zero, out var result);
 					if (res != S_OK || result.IsInvalid)
-						return (null, null);
+						return null;
 					using (result)
 					{
 						var native = Marshal.PtrToStructure<MORRSLT>(result.DangerousGetHandle());
 						var output = Marshal.PtrToStringUni(native.Output, native.OutputLength);
-						var monoRubyIndexes = CopyToUInt16(native.MonoRubyPos, text.Length + 1);
-						return (output, monoRubyIndexes);
+						var length = text.Length + 1;
+						var array = new short[length];
+						Marshal.Copy(native.MonoRubyPos, array, 0, length);
+						return new MonoRuby(output, array);
 					}
 				}
 				finally { language.Close(); }
 			}
 			finally { Marshal.ReleaseComObject(language); }
 		}
+	}
+
+	public struct MonoRuby : IEquatable<MonoRuby>
+	{
+		public MonoRuby(string text, Array indexes)
+		{
+			Text = text ?? throw new ArgumentNullException(nameof(text));
+			if (indexes == null)
+				throw new ArgumentNullException(nameof(indexes));
+			if (indexes.GetType() != typeof(short[]) && indexes.GetType() != typeof(ushort[]))
+				throw new ArgumentException("Must be of array of Int16 or UInt16", nameof(indexes));
+			Indexes = new ushort[indexes.Length];
+			Buffer.BlockCopy(indexes, 0, Indexes, 0, sizeof(ushort) * indexes.Length);
+		}
+
+		public const ushort UnmatchedPosition = 0xffff;
+
+		public string Text;
+		public ushort[] Indexes;
+
+		public bool Equals(MonoRuby other) => Text == other.Text && Indexes == other.Indexes;
+		public override bool Equals(object obj) => obj is MonoRuby other && Equals(other);
+		public override int GetHashCode() => Text.GetHashCode() ^ Indexes.GetHashCode();
+		public static bool operator ==(MonoRuby left, MonoRuby right) => left.Equals(right);
+		public static bool operator !=(MonoRuby left, MonoRuby right) => !(left == right);
 	}
 
 	[StructLayout(LayoutKind.Sequential, Pack = 1)]
