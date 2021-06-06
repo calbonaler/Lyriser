@@ -51,8 +51,8 @@ namespace Lyriser.Views
 
 	public class HighlightDecorationCollection : IList<HighlightDecoration>, IList
 	{
-		readonly List<HighlightingColor> m_List = new List<HighlightingColor>();
-		readonly Dictionary<string, int> m_Dictionary = new Dictionary<string, int>();
+		readonly List<HighlightingColor> m_List = new();
+		readonly Dictionary<string, int> m_Dictionary = new();
 
 		public IEnumerable<HighlightingColor> NamedHighlightingColors => m_Dictionary.Values.Select(x => m_List[x]);
 		public HighlightingColor GetNamedColor(string name) => m_Dictionary.TryGetValue(name, out var index) ? m_List[index] : null;
@@ -125,7 +125,7 @@ namespace Lyriser.Views
 		void IList.Insert(int index, object value) => InsertItem(index, (HighlightDecoration)value);
 		void IList.Remove(object value) => Remove((HighlightDecoration)value);
 
-		HighlightingColor ConvertTo(HighlightDecoration highlightDecoration)
+		static HighlightingColor ConvertTo(HighlightDecoration highlightDecoration)
 		{
 			var highlightingColor = new HighlightingColor();
 			if (highlightDecoration.ForeColor != default)

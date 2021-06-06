@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
+using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ICSharpCode.AvalonEdit.Document;
@@ -10,6 +11,7 @@ using Livet.Commands;
 using Livet.EventListeners;
 using Livet.Messaging;
 using Lyriser.Models;
+using System.Threading;
 
 namespace Lyriser.ViewModels
 {
@@ -35,7 +37,7 @@ namespace Lyriser.ViewModels
 			CompositeDisposable.Add(
 				m_Model.AsPropertyChanged(nameof(m_Model.ParserErrors))
 					.Throttle(TimeSpan.FromMilliseconds(1000))
-					.ObserveOn(DispatcherHelper.UIDispatcher)
+					.ObserveOn(SynchronizationContext.Current)
 					.Subscribe(_ =>
 					{
 						ParserErrors.Clear();
@@ -78,7 +80,7 @@ namespace Lyriser.ViewModels
 			MoveCaretToSelectedErrorCommand = new ViewModelCommand(async () => await MoveCaretToSelectedErrorAsync());
 		}
 
-		readonly Model m_Model = new Model(ImeLanguage.Instance);
+		readonly Model m_Model = new(ImeLanguage.Instance);
 
 		public TextDocument SourceDocument => m_Model.SourceDocument;
 		public LyricsSource LyricsSource
