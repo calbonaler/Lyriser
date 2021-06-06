@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyriser", "Lyriser\Lyriser.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyriser.Tests", "Lyriser.Tests\Lyriser.Tests.csproj", "{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lyriser.Core", "Lyriser.Core\Lyriser.Core.vcxproj", "{6F519980-D573-4D33-80E4-AEDDB777D8AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -29,6 +31,14 @@ Global
 		{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}.Debug|x86.Build.0 = Debug|x86
 		{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}.Release|x64.ActiveCfg = Release|x64
 		{518CFA17-57CA-4CBE-A5A4-F39ED18ACAF9}.Release|x86.ActiveCfg = Release|x86
+		{6F519980-D573-4D33-80E4-AEDDB777D8AB}.Debug|x64.ActiveCfg = Debug|x64
+		{6F519980-D573-4D33-80E4-AEDDB777D8AB}.Debug|x64.Build.0 = Debug|x64
+		{6F519980-D573-4D33-80E4-AEDDB777D8AB}.Debug|x86.ActiveCfg = Debug|Win32
+		{6F519980-D573-4D33-80E4-AEDDB777D8AB}.Debug|x86.Build.0 = Debug|Win32
+		{6F519980-D573-4D33-80E4-AEDDB777D8AB}.Release|x64.ActiveCfg = Release|x64
+		{6F519980-D573-4D33-80E4-AEDDB777D8AB}.Release|x64.Build.0 = Release|x64
+		{6F519980-D573-4D33-80E4-AEDDB777D8AB}.Release|x86.ActiveCfg = Release|Win32
+		{6F519980-D573-4D33-80E4-AEDDB777D8AB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

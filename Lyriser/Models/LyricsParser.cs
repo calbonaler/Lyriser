@@ -512,9 +512,9 @@ namespace Lyriser.Models
 			}
 			var text = string.Concat(Text.Select(x => x.Text));
 			if (syllableDivision)
-				attachedSpecifiers.Add(new SyllableDivisionSpecifier(new SharpDX.DirectWrite.TextRange(textBuilder.Length, text.Length), rubyTextBuilder.Length));
+				attachedSpecifiers.Add(new SyllableDivisionSpecifier(Core.DirectWrite.TextRange.FromStartLength(textBuilder.Length, text.Length), rubyTextBuilder.Length));
 			else
-				attachedSpecifiers.Add(new RubySpecifier(new SharpDX.DirectWrite.TextRange(textBuilder.Length, text.Length), rubyTextBuilder.ToString()));
+				attachedSpecifiers.Add(new RubySpecifier(Core.DirectWrite.TextRange.FromStartLength(textBuilder.Length, text.Length), rubyTextBuilder.ToString()));
 			textBuilder.Append(text);
 		}
 

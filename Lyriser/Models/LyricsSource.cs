@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using SharpDX.DirectWrite;
 
 namespace Lyriser.Models
 {
@@ -58,29 +57,29 @@ namespace Lyriser.Models
 
 	public abstract class AttachedSpecifier
 	{
-		protected AttachedSpecifier(TextRange range) => Range = range;
+		protected AttachedSpecifier(Core.DirectWrite.TextRange range) => Range = range;
 
-		public TextRange Range { get; }
+		public Core.DirectWrite.TextRange Range { get; }
 
 		public abstract AttachedSpecifier Move(int distance);
 	}
 
 	public class RubySpecifier : AttachedSpecifier
 	{
-		public RubySpecifier(TextRange range, string text) : base(range) => Text = text;
+		public RubySpecifier(Core.DirectWrite.TextRange range, string text) : base(range) => Text = text;
 
 		public string Text { get; }
 
-		public override AttachedSpecifier Move(int distance) => new RubySpecifier(new TextRange(Range.StartPosition + distance, Range.Length), Text);
+		public override AttachedSpecifier Move(int distance) => new RubySpecifier(Core.DirectWrite.TextRange.FromStartLength(Range.StartPosition + distance, Range.Length), Text);
 	}
 
 	public class SyllableDivisionSpecifier : AttachedSpecifier
 	{
-		public SyllableDivisionSpecifier(TextRange range, int divisionCount) : base(range) => DivisionCount = divisionCount;
+		public SyllableDivisionSpecifier(Core.DirectWrite.TextRange range, int divisionCount) : base(range) => DivisionCount = divisionCount;
 
 		public int DivisionCount { get; }
 
-		public override AttachedSpecifier Move(int distance) => new SyllableDivisionSpecifier(new TextRange(Range.StartPosition + distance, Range.Length), DivisionCount);
+		public override AttachedSpecifier Move(int distance) => new SyllableDivisionSpecifier(Core.DirectWrite.TextRange.FromStartLength(Range.StartPosition + distance, Range.Length), DivisionCount);
 	}
 
 	public readonly struct SubSyllable : IEquatable<SubSyllable>
