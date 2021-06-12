@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Windows;
 using System.Windows.Interop;
 using ICSharpCode.AvalonEdit;
@@ -50,27 +49,25 @@ namespace Lyriser.Views
 
 		protected override void InvokeAction(InteractionMessage message)
 		{
-			if (!(message is WarnUnsavedChangeMessage actualMessage))
+			if (message is not WarnUnsavedChangeMessage actualMessage)
 				return;
-			using (var dialog = new TaskDialog())
-			{
-				dialog.Cancelable = true;
-				dialog.Caption = Title;
-				dialog.InstructionText = string.Format(MessageFormat, actualMessage.DocumentName);
-				TaskDialogButton SaveButton = new TaskDialogButton(nameof(SaveButton), SaveButtonText);
-				SaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Yes);
-				dialog.Controls.Add(SaveButton);
-				TaskDialogButton DontSaveButton = new TaskDialogButton(nameof(DontSaveButton), DoNotSaveButtonText);
-				DontSaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.No);
-				dialog.Controls.Add(DontSaveButton);
-				TaskDialogButton CancelButton = new TaskDialogButton(nameof(CancelButton), CancelButtonText);
-				CancelButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Cancel);
-				dialog.Controls.Add(CancelButton);
-				dialog.StartupLocation = TaskDialogStartupLocation.CenterOwner;
-				dialog.OwnerWindowHandle = ((HwndSource)PresentationSource.FromVisual(AssociatedObject)).Handle;
-				var result = dialog.Show();
-				actualMessage.Response = result == TaskDialogResult.Yes ? true : result == TaskDialogResult.No ? false : (bool?)null;
-			}
+			using var dialog = new TaskDialog();
+			dialog.Cancelable = true;
+			dialog.Caption = Title;
+			dialog.InstructionText = string.Format(MessageFormat, actualMessage.DocumentName);
+			TaskDialogButton SaveButton = new TaskDialogButton(nameof(SaveButton), SaveButtonText);
+			SaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Yes);
+			dialog.Controls.Add(SaveButton);
+			TaskDialogButton DontSaveButton = new TaskDialogButton(nameof(DontSaveButton), DoNotSaveButtonText);
+			DontSaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.No);
+			dialog.Controls.Add(DontSaveButton);
+			TaskDialogButton CancelButton = new TaskDialogButton(nameof(CancelButton), CancelButtonText);
+			CancelButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Cancel);
+			dialog.Controls.Add(CancelButton);
+			dialog.StartupLocation = TaskDialogStartupLocation.CenterOwner;
+			dialog.OwnerWindowHandle = ((HwndSource)PresentationSource.FromVisual(AssociatedObject)).Handle;
+			var result = dialog.Show();
+			actualMessage.Response = result == TaskDialogResult.Yes ? true : result == TaskDialogResult.No ? false : null;
 		}
 	}
 
@@ -102,25 +99,25 @@ namespace Lyriser.Views
 			dialog.DefaultExtension = dialog.Filters[0].Extensions[0];
 		}
 
-		protected Func<Encoding> AddEncodingSelectorToDialog(CommonFileDialog dialog, bool addAutoDetect)
+		protected Func<FileEncoding> AddEncodingSelectorToDialog(CommonFileDialog dialog, bool addAutoDetect)
 		{
 			var encodingComboBox = new CommonFileDialogComboBox();
-			var encodings = new List<(string DisplayName, Func<Encoding> Encoding)>()
+			var encodings = new List<(string DisplayName, FileEncoding Encoding)>()
 			{
-				("UTF-8",       () => new UTF8Encoding(false)),
-				("UTF-8 (BOM)", () => new UTF8Encoding(true)),
-				("ANSI",        () => Encoding.Default),
+				("UTF-8",       FileEncoding.UTF8),
+				("UTF-8 (BOM)", FileEncoding.UTF8WithBom),
+				("ANSI",        FileEncoding.Ansi),
 			};
 			if (addAutoDetect)
-				encodings.Insert(0, ("自動検出", () => null));
-			foreach (var encoding in encodings)
-				encodingComboBox.Items.Add(new CommonFileDialogComboBoxItem(encoding.DisplayName));
+				encodings.Insert(0, ("自動検出", FileEncoding.AutoDetect));
+			foreach (var (displayName, _) in encodings)
+				encodingComboBox.Items.Add(new CommonFileDialogComboBoxItem(displayName));
 			encodingComboBox.SelectedIndex = 0;
 			var group = new CommonFileDialogGroupBox(EncodingLabelText);
 			group.Items.Add(encodingComboBox);
 			group.IsProminent = true;
 			dialog.Controls.Add(group);
-			return () => encodings[encodingComboBox.SelectedIndex].Encoding();
+			return () => encodings[encodingComboBox.SelectedIndex].Encoding;
 		}
 	}
 
@@ -128,16 +125,14 @@ namespace Lyriser.Views
 	{
 		protected override void InvokeAction(InteractionMessage message)
 		{
-			if (!(message is ResponsiveInteractionMessage<EncodedFileInfo> actualMessage))
+			if (message is not ResponsiveInteractionMessage<EncodedFileInfo?> actualMessage)
 				return;
-			using (var dialog = new CommonOpenFileDialog())
-			{
-				dialog.EnsureFileExists = true;
-				dialog.EnsurePathExists = true;
-				SetFilterToDialog(dialog);
-				var selector = AddEncodingSelectorToDialog(dialog, true);
-				actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new EncodedFileInfo(dialog.FileName, selector()) : null;
-			}
+			using var dialog = new CommonOpenFileDialog();
+			dialog.EnsureFileExists = true;
+			dialog.EnsurePathExists = true;
+			SetFilterToDialog(dialog);
+			var selector = AddEncodingSelectorToDialog(dialog, true);
+			actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new EncodedFileInfo(dialog.FileName, selector()) : null;
 		}
 	}
 
@@ -145,19 +140,17 @@ namespace Lyriser.Views
 	{
 		protected override void InvokeAction(InteractionMessage message)
 		{
-			if (!(message is ResponsiveInteractionMessage<EncodedFileInfo> actualMessage))
+			if (message is not ResponsiveInteractionMessage<EncodedFileInfo?> actualMessage)
 				return;
-			using (var dialog = new CommonSaveFileDialog())
-			{
-				dialog.AlwaysAppendDefaultExtension = true;
-				dialog.CreatePrompt = true;
-				dialog.EnsurePathExists = true;
-				dialog.EnsureValidNames = true;
-				dialog.OverwritePrompt = true;
-				SetFilterToDialog(dialog);
-				var selector = AddEncodingSelectorToDialog(dialog, false);
-				actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new EncodedFileInfo(dialog.FileName, selector()) : null;
-			}
+			using var dialog = new CommonSaveFileDialog();
+			dialog.AlwaysAppendDefaultExtension = true;
+			dialog.CreatePrompt = true;
+			dialog.EnsurePathExists = true;
+			dialog.EnsureValidNames = true;
+			dialog.OverwritePrompt = true;
+			SetFilterToDialog(dialog);
+			var selector = AddEncodingSelectorToDialog(dialog, false);
+			actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new EncodedFileInfo(dialog.FileName, selector()) : null;
 		}
 	}
 
@@ -165,7 +158,7 @@ namespace Lyriser.Views
 	{
 		protected override void InvokeAction(InteractionMessage message)
 		{
-			if (!(message is GenericInteractionMessage<SyncFocusArgument> actualMessage))
+			if (message is not GenericInteractionMessage<SyncFocusArgument> actualMessage)
 				return;
 			var arg = actualMessage.Value;
 			if (arg.Force)
@@ -181,7 +174,7 @@ namespace Lyriser.Views
 	{
 		protected override void InvokeAction(InteractionMessage message)
 		{
-			if (!(message is GenericInteractionMessage<SyncFocusArgument> actualMessage))
+			if (message is not GenericInteractionMessage<SyncFocusArgument> actualMessage)
 				return;
 			var arg = actualMessage.Value;
 			if (arg.Force)
@@ -197,7 +190,7 @@ namespace Lyriser.Views
 	{
 		protected override void InvokeAction(InteractionMessage message)
 		{
-			if (!(message is GenericInteractionMessage<LyricsHighlightRequest> actualMessage))
+			if (message is not GenericInteractionMessage<LyricsHighlightRequest> actualMessage)
 				return;
 			switch (actualMessage.Value)
 			{

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading;
 using System.Windows;
 using System.Windows.Interop;
@@ -12,8 +13,8 @@ namespace Lyriser.Views
 		const int RenderWait = 2; // default: 2ms
 
 		// - field -----------------------------------------------------------------------
-		D3DImage m_D3DImage;
-		Core.D2D3D9InteropClient m_InteropClient;
+		D3DImage? m_D3DImage;
+		Core.D2D3D9InteropClient? m_InteropClient;
 
 		// - property --------------------------------------------------------------------
 		public static bool IsInDesignMode
@@ -53,13 +54,15 @@ namespace Lyriser.Views
 		{
 			if (IsInDesignMode)
 				return;
+			Debug.Assert(m_D3DImage != null, "Unloaded is called but Loaded is not");
 			StopRendering();
 			m_D3DImage.IsFrontBufferAvailableChanged -= OnIsFrontBufferAvailableChanged;
 			Source = null;
 			Utils.SafeDispose(ref m_InteropClient);
 		}
-		void OnRendering(object sender, EventArgs e)
+		void OnRendering(object? sender, EventArgs e)
 		{
+			Debug.Assert(m_D3DImage != null && m_InteropClient != null, "Rendering is listened to but Loaded is not called");
 			m_InteropClient.PrepareAndCallRender();
 			if (m_InteropClient.IsD3D9RenderTargetValid)
 			{
@@ -71,19 +74,21 @@ namespace Lyriser.Views
 		}
 		protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
 		{
+			Debug.Assert(m_D3DImage != null && m_InteropClient != null, "RenderSizeChanged is called but Loaded is not");
 			var dpiScaleFactor = DpiScaleFactor;
 			m_InteropClient.CreateAndBindTargets(ActualWidth, ActualHeight, dpiScaleFactor.X, dpiScaleFactor.Y);
 			base.OnRenderSizeChanged(sizeInfo);
 		}
 		void OnIsFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)
 		{
-			if (m_D3DImage.IsFrontBufferAvailable)
+			if ((bool)e.NewValue)
 				StartRendering();
 			else
 				StopRendering();
 		}
 		void OnSetBackBuffer(IntPtr newBackBuffer)
 		{
+			Debug.Assert(m_D3DImage != null && m_InteropClient != null, "OnSetBackBuffer is called but Loaded is not");
 			m_D3DImage.Lock();
 			m_D3DImage.SetBackBuffer(D3DResourceType.IDirect3DSurface9, newBackBuffer);
 			m_D3DImage.Unlock();
@@ -107,9 +112,9 @@ namespace Lyriser.Views
 	public class ResourceCache
 	{
 		// - field -----------------------------------------------------------------------
-		readonly Dictionary<string, Func<Core.Direct2D1.RenderTarget, object>> m_Generators = new Dictionary<string, Func<Core.Direct2D1.RenderTarget, object>>();
-		readonly Dictionary<string, object> m_Resources = new Dictionary<string, object>();
-		Core.Direct2D1.RenderTarget m_RenderTarget = null;
+		readonly Dictionary<string, Func<Core.Direct2D1.RenderTarget, object>> m_Generators = new();
+		readonly Dictionary<string, object> m_Resources = new();
+		Core.Direct2D1.RenderTarget? m_RenderTarget = null;
 
 		// - property --------------------------------------------------------------------
 		public object this[string key] => m_Resources[key];
@@ -120,7 +125,8 @@ namespace Lyriser.Views
 			m_Generators.Add(key, generator);
 			if (m_Resources.TryGetValue(key, out var resOld))
 				(resOld as IDisposable)?.Dispose();
-			m_Resources[key] = m_RenderTarget == null ? null : generator(m_RenderTarget);
+			if (m_RenderTarget != null)
+				m_Resources[key] = generator(m_RenderTarget);
 		}
 		public void UpdateResources(Core.Direct2D1.RenderTarget renderTarget)
 		{

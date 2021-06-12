@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,7 +14,7 @@ namespace Lyriser.Views
 		public static readonly DependencyProperty MethodTargetProperty = DependencyProperty.Register(nameof(MethodTarget), typeof(object), typeof(WindowClosingBehavior), new PropertyMetadata(null));
 		public static readonly DependencyProperty MethodNameProperty = DependencyProperty.Register(nameof(MethodName), typeof(string), typeof(WindowClosingBehavior), new PropertyMetadata(null));
 
-		readonly ReturnMethodBinder<bool> binder = new ReturnMethodBinder<bool>();
+		readonly ReturnMethodBinder<bool> binder = new();
 
 		public object MethodTarget
 		{
@@ -49,9 +50,9 @@ namespace Lyriser.Views
 
 	public class ReturnMethodBinder<T>
 	{
-		Type _cachedTargetType;
-		string _cachedName;
-		Func<object, Task<T>> _cachedDelegate;
+		Type? _cachedTargetType;
+		string? _cachedName;
+		Func<object, Task<T>>? _cachedDelegate;
 
 		public Task<T> Invoke(object target, string name)
 		{
@@ -61,7 +62,10 @@ namespace Lyriser.Views
 				throw new ArgumentNullException(nameof(name));
 			var targetType = target.GetType();
 			if (_cachedTargetType == targetType && _cachedName == name)
+			{
+				Debug.Assert(_cachedDelegate != null);
 				return _cachedDelegate(target);
+			}
 
 			_cachedTargetType = targetType;
 			_cachedName = name;

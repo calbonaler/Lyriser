@@ -7,7 +7,7 @@ namespace Lyriser.Models
 {
 	public class LyricsSource
 	{
-		public static readonly LyricsSource Empty = new LyricsSource();
+		public static readonly LyricsSource Empty = new();
 
 		public LyricsSource(IEnumerable<LyricsNode[]> lyrics)
 		{
@@ -95,8 +95,8 @@ namespace Lyriser.Models
 		public bool IsSimple => AttachedIndex < 0;
 
 		public bool Equals(SubSyllable other) => AttachedIndex == other.AttachedIndex && CharacterIndex == other.CharacterIndex;
-		public override bool Equals(object obj) => obj is SubSyllable other && Equals(other);
-		public override int GetHashCode() => AttachedIndex ^ CharacterIndex;
+		public override bool Equals(object? obj) => obj is SubSyllable other && Equals(other);
+		public override int GetHashCode() => HashCode.Combine(AttachedIndex, CharacterIndex);
 		public static bool operator ==(SubSyllable left, SubSyllable right) => left.Equals(right);
 		public static bool operator !=(SubSyllable left, SubSyllable right) => !(left == right);
 	}
@@ -113,8 +113,8 @@ namespace Lyriser.Models
 		public int Column { get; }
 
 		public bool Equals(SyllableLocation other) => Line == other.Line && Column == other.Column;
-		public override bool Equals(object obj) => obj is SyllableLocation other && Equals(other);
-		public override int GetHashCode() => Line ^ Column;
+		public override bool Equals(object? obj) => obj is SyllableLocation other && Equals(other);
+		public override int GetHashCode() => HashCode.Combine(Line, Column);
 		public static bool operator ==(SyllableLocation left, SyllableLocation right) => left.Equals(right);
 		public static bool operator !=(SyllableLocation left, SyllableLocation right) => !(left == right);
 	}
@@ -135,8 +135,8 @@ namespace Lyriser.Models
 		public int AttachedLength { get; }
 
 		public bool Equals(PhysicalLine other) => TextStart == other.TextStart && TextLength == other.TextLength && AttachedStart == other.AttachedStart && AttachedLength == other.AttachedLength;
-		public override bool Equals(object obj) => obj is PhysicalLine other && Equals(other);
-		public override int GetHashCode() => TextStart ^ TextLength ^ AttachedStart ^ AttachedLength;
+		public override bool Equals(object? obj) => obj is PhysicalLine other && Equals(other);
+		public override int GetHashCode() => HashCode.Combine(TextStart, TextLength, AttachedStart, AttachedLength);
 		public static bool operator ==(PhysicalLine left, PhysicalLine right) => left.Equals(right);
 		public static bool operator !=(PhysicalLine left, PhysicalLine right) => !(left == right);
 	}

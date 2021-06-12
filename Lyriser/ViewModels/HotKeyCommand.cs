@@ -19,23 +19,23 @@ namespace Lyriser.ViewModels
 		readonly Func<bool> _canExecute;
 		static readonly Func<bool> AlwaysExecute = () => true;
 
-		KeyGesture _gesture;
-		public KeyGesture Gesture
+		KeyGesture? _gesture;
+		public KeyGesture? Gesture
 		{
 			get => _gesture;
 			set => Utils.SetPropertyWithRelated(ref _gesture, value, PropertyChanged, this, new[] { nameof(GestureText) });
 		}
 
-		public string GestureText => Gesture?.GetDisplayStringForCulture(CultureInfo.CurrentUICulture);
+		public string? GestureText => Gesture?.GetDisplayStringForCulture(CultureInfo.CurrentUICulture);
 
 		public void Execute() => _execute();
 		public bool CanExecute() => _canExecute();
-		public void RaiseCanExecuteChanged() => CanExecuteChanged(this, EventArgs.Empty);
+		public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 
-		void ICommand.Execute(object parameter) => Execute();
-		bool ICommand.CanExecute(object parameter) => CanExecute();
+		void ICommand.Execute(object? parameter) => Execute();
+		bool ICommand.CanExecute(object? parameter) => CanExecute();
 
-		public event EventHandler CanExecuteChanged;
-		public event PropertyChangedEventHandler PropertyChanged;
+		public event EventHandler? CanExecuteChanged;
+		public event PropertyChangedEventHandler? PropertyChanged;
 	}
 }

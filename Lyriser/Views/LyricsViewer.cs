@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Windows;
 using System.Windows.Input;
 using Lyriser.Models;
@@ -20,10 +23,11 @@ namespace Lyriser.Views
 		}
 
 		System.Windows.Media.FontFamily FontFamily { get; } = new System.Windows.Media.FontFamily("Meiryo");
-		FontWeight FontWeight => FontWeights.Normal;
-		FontStyle FontStyle => FontStyles.Normal;
-		FontStretch FontStretch => FontStretches.Normal;
-		double FontSize => 14.0 * 96.0 / 72.0;
+
+		static FontWeight FontWeight => FontWeights.Normal;
+		static FontStyle FontStyle => FontStyles.Normal;
+		static FontStretch FontStretch => FontStretches.Normal;
+		static double FontSize => 14.0 * 96.0 / 72.0;
 
 		const float s_LeftPadding = 10;
 		const float s_TopPadding = 5;
@@ -32,16 +36,16 @@ namespace Lyriser.Views
 		const float s_NextTopPadding = 5;
 		const float s_NextBottomPadding = 5;
 
-		Core.DirectWrite.Factory m_WriteFactory;
-		TextRun m_Run;
-		NextTextRun m_NextRun;
+		Core.DirectWrite.Factory? m_WriteFactory;
+		TextRun? m_Run;
+		NextTextRun? m_NextRun;
 
 		public static readonly new DependencyProperty SourceProperty = DependencyProperty.Register(nameof(Source), typeof(LyricsSource), typeof(LyricsViewer), new PropertyMetadata(LyricsSource.Empty, (s, e) => ((LyricsViewer)s).OnSourceChanged(e)));
 		public static readonly DependencyProperty CurrentSyllableProperty = DependencyProperty.Register(
 			nameof(CurrentSyllable), typeof(SyllableLocation), typeof(LyricsViewer),
 			new FrameworkPropertyMetadata(default(SyllableLocation), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, (s, e) => ((LyricsViewer)s).UpdateNextLineViewer()));
-		public static readonly DependencyProperty ScrollPositionXProperty = DependencyProperty.Register(nameof(ScrollPositionX), typeof(double), typeof(LyricsViewer), new PropertyMetadata(0.0, null, (s, v) => Utils.Clamp((double)v, 0, ((LyricsViewer)s).ScrollMaximumX)));
-		public static readonly DependencyProperty ScrollPositionYProperty = DependencyProperty.Register(nameof(ScrollPositionY), typeof(double), typeof(LyricsViewer), new PropertyMetadata(0.0, null, (s, v) => Utils.Clamp((double)v, 0, ((LyricsViewer)s).ScrollMaximumY)));
+		public static readonly DependencyProperty ScrollPositionXProperty = DependencyProperty.Register(nameof(ScrollPositionX), typeof(double), typeof(LyricsViewer), new PropertyMetadata(0.0, null, (s, v) => Math.Clamp((double)v, 0, ((LyricsViewer)s).ScrollMaximumX)));
+		public static readonly DependencyProperty ScrollPositionYProperty = DependencyProperty.Register(nameof(ScrollPositionY), typeof(double), typeof(LyricsViewer), new PropertyMetadata(0.0, null, (s, v) => Math.Clamp((double)v, 0, ((LyricsViewer)s).ScrollMaximumY)));
 		static readonly DependencyPropertyKey ScrollMaximumXPropertyKey = DependencyProperty.RegisterReadOnly(nameof(ScrollMaximumX), typeof(double), typeof(LyricsViewer), new PropertyMetadata());
 		static readonly DependencyPropertyKey ScrollMaximumYPropertyKey = DependencyProperty.RegisterReadOnly(nameof(ScrollMaximumY), typeof(double), typeof(LyricsViewer), new PropertyMetadata());
 		public static readonly DependencyProperty ScrollMaximumXProperty = ScrollMaximumXPropertyKey.DependencyProperty;
@@ -62,6 +66,7 @@ namespace Lyriser.Views
 
 		protected virtual void OnSourceChanged(DependencyPropertyChangedEventArgs e)
 		{
+			Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
 			m_Run.Setup(m_WriteFactory, Source.Text, Source.AttachedSpecifiers, FontFamily, FontWeight, FontStyle, FontStretch, FontSize);
 			UpdateNextLineViewer();
 			UpdateScrollInfo();
@@ -91,8 +96,9 @@ namespace Lyriser.Views
 		{
 			if (Source.SyllableLines.Count <= 0)
 				return;
+			Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
 			var subSyllables = Source.SyllableLines[CurrentSyllable.Line][CurrentSyllable.Column];
-			var centerX = (m_Run.GetSubSyllableBounds(subSyllables[0]).Left + m_Run.GetSubSyllableBounds(subSyllables.Last()).Right) / 2.0f;
+			var centerX = (m_Run.GetSubSyllableBounds(subSyllables[0]).TopLeft.X + m_Run.GetSubSyllableBounds(subSyllables.Last()).BottomRight.X) / 2.0f;
 			var newLineIndex = CurrentSyllable.Line + (forward ? 1 : -1);
 			if (newLineIndex >= 0 && newLineIndex < Source.SyllableLines.Count)
 				CurrentSyllable = new SyllableLocation(newLineIndex, FindNearestSyllableIndex(newLineIndex, centerX));
@@ -108,7 +114,7 @@ namespace Lyriser.Views
 		{
 			if (Source.SyllableLines.Count <= 0)
 				return;
-			CurrentSyllable = new SyllableLocation(Source.SyllableLines.Count - 1, Source.SyllableLines.Last().Length - 1);
+			CurrentSyllable = new SyllableLocation(Source.SyllableLines.Count - 1, Source.SyllableLines[^1].Length - 1);
 			ScrollPositionX = ScrollMaximumX;
 			ScrollPositionY = ScrollMaximumY;
 		}
@@ -126,6 +132,7 @@ namespace Lyriser.Views
 		}
 		void UpdateNextLineViewer()
 		{
+			Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
 			if (CurrentSyllable.Line + 1 < Source.SyllableLines.Count)
 			{
 				var (text, attachedSpecs) = m_Run.GetLine(CurrentSyllable.Line + 1, Source.LineMap);
@@ -136,12 +143,13 @@ namespace Lyriser.Views
 		}
 		int FindNearestLineIndex(float y)
 		{
+			Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
 			var distance = float.PositiveInfinity;
 			var candidateLineIndex = -1;
 			for (var i = 0; i < Source.SyllableLines.Count; i++)
 			{
 				var bounds = m_Run.GetSubSyllableBounds(Source.SyllableLines[i][0][0]);
-				var dist = Math.Abs(y + m_Run.LineSpacing.LineSpacing / 2 - bounds.Bottom);
+				var dist = Math.Abs(y + m_Run.LineSpacing.LineSpacing / 2 - bounds.BottomRight.Y);
 				if (dist < distance)
 				{
 					distance = dist;
@@ -152,6 +160,7 @@ namespace Lyriser.Views
 		}
 		int FindNearestSyllableIndex(int lineIndex, float x)
 		{
+			Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
 			var distance = float.PositiveInfinity;
 			var nearestIndex = 0;
 			for (var i = 0; i < Source.SyllableLines[lineIndex].Length; i++)
@@ -159,14 +168,14 @@ namespace Lyriser.Views
 				foreach (var subSyllable in Source.SyllableLines[lineIndex][i])
 				{
 					var bounds = m_Run.GetSubSyllableBounds(subSyllable);
-					var dist = Math.Abs(x - (bounds.Left + bounds.Right) / 2);
+					var dist = Math.Abs(x - (bounds.TopLeft.X + bounds.BottomRight.X) / 2);
 					if (dist < distance)
 						(distance, nearestIndex) = (dist, i);
 				}
 			}
 			return nearestIndex;
 		}
-		SyllableLocation HitTestPoint(Core.Direct2D1.Point2F point)
+		SyllableLocation HitTestPoint(Vector2 point)
 		{
 			var lineIndex = FindNearestLineIndex(point.Y);
 			return lineIndex < 0 ? new SyllableLocation(0, 0) : new SyllableLocation(lineIndex, FindNearestSyllableIndex(lineIndex, point.X));
@@ -174,33 +183,33 @@ namespace Lyriser.Views
 		public void ScrollIntoCurrentSyllable() => ScrollInto(Source.SyllableLines[CurrentSyllable.Line][CurrentSyllable.Column]);
 		void ScrollInto(IEnumerable<SubSyllable> syllable)
 		{
+			Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
 			var rects = syllable.Select(x => m_Run.GetSubSyllableBounds(x)).ToArray();
 			if (rects.Length <= 0)
 				throw new ArgumentException("Syllable must contain at least one sub-syllable", nameof(syllable));
 			ScrollInto(Core.Direct2D1.RectF.FromLTRB(
-				rects.Min(x => x.Left) - s_LeftPadding,
-				rects[0].Bottom - m_Run.LineSpacing.LineSpacing - s_TopPadding,
-				rects.Max(x => x.Right) + s_RightPadding,
-				rects[0].Bottom + s_BottomPadding
+				rects.Min(x => x.TopLeft.X) - s_LeftPadding,
+				rects[0].BottomRight.Y - m_Run.LineSpacing.LineSpacing - s_TopPadding,
+				rects.Max(x => x.BottomRight.X) + s_RightPadding,
+				rects[0].BottomRight.Y + s_BottomPadding
 			));
 		}
 		void ScrollInto(Core.Direct2D1.RectF bounds)
 		{
-			var transform = ViewTransform;
-			transform.Invert();
-			var topLeft = transform.TransformPoint(default);
-			var bottomRight = transform.TransformPoint(new Core.Direct2D1.Point2F((float)ActualWidth, (float)ActualHeight - NextLineViewerHeight));
+			Matrix3x2.Invert(ViewTransform, out var transform);
+			var topLeft = Vector2.Transform(default, transform);
+			var bottomRight = Vector2.Transform(new Vector2((float)ActualWidth, (float)ActualHeight - NextLineViewerHeight), transform);
 
 			float offsetX = 0;
-			if (bounds.Left < topLeft.X)
-				offsetX += bounds.Left - topLeft.X;
-			else if (bounds.Right > bottomRight.X)
-				offsetX += bounds.Right - bottomRight.X;
+			if (bounds.TopLeft.X < topLeft.X)
+				offsetX += bounds.TopLeft.X - topLeft.X;
+			else if (bounds.BottomRight.X > bottomRight.X)
+				offsetX += bounds.BottomRight.X - bottomRight.X;
 			float offsetY = 0;
-			if (bounds.Top < topLeft.Y)
-				offsetY += bounds.Top - topLeft.Y;
-			else if (bounds.Bottom > bottomRight.Y)
-				offsetY += bounds.Bottom - bottomRight.Y;
+			if (bounds.TopLeft.Y < topLeft.Y)
+				offsetY += bounds.TopLeft.Y - topLeft.Y;
+			else if (bounds.BottomRight.Y > bottomRight.Y)
+				offsetY += bounds.BottomRight.Y - bottomRight.Y;
 
 			ScrollPositionX += offsetX;
 			ScrollPositionY += offsetY;
@@ -236,8 +245,15 @@ namespace Lyriser.Views
 			get => (double)GetValue(ScrollMaximumYProperty);
 			private set => SetValue(ScrollMaximumYPropertyKey, value);
 		}
-		Core.Direct2D1.Matrix3x2F ViewTransform => Core.Direct2D1.Matrix3x2F.Translation(-(float)ScrollPositionX + s_LeftPadding, -(float)ScrollPositionY + s_TopPadding);
-		float NextLineViewerHeight => s_NextTopPadding + m_NextRun.Size.Height + s_NextBottomPadding;
+		Matrix3x2 ViewTransform => Matrix3x2.CreateTranslation(-(float)ScrollPositionX + s_LeftPadding, -(float)ScrollPositionY + s_TopPadding);
+		float NextLineViewerHeight
+		{
+			get
+			{
+				Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
+				return s_NextTopPadding + m_NextRun.Size.Y + s_NextBottomPadding;
+			}
+		}
 
 		//protected override void OnForeColorChanged(EventArgs e)
 		//{
@@ -255,6 +271,7 @@ namespace Lyriser.Views
 		{
 			if (IsInDesignMode)
 				return;
+			Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
 			target.Clear(new Core.ColorF(0xFFFFFF));
 			var transform = ViewTransform;
 			target.Transform = transform;
@@ -264,12 +281,12 @@ namespace Lyriser.Views
 					target.FillRectangle(m_Run.GetSubSyllableBounds(subSyllable), (Core.Direct2D1.Brush)ResourceCache["HighlightBrush"]);
 			}
 			m_Run.Draw(target, (Core.Direct2D1.Brush)ResourceCache["TextBrush"]);
-			target.Transform = Core.Direct2D1.Matrix3x2F.Identity;
+			target.Transform = Matrix3x2.Identity;
 
 			var size = target.Size;
-			target.PushAxisAlignedClip(Core.Direct2D1.RectF.FromXYWH(0, size.Height - NextLineViewerHeight, size.Width, NextLineViewerHeight), Core.Direct2D1.AntialiasMode.Aliased);
+			target.PushAxisAlignedClip(Core.Direct2D1.RectF.FromXYWH(0, size.Y - NextLineViewerHeight, size.X, NextLineViewerHeight), Core.Direct2D1.AntialiasMode.Aliased);
 			target.Clear(new Core.ColorF(0x808080));
-			target.Transform = Core.Direct2D1.Matrix3x2F.Translation(transform.Dx, size.Height - NextLineViewerHeight + s_NextTopPadding);
+			target.Transform = Matrix3x2.CreateTranslation(transform.Translation.X, size.Y - NextLineViewerHeight + s_NextTopPadding);
 			m_NextRun.Draw(target, (Core.Direct2D1.Brush)ResourceCache["NextTextBrush"]);
 			target.PopAxisAlignedClip();
 		}
@@ -284,14 +301,14 @@ namespace Lyriser.Views
 			if (e == null)
 				throw new ArgumentNullException(nameof(e));
 			Focus();
-			var transform = ViewTransform;
-			transform.Invert();
+			Matrix3x2.Invert(ViewTransform, out var transform);
 			var pt = e.GetPosition(this);
-			CurrentSyllable = HitTestPoint(transform.TransformPoint(new Core.Direct2D1.Point2F((float)pt.X, (float)pt.Y)));
+			CurrentSyllable = HitTestPoint(Vector2.Transform(new Vector2((float)pt.X, (float)pt.Y), transform));
 		}
 		protected override void OnMouseWheel(MouseWheelEventArgs e)
 		{
 			base.OnMouseWheel(e);
+			Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
 			var offset = -e.Delta / Mouse.MouseWheelDeltaForOneLine * m_Run.LineSpacing.LineSpacing;
 			ScrollPositionY += offset;
 		}
@@ -314,21 +331,22 @@ namespace Lyriser.Views
 				else
 					HighlightNext(true);
 			}
-			else if (e.Key == Key.Up || e.Key == Key.Down)
+			else if (e.Key is Key.Up or Key.Down)
 				HighlightNextLine(e.Key == Key.Down);
 			e.Handled = true;
 		}
 
 		void UpdateScrollInfo()
 		{
+			Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
 			var size = m_Run.Size;
 			// Add paddings
-			size.Width += s_LeftPadding + s_RightPadding;
-			size.Height += s_TopPadding + s_BottomPadding;
+			size.X += s_LeftPadding + s_RightPadding;
+			size.Y += s_TopPadding + s_BottomPadding;
 			// Add next line viewer height
-			size.Height += NextLineViewerHeight;
-			ScrollMaximumX = Math.Max(size.Width - ActualWidth, 0.0);
-			ScrollMaximumY = Math.Max(size.Height - ActualHeight, 0.0);
+			size.Y += NextLineViewerHeight;
+			ScrollMaximumX = Math.Max(size.X - ActualWidth, 0.0);
+			ScrollMaximumY = Math.Max(size.Y - ActualHeight, 0.0);
 		}
 	}
 
@@ -373,27 +391,37 @@ namespace Lyriser.Views
 			Utils.SafeDispose(ref m_TextLayout);
 		}
 
-		Core.Direct2D1.Point2F m_Origin;
-		Core.DirectWrite.TextLayout m_TextLayout;
+		Vector2 m_Origin;
+		Core.DirectWrite.TextLayout? m_TextLayout;
 
 		public string Text { get; }
 
-		public override void Recreate(Core.DirectWrite.Factory factory, Core.DirectWrite.TextFormat format) => Utils.AssignWithDispose(ref m_TextLayout, factory.CreateTextLayout(Text, format, default));
+		public override void Recreate(Core.DirectWrite.Factory factory, Core.DirectWrite.TextFormat format)
+		{
+			Debug.Assert(m_TextLayout != null);
+			Utils.AssignWithDispose(ref m_TextLayout, factory.CreateTextLayout(Text, format, default));
+		}
 		public override void Draw(Core.Direct2D1.RenderTarget renderTarget, Core.Direct2D1.Brush defaultFillBrush)
 		{
+			Debug.Assert(m_TextLayout != null);
 			if (renderTarget == null)
 				throw new ArgumentNullException(nameof(renderTarget));
 			if (defaultFillBrush == null)
 				throw new ArgumentNullException(nameof(defaultFillBrush));
 			renderTarget.DrawTextLayout(m_Origin, m_TextLayout, defaultFillBrush);
 		}
-		public override float Measure(Core.DirectWrite.TextLayout baseTextLayout) => Math.Max(m_TextLayout.Metrics.Width - GetMetricsForRange(baseTextLayout).Size.Width, 0.0f) / 2;
+		public override float Measure(Core.DirectWrite.TextLayout baseTextLayout)
+		{
+			Debug.Assert(m_TextLayout != null);
+			return Math.Max(m_TextLayout.Metrics.Width - GetMetricsForRange(baseTextLayout).Size.X, 0.0f) / 2;
+		}
 		public override void Arrange(Core.DirectWrite.TextLayout baseTextLayout)
 		{
+			Debug.Assert(m_TextLayout != null);
 			var rangeMetrics = GetMetricsForRange(baseTextLayout);
 			var nonWhitespaceClusterCount = m_TextLayout.GetClusterMetrics().Count(x => !x.IsWhitespace);
-			var spacing = rangeMetrics.Size.Width - m_TextLayout.Metrics.Width;
-			m_TextLayout.MaxWidth = rangeMetrics.Size.Width - spacing / nonWhitespaceClusterCount;
+			var spacing = rangeMetrics.Size.X - m_TextLayout.Metrics.Width;
+			m_TextLayout.MaxWidth = rangeMetrics.Size.X - spacing / nonWhitespaceClusterCount;
 			m_TextLayout.TextAlignment = Core.DirectWrite.TextAlignment.Justified;
 			var textWidth = m_TextLayout.GetClusterMetrics().Select(x => x.Width).RobustSum();
 			if (textWidth < m_TextLayout.MaxWidth)
@@ -401,29 +429,28 @@ namespace Lyriser.Views
 				// text does not seem to be justified, so we use centering instead
 				m_TextLayout.TextAlignment = Core.DirectWrite.TextAlignment.Center;
 			}
-			m_Origin = new Core.Direct2D1.Point2F(rangeMetrics.Position.X + spacing / 2 / nonWhitespaceClusterCount, rangeMetrics.Position.Y);
+			m_Origin = new Vector2(rangeMetrics.TopLeft.X + spacing / 2 / nonWhitespaceClusterCount, rangeMetrics.TopLeft.Y);
 		}
 		public override Core.Direct2D1.RectF GetSubSyllableBounds(Core.DirectWrite.TextLayout baseTextLayout, int textPosition)
 		{
 			var metrics = GetMetricsForRange(baseTextLayout);
 			var (bounds, range) = GetCharacterBounds(textPosition);
 			return Core.Direct2D1.RectF.FromLTRB(
-				range.StartPosition > 0 ? bounds.Left : metrics.Position.X,
-				bounds.Top,
-				range.StartPosition + range.Length < Text.Length ? bounds.Right : metrics.Position.X + metrics.Size.Width,
-				metrics.Position.Y + metrics.Size.Height
+				range.StartPosition > 0 ? bounds.TopLeft.X : metrics.TopLeft.X,
+				bounds.TopLeft.Y,
+				range.StartPosition + range.Length < Text.Length ? bounds.BottomRight.X : metrics.BottomRight.X,
+				metrics.BottomRight.Y
 			);
 		}
 		public override AttachedSpecifier CreateSpecifier() => new RubySpecifier(Range, Text);
 
 		(Core.Direct2D1.RectF Value, Core.DirectWrite.TextRange Range) GetCharacterBounds(int textPosition)
 		{
+			Debug.Assert(m_TextLayout != null);
 			var (_, metrics) = m_TextLayout.HitTestTextPosition(textPosition, false);
-			var bounds = Core.Direct2D1.RectF.FromXYWH(metrics.Position.X, metrics.Position.Y, metrics.Size.Width, metrics.Size.Height);
-			bounds.Left += m_Origin.X;
-			bounds.Top += m_Origin.Y;
-			bounds.Right += m_Origin.X;
-			bounds.Bottom += m_Origin.Y;
+			var bounds = Core.Direct2D1.RectF.FromXYWH(metrics.TopLeft, metrics.Size);
+			bounds.TopLeft += m_Origin;
+			bounds.BottomRight += m_Origin;
 			return (bounds, metrics.TextRange);
 		}
 	}
@@ -442,7 +469,7 @@ namespace Lyriser.Views
 		{
 			var rangeMetrics = GetMetricsForRange(baseTextLayout);
 			var (_, metrics) = baseTextLayout.HitTestTextPosition(Range.StartPosition, false);
-			return Core.Direct2D1.RectF.FromXYWH(rangeMetrics.Position.X + rangeMetrics.Size.Width * textPosition / DivisionCount, metrics.Position.Y, rangeMetrics.Size.Width / DivisionCount, rangeMetrics.Position.Y + rangeMetrics.Size.Height - metrics.Position.Y);
+			return Core.Direct2D1.RectF.FromXYWH(rangeMetrics.TopLeft.X + rangeMetrics.Size.X * textPosition / DivisionCount, metrics.TopLeft.Y, rangeMetrics.Size.X / DivisionCount, rangeMetrics.BottomRight.Y - metrics.TopLeft.Y);
 		}
 		public override AttachedSpecifier CreateSpecifier() => new SyllableDivisionSpecifier(Range, DivisionCount);
 	}
@@ -465,27 +492,29 @@ namespace Lyriser.Views
 			CleanupAttacheds();
 		}
 
-		Core.DirectWrite.TextLayout m_TextLayout;
-		Attached[] m_Attacheds;
+		Core.DirectWrite.TextLayout? m_TextLayout;
+		Attached[]? m_Attacheds;
 
-		protected string Text { get; private set; }
-		protected Core.DirectWrite.TextLayout TextLayout => m_TextLayout;
-		protected IReadOnlyList<Attached> Attacheds => m_Attacheds;
+		protected string? Text { get; private set; }
+		protected Core.DirectWrite.TextLayout? TextLayout => m_TextLayout;
+		protected IReadOnlyList<Attached>? Attacheds => m_Attacheds;
 
-		public Core.Direct2D1.SizeF Size
+		public Vector2 Size
 		{
 			get
 			{
+				if (Text == null || m_TextLayout == null || m_Attacheds == null)
+					throw new InvalidOperationException("Setup not called");
 				var metrics = m_TextLayout.Metrics;
-				return new Core.Direct2D1.SizeF(
-					Math.Max(metrics.LayoutSize.Width, metrics.WidthIncludingTrailingWhitespace),
-					Math.Max(metrics.LayoutSize.Height, metrics.Height)
+				return new Vector2(
+					Math.Max(metrics.LayoutSize.X, metrics.WidthIncludingTrailingWhitespace),
+					Math.Max(metrics.LayoutSize.Y, metrics.Height)
 				);
 			}
 		}
 		public void Draw(Core.Direct2D1.RenderTarget renderTarget, Core.Direct2D1.Brush defaultFillBrush)
 		{
-			if (m_TextLayout == null)
+			if (m_TextLayout == null || m_Attacheds == null)
 				return;
 			if (renderTarget == null)
 				throw new ArgumentNullException(nameof(renderTarget));
@@ -507,6 +536,7 @@ namespace Lyriser.Views
 				format.WordWrapping = Core.DirectWrite.WordWrapping.NoWrap;
 				format.LineSpacing = (Core.DirectWrite.LineSpacingMethod.Uniform, (float)fontSize * 1.5f * (1.0f / 0.8f), (float)fontSize * 1.5f);
 				Utils.AssignWithDispose(ref m_TextLayout, writeFactory.CreateTextLayout(Text, format, default));
+				Debug.Assert(m_TextLayout != null);
 			}
 			CleanupAttacheds();
 			m_Attacheds = new Attached[attachedSpecifiers.Count];
@@ -515,17 +545,12 @@ namespace Lyriser.Views
 				format.WordWrapping = Core.DirectWrite.WordWrapping.NoWrap;
 				for (var i = 0; i < attachedSpecifiers.Count; i++)
 				{
-					switch (attachedSpecifiers[i])
+					m_Attacheds[i] = attachedSpecifiers[i] switch
 					{
-						case RubySpecifier rubySpecifier:
-							m_Attacheds[i] = new Ruby(writeFactory, rubySpecifier.Range, rubySpecifier.Text, format);
-							break;
-						case SyllableDivisionSpecifier syllableDivisionSpecifier:
-							m_Attacheds[i] = new SyllableDivision(syllableDivisionSpecifier.Range, syllableDivisionSpecifier.DivisionCount);
-							break;
-						default:
-							throw new NotSupportedException($"Unsupported attached specifier: {attachedSpecifiers[i]?.GetType()}");
-					}
+						RubySpecifier rubySpecifier => new Ruby(writeFactory, rubySpecifier.Range, rubySpecifier.Text, format),
+						SyllableDivisionSpecifier syllableDivisionSpecifier => new SyllableDivision(syllableDivisionSpecifier.Range, syllableDivisionSpecifier.DivisionCount),
+						_ => throw new NotSupportedException($"Unsupported attached specifier: {attachedSpecifiers[i]?.GetType()}"),
+					};
 					var spacing = m_Attacheds[i].Measure(m_TextLayout);
 					SetRangeSpacing(spacing, spacing, 0, m_Attacheds[i].Range);
 					m_Attacheds[i].Arrange(m_TextLayout);
@@ -534,6 +559,8 @@ namespace Lyriser.Views
 		}
 		public void ChangeFont(Core.DirectWrite.Factory writeFactory, System.Windows.Media.FontFamily fontFamily, FontWeight fontWeight, FontStyle fontStyle, FontStretch fontStretch, double fontSize)
 		{
+			if (Text == null || m_TextLayout == null || m_Attacheds == null)
+				throw new InvalidOperationException("Setup not called");
 			var fontFamilyName = fontFamily.Source;
 			var dwriteFontWeight = fontWeight.ToOpenTypeWeight();
 			var dwriteFontStyle = fontStyle.ToDWrite();
@@ -571,6 +598,7 @@ namespace Lyriser.Views
 		}
 		void SetRangeSpacing(float leadingSpacing, float trailingSpacing, float minimumAdvanceWidth, Core.DirectWrite.TextRange range)
 		{
+			Debug.Assert(m_TextLayout != null);
 			var metricsForRange = new List<(Core.DirectWrite.TextRange Range, bool IsRightToLeft)>();
 			var clusters = m_TextLayout.GetClusterMetrics();
 			var start = 0;
@@ -585,29 +613,27 @@ namespace Lyriser.Views
 				}
 				start += cluster.Length;
 			}
-			using (var textLayout1 = Core.DirectWrite.TextLayout1.From(m_TextLayout))
+			using var textLayout1 = Core.DirectWrite.TextLayout1.From(m_TextLayout);
+			if (metricsForRange.Count == 1)
+				textLayout1.SetCharacterSpacing(leadingSpacing, trailingSpacing, minimumAdvanceWidth, range);
+			else
 			{
-				if (metricsForRange.Count == 1)
-					textLayout1.SetCharacterSpacing(leadingSpacing, trailingSpacing, minimumAdvanceWidth, range);
-				else
+				static void SwapSpacing(ref float l, ref float t)
 				{
-					void SwapSpacing(ref float l, ref float t)
-					{
-						var tmp = t;
-						t = l;
-						l = tmp;
-					}
-
-					var (leading, trailing) = (leadingSpacing, 0.0f);
-					if (metricsForRange[0].IsRightToLeft)
-						SwapSpacing(ref leading, ref trailing);
-					textLayout1.SetCharacterSpacing(leading, trailing, minimumAdvanceWidth, metricsForRange[0].Range);
-
-					(leading, trailing) = (0.0f, trailingSpacing);
-					if (metricsForRange.Last().IsRightToLeft)
-						SwapSpacing(ref leading, ref trailing);
-					textLayout1.SetCharacterSpacing(leading, trailing, minimumAdvanceWidth, metricsForRange.Last().Range);
+					var tmp = t;
+					t = l;
+					l = tmp;
 				}
+
+				var (leading, trailing) = (leadingSpacing, 0.0f);
+				if (metricsForRange[0].IsRightToLeft)
+					SwapSpacing(ref leading, ref trailing);
+				textLayout1.SetCharacterSpacing(leading, trailing, minimumAdvanceWidth, metricsForRange[0].Range);
+
+				(leading, trailing) = (0.0f, trailingSpacing);
+				if (metricsForRange.Last().IsRightToLeft)
+					SwapSpacing(ref leading, ref trailing);
+				textLayout1.SetCharacterSpacing(leading, trailing, minimumAdvanceWidth, metricsForRange.Last().Range);
 			}
 		}
 	}
@@ -617,22 +643,35 @@ namespace Lyriser.Views
 		public TextRun(Core.DirectWrite.Factory writeFacotry, System.Windows.Media.FontFamily fontFamily, FontWeight fontWeight, FontStyle fontStyle, FontStretch fontStretch, double fontSize)
 			: base(writeFacotry, fontFamily, fontWeight, fontStyle, fontStretch, fontSize) { }
 
-		public (Core.DirectWrite.LineSpacingMethod LineSpacingMethod, float LineSpacing, float Baseline) LineSpacing => TextLayout.LineSpacing;
+		public (Core.DirectWrite.LineSpacingMethod LineSpacingMethod, float LineSpacing, float Baseline) LineSpacing
+		{
+			get
+			{
+				if (Text == null || TextLayout == null || Attacheds == null)
+					throw new InvalidOperationException("Setup not called");
+				return TextLayout.LineSpacing;
+			}
+		}
+
 		public Core.Direct2D1.RectF GetSubSyllableBounds(SubSyllable subSyllable)
 		{
+			if (Text == null || TextLayout == null || Attacheds == null)
+				throw new InvalidOperationException("Setup not called");
 			if (subSyllable.IsSimple)
 			{
 				// HitTestTextPoint retrieves actual character bounds, while HitTestTextRange retrieves line-based bounds.
 				var (_, metrics) = TextLayout.HitTestTextPosition(subSyllable.CharacterIndex, false);
 				if (!TextLayout.HitTestTextRange(metrics.TextRange, default, out var rangeMetrics))
 					throw new InvalidOperationException("One index must reference one script group.");
-				return Core.Direct2D1.RectF.FromLTRB(rangeMetrics.Position.X, metrics.Position.Y, rangeMetrics.Position.X + rangeMetrics.Size.Width, rangeMetrics.Position.Y + rangeMetrics.Size.Height);
+				return Core.Direct2D1.RectF.FromLTRB(new Vector2(rangeMetrics.TopLeft.X, metrics.TopLeft.Y), rangeMetrics.BottomRight);
 			}
 			else
 				return Attacheds[subSyllable.AttachedIndex].GetSubSyllableBounds(TextLayout, subSyllable.CharacterIndex);
 		}
 		public (string Text, AttachedSpecifier[] AttachedSpecifiers) GetLine(int lineIndex, LineMap lineMap)
 		{
+			if (Text == null || TextLayout == null || Attacheds == null)
+				throw new InvalidOperationException("Setup not called");
 			var physicalLine = lineMap.GetPhysicalLineByLogical(lineIndex);
 			var text = Text.Substring(physicalLine.TextStart, physicalLine.TextLength).TrimEnd('\n');
 			var attachedSpecs = Attacheds.Skip(physicalLine.AttachedStart).Take(physicalLine.AttachedLength).Select(x => x.CreateSpecifier().Move(-physicalLine.TextStart)).ToArray();

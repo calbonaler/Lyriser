@@ -59,26 +59,28 @@ namespace Lyriser::Core::DirectWrite
 	};
 
 	/// <summary>The DWRITE_TEXT_RANGE structure specifies a range of text positions where format is applied.</summary>
-	public value struct TextRange
+	public value struct TextRange : public System::IEquatable<TextRange>
 	{
 	public:
 		static TextRange FromStartLength(int startPosition, int length) { return { startPosition, length }; }
 		static TextRange FromStartEnd(int startPosition, int endPosition) { return { startPosition, endPosition - startPosition }; }
 
 		/// <summary>The end text position of the range.</summary>
-		property int EndPosition { int get() { return StartPosition + Length; } }
+		property int EndPosition { CS_READONLY int get() { return StartPosition + Length; } }
 
 		/// <summary>The start text position of the range.</summary>
 		int StartPosition;
 		/// <summary>The number of text positions in the range.</summary>
 		int Length;
 
+		DEFINE_STRUCT_EQUALITY(TextRange, StartPosition, Length);
+
 	internal:
 		DWRITE_TEXT_RANGE ToNative() { return { static_cast<UINT32>(StartPosition), static_cast<UINT32>(Length) }; }
 	};
 
 	/// <summary>The DWRITE_CLUSTER_METRICS structure contains information about a glyph cluster.</summary>
-	public value struct ClusterMetrics
+	public value struct ClusterMetrics : public System::IEquatable<ClusterMetrics>
 	{
 	public:
 		/// <summary>The total advance width of all glyphs in the cluster.</summary>
@@ -89,26 +91,28 @@ namespace Lyriser::Core::DirectWrite
 		short bitValues;
 	public:
 		/// <summary>Indicate whether line can be broken right after the cluster.</summary>
-		property bool CanWrapLineAfter { bool get() { return bitValues & 1; } }
+		property bool CanWrapLineAfter { CS_READONLY bool get() { return bitValues & 1; } }
 		/// <summary>Indicate whether the cluster corresponds to whitespace character.</summary>
-		property bool IsWhitespace { bool get() { return bitValues & 2; } }
+		property bool IsWhitespace { CS_READONLY bool get() { return bitValues & 2; } }
 		/// <summary>Indicate whether the cluster corresponds to a newline character.</summary>
-		property bool IsNewline { bool get() { return bitValues & 4; } }
+		property bool IsNewline { CS_READONLY bool get() { return bitValues & 4; } }
 		/// <summary>Indicate whether the cluster corresponds to soft hyphen character.</summary>
-		property bool IsSoftHyphen { bool get() { return bitValues & 8; } }
+		property bool IsSoftHyphen { CS_READONLY bool get() { return bitValues & 8; } }
 		/// <summary>Indicate whether the cluster is read from right to left.</summary>
-		property bool IsRightToLeft { bool get() { return bitValues & 16; } }
+		property bool IsRightToLeft { CS_READONLY bool get() { return bitValues & 16; } }
+
+		DEFINE_STRUCT_EQUALITY(ClusterMetrics, Width, Length, bitValues);
 	};
 
 	/// <summary>
 	/// Overall metrics associated with text after layout.
 	/// All coordinates are in device independent pixels (DIPs).
 	/// </summary>
-	public value struct TextMetrics
+	public value struct TextMetrics : public System::IEquatable<TextMetrics>
 	{
 	public:
 		/// <summary>Top-left point of formatted text relative to layout box (excluding any glyph overhang).</summary>
-		Direct2D1::Point2F Position;
+		System::Numerics::Vector2 TopLeft;
 		/// <summary>The width of the formatted text ignoring trailing whitespace at the end of each line.</summary>
 		float Width;
 		/// <summary>The width of the formatted text taking into account the trailing whitespace at the end of each line.</summary>
@@ -116,7 +120,7 @@ namespace Lyriser::Core::DirectWrite
 		/// <summary>The height of the formatted text. The height of an empty string is determined by the size of the default font's line height.</summary>
 		float Height;
 		/// <summary>Initial size given to the layout. Depending on whether the text was wrapped or not and the length of the text, it may be larger or smaller than the text content size.</summary>
-		Direct2D1::SizeF LayoutSize;
+		System::Numerics::Vector2 LayoutSize;
 		/// <summary>
 		/// The maximum reordering count of any line of text, used to calculate the most number of hit-testing boxes needed.
 		/// If the layout has no bidirectional text or no text at all, the minimum level is 1.
@@ -124,18 +128,20 @@ namespace Lyriser::Core::DirectWrite
 		int MaxBidiReorderingDepth;
 		/// <summary>Total number of lines.</summary>
 		int LineCount;
+
+		DEFINE_STRUCT_EQUALITY(TextMetrics, TopLeft, Width, WidthIncludingTrailingWhitespace, Height, LayoutSize, MaxBidiReorderingDepth, LineCount);
 	};
 
 	/// <summary>Geometry enclosing of text positions.</summary>
-	public value struct HitTestMetrics
+	public value struct HitTestMetrics : public System::IEquatable<HitTestMetrics>
 	{
 	public:
 		/// <summary>Text range within the geometry.</summary>
 		TextRange TextRange;
 		/// <summary>Position of the top-left coordinate of the geometry.</summary>
-		Direct2D1::Point2F Position;
+		System::Numerics::Vector2 TopLeft;
 		/// <summary>Geometry's size.</summary>
-		Direct2D1::SizeF Size;
+		System::Numerics::Vector2 Size;
 		/// <summary>Bidi level of text positions enclosed within the geometry.</summary>
 		int BidiLevel;
 	private:
@@ -143,9 +149,12 @@ namespace Lyriser::Core::DirectWrite
 		int isTrimmed;
 	public:
 		/// <summary>Geometry encloses text?</summary>
-		property bool IsText { bool get() { return isText; } }
+		property bool IsText { CS_READONLY bool get() { return isText; } }
 		/// <summary>Range is trimmed.</summary>
-		property bool IsTrimmed { bool get() { return isTrimmed; } }
+		property bool IsTrimmed { CS_READONLY bool get() { return isTrimmed; } }
+		property System::Numerics::Vector2 BottomRight { CS_READONLY System::Numerics::Vector2 get() { return TopLeft + Size; } }
+
+		DEFINE_STRUCT_EQUALITY(HitTestMetrics, TextRange, TopLeft, Size, BidiLevel, isText, isTrimmed);
 	};
 
 	public ref class TextFormat : public Interop::DisposableComPtrBase<IDWriteTextFormat>
@@ -189,15 +198,15 @@ namespace Lyriser::Core::DirectWrite
 			return clusterMetrics;
 		}
 		[returnvalue: System::Runtime::CompilerServices::TupleElementNamesAttribute(gcnew cli::array<System::String^>() { "Point", "HitTestMetrics" })]
-		System::ValueTuple<Direct2D1::Point2F, HitTestMetrics> HitTestTextPosition(int textPosition, bool isTrailingHit)
+		System::ValueTuple<System::Numerics::Vector2, HitTestMetrics> HitTestTextPosition(int textPosition, bool isTrailingHit)
 		{
 			float pointX;
 			float pointY;
 			HitTestMetrics hitTestMetrics{};
 			ThrowIfFailed(GetPointer()->HitTestTextPosition(textPosition, isTrailingHit, &pointX, &pointY, reinterpret_cast<DWRITE_HIT_TEST_METRICS*>(&hitTestMetrics)));
-			return System::ValueTuple<Direct2D1::Point2F, HitTestMetrics>(Direct2D1::Point2F(pointX, pointY), hitTestMetrics);
+			return System::ValueTuple<System::Numerics::Vector2, HitTestMetrics>(System::Numerics::Vector2(pointX, pointY), hitTestMetrics);
 		}
-		bool HitTestTextRange(TextRange textRange, Direct2D1::Point2F origin, [System::Runtime::InteropServices::Out] HitTestMetrics% hitTestMetrics)
+		bool HitTestTextRange(TextRange textRange, System::Numerics::Vector2 origin, [System::Runtime::InteropServices::Out] HitTestMetrics% hitTestMetrics)
 		{
 			pin_ptr<HitTestMetrics> pHitTestMetrics = &hitTestMetrics;
 			UINT32 actualHitTestMetricsCount;
@@ -269,12 +278,12 @@ namespace Lyriser::Core::DirectWrite
 			ThrowIfFailed(p->CreateTextFormat(pFontFamilyName, nullptr, safe_cast<DWRITE_FONT_WEIGHT>(fontWeight), safe_cast<DWRITE_FONT_STYLE>(fontStyle), safe_cast<DWRITE_FONT_STRETCH>(fontStretch), fontSize, L"", presult));
 			return result;
 		}
-		TextLayout^ CreateTextLayout(System::String^ text, TextFormat^ textFormat, Direct2D1::SizeF maxSize)
+		TextLayout^ CreateTextLayout(System::String^ text, TextFormat^ textFormat, System::Numerics::Vector2 maxSize)
 		{
 			pin_ptr<const WCHAR> pText = PtrToStringChars(text);
 			TextLayout^ result = gcnew TextLayout();
 			PIN_LIGHT_COM_PTR_FOR_SET(result);
-			ThrowIfFailed(p->CreateTextLayout(pText, text->Length, textFormat->p, maxSize.Width, maxSize.Height, reinterpret_cast<IDWriteTextLayout**>(presult)));
+			ThrowIfFailed(p->CreateTextLayout(pText, text->Length, textFormat->p, maxSize.X, maxSize.Y, reinterpret_cast<IDWriteTextLayout**>(presult)));
 			return result;
 		}
 	};

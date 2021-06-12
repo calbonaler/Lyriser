@@ -8,6 +8,8 @@
 #define PCH_H
 
 // プリコンパイルするヘッダーをここに追加します
+#include <boost/preprocessor.hpp>
+
 #include <atlcomcli.h>
 
 #include <d2d1.h>

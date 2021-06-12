@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -18,12 +19,16 @@ namespace Lyriser.Models
 		const int FELANG_REQ_REV = 0x00030000;
 		const int FELANG_CMODE_MONORUBY = 0x00000002;
 
-		static readonly Type s_LanguageType = Type.GetTypeFromProgID("MSIME.Japan");
+		static readonly Type? s_LanguageType = Type.GetTypeFromProgID("MSIME.Japan");
 		public static readonly IMonoRubyProvider Instance = new ImeLanguage();
 
 		public MonoRuby? GetMonoRuby(string text)
 		{
-			var language = (IFELanguage)Activator.CreateInstance(s_LanguageType);
+			// nullability: MSIME.Japan ProgID must be installed in Windows Japanese platform, and other platforms are not supported.
+			Debug.Assert(s_LanguageType != null, "MSIME.Japan ProgID is null");
+			var language = (IFELanguage?)Activator.CreateInstance(s_LanguageType);
+			// nullability: I think created object must not be null...
+			Debug.Assert(language != null, "MSIME.Japan object is null");
 			try
 			{
 				if (language.Open() != S_OK)
@@ -68,8 +73,8 @@ namespace Lyriser.Models
 		public ushort[] Indexes;
 
 		public bool Equals(MonoRuby other) => Text == other.Text && Indexes == other.Indexes;
-		public override bool Equals(object obj) => obj is MonoRuby other && Equals(other);
-		public override int GetHashCode() => Text.GetHashCode() ^ Indexes.GetHashCode();
+		public override bool Equals(object? obj) => obj is MonoRuby other && Equals(other);
+		public override int GetHashCode() => HashCode.Combine(Text, Indexes);
 		public static bool operator ==(MonoRuby left, MonoRuby right) => left.Equals(right);
 		public static bool operator !=(MonoRuby left, MonoRuby right) => !(left == right);
 	}

@@ -8,15 +8,15 @@ namespace Lyriser.Models
 {
 	public class LyricsParser
 	{
-		public Action<ParserError> ErrorReporter { get; set; }
+		public Action<ParserError>? ErrorReporter { get; set; }
 
-		static ParserError ErrorSilentImproperlyEnded       (SourceLocation location) => new ParserError("E0001", "非発音領域が適切に終了されていません。",       location);
-		static ParserError ErrorRubyBaseRequired            (SourceLocation location) => new ParserError("E0002", "ルビを振る対象を省略することはできません。",   location);
-		static ParserError ErrorRubyStartNotFound           (SourceLocation location) => new ParserError("E0003", "ルビ領域でのルビの開始位置が見つかりません。", location);
-		static ParserError ErrorRubyImproperlyEnded         (SourceLocation location) => new ParserError("E0004", "ルビが適切に終了されていません。",             location);
-		static ParserError ErrorRubyRequired                (SourceLocation location) => new ParserError("E0005", "ルビを省略することはできません。",             location);
-		static ParserError ErrorRubyMustNotBeOnlyWhitespaces(SourceLocation location) => new ParserError("E0006", "ルビを空白文字のみとすることはできません。",   location);
-		static ParserError ErrorAnyCharacterRequired        (SourceLocation location) => new ParserError("E0007", "何らかの文字が必要です。",                     location);
+		static ParserError ErrorSilentImproperlyEnded       (SourceLocation location) => new("E0001", "非発音領域が適切に終了されていません。",       location);
+		static ParserError ErrorRubyBaseRequired            (SourceLocation location) => new("E0002", "ルビを振る対象を省略することはできません。",   location);
+		static ParserError ErrorRubyStartNotFound           (SourceLocation location) => new("E0003", "ルビ領域でのルビの開始位置が見つかりません。", location);
+		static ParserError ErrorRubyImproperlyEnded         (SourceLocation location) => new("E0004", "ルビが適切に終了されていません。",             location);
+		static ParserError ErrorRubyRequired                (SourceLocation location) => new("E0005", "ルビを省略することはできません。",             location);
+		static ParserError ErrorRubyMustNotBeOnlyWhitespaces(SourceLocation location) => new("E0006", "ルビを空白文字のみとすることはできません。",   location);
+		static ParserError ErrorAnyCharacterRequired        (SourceLocation location) => new("E0007", "何らかの文字が必要です。",                     location);
 
 		internal const char RubyBaseStartChar = '|';
 		internal const char RubyStartChar = '(';
@@ -25,7 +25,7 @@ namespace Lyriser.Models
 		internal const char SilentEndChar = ']';
 		internal const char EscapeChar = '`';
 
-		bool Accept(Scanner scanner, char ch)
+		static bool Accept(Scanner scanner, char ch)
 		{
 			if (scanner.Peek() == ch)
 			{
@@ -61,7 +61,7 @@ namespace Lyriser.Models
 			if (Accept(scanner, RubyBaseStartChar))
 			{
 				var rubyBase = new List<SimpleNode>();
-				while (scanner.Peek() != null && scanner.Peek() != RubyStartChar)
+				while (scanner.Peek() is not null and not RubyStartChar)
 					rubyBase.Add(ParseSimpleNode(scanner));
 				if (rubyBase.Count <= 0)
 				{
@@ -82,7 +82,7 @@ namespace Lyriser.Models
 				var rubyNodes = ParseRubyNodes(scanner);
 				return rubyNodes.Count > 0
 					? new CompositeNode(Enumerable.Repeat(simpleNode, 1), rubyNodes, false, new SourceSpan(start, scanner.Location))
-					: (LyricsNode)simpleNode;
+					: simpleNode;
 			}
 		}
 
@@ -113,13 +113,13 @@ namespace Lyriser.Models
 				else if (rubyNodes.All(x => string.IsNullOrWhiteSpace(x.PhoneticText)))
 				{
 					ErrorReporter?.Invoke(ErrorRubyMustNotBeOnlyWhitespaces(rubyStart));
-					rubyNodes.Add(new SimpleNode("_", false, new SourceSpan(rubyNodes[rubyNodes.Count - 1].Span.End, rubyNodes[rubyNodes.Count - 1].Span.End)));
+					rubyNodes.Add(new SimpleNode("_", false, new SourceSpan(rubyNodes[^1].Span.End, rubyNodes[^1].Span.End)));
 				}
 			}
 			return rubyNodes;
 		}
 
-		(List<T> Nodes, SourceSpan Span) ParseSilentNode<T>(Scanner scanner, Func<Scanner, T> subParser)
+		(List<T>? Nodes, SourceSpan Span) ParseSilentNode<T>(Scanner scanner, Func<Scanner, T> subParser)
 		{
 			var start = scanner.Location;
 			if (!Accept(scanner, SilentStartChar))
@@ -151,7 +151,8 @@ namespace Lyriser.Models
 				ErrorReporter?.Invoke(ErrorAnyCharacterRequired(scanner.Location));
 				sb.Append('_');
 			}
-			if (char.IsHighSurrogate(sb[sb.Length - 1]) && scanner.Peek() != null && char.IsLowSurrogate((char)scanner.Peek()))
+			// nullability: Because Peek() is tested immediately before, Peek() must not be null
+			if (char.IsHighSurrogate(sb[^1]) && scanner.Peek() != null && char.IsLowSurrogate((char)scanner.Peek()!))
 				sb.Append(scanner.Read());
 			return new SimpleNode(sb.ToString(), escaping, new SourceSpan(start, scanner.Location));
 		}
@@ -165,12 +166,7 @@ namespace Lyriser.Models
 			if (text.Length == 0)
 				return false;
 			var ch = char.ConvertToUtf32(text, 0);
-			return ch == RubyBaseStartChar ||
-				ch == RubyStartChar ||
-				ch == RubyEndChar ||
-				ch == SilentStartChar ||
-				ch == SilentEndChar ||
-				ch == EscapeChar;
+			return ch is RubyBaseStartChar or RubyStartChar or RubyEndChar or SilentStartChar or SilentEndChar or EscapeChar;
 		}
 	}
 
@@ -183,7 +179,7 @@ namespace Lyriser.Models
 		int _lineStartIndex = 0;
 		int _textIndex = 0;
 
-		public SourceLocation Location => new SourceLocation(_textIndex, _lineIndex + 1, _textIndex - _lineStartIndex + 1);
+		public SourceLocation Location => new(_textIndex, _lineIndex + 1, _textIndex - _lineStartIndex + 1);
 
 		public bool MoveNextLine(out string rest)
 		{
@@ -238,7 +234,7 @@ namespace Lyriser.Models
 		public SourceLocation Location { get; }
 
 		[Obsolete("Workaround for .NET memory leak bug", true)]
-		event PropertyChangedEventHandler INotifyPropertyChanged.PropertyChanged
+		event PropertyChangedEventHandler? INotifyPropertyChanged.PropertyChanged
 		{
 			add { }
 			remove { }
@@ -260,7 +256,7 @@ namespace Lyriser.Models
 
 		public bool Equals(SourceLocation other) => Index == other.Index;
 		public int CompareTo(SourceLocation other) => Index.CompareTo(other.Index);
-		public override bool Equals(object obj) => obj is SourceLocation other && Equals(other);
+		public override bool Equals(object? obj) => obj is SourceLocation other && Equals(other);
 		public override int GetHashCode() => Index;
 
 		public static bool operator ==(SourceLocation left, SourceLocation right) => left.Equals(right);
@@ -286,8 +282,8 @@ namespace Lyriser.Models
 		public int Length => End.Difference(Start);
 
 		public bool Equals(SourceSpan other) => Start == other.Start && End == other.End;
-		public override bool Equals(object obj) => obj is SourceSpan other && Equals(other);
-		public override int GetHashCode() => Start.GetHashCode() ^ End.GetHashCode();
+		public override bool Equals(object? obj) => obj is SourceSpan other && Equals(other);
+		public override int GetHashCode() => HashCode.Combine(Start, End);
 		public static bool operator ==(SourceSpan left, SourceSpan right) => left.Equals(right);
 		public static bool operator !=(SourceSpan left, SourceSpan right) => !(left == right);
 	}
@@ -304,16 +300,16 @@ namespace Lyriser.Models
 		public SourceSpan Span { get; }
 
 		public bool Equals(HighlightToken other) => Label == other.Label && Span == other.Span;
-		public override bool Equals(object obj) => obj is HighlightToken other && Equals(other);
-		public override int GetHashCode() => Label.GetHashCode() ^ Span.GetHashCode();
+		public override bool Equals(object? obj) => obj is HighlightToken other && Equals(other);
+		public override int GetHashCode() => HashCode.Combine(Label, Span);
 		public static bool operator ==(HighlightToken left, HighlightToken right) => left.Equals(right);
 		public static bool operator !=(HighlightToken left, HighlightToken right) => !(left == right);
 	}
 
 	public class SyllableStore
 	{
-		readonly List<SubSyllable[]> _syllables = new List<SubSyllable[]>();
-		List<SubSyllable> _subSyllables;
+		readonly List<SubSyllable[]> _syllables = new();
+		List<SubSyllable>? _subSyllables;
 
 		public void StartGrouping()
 		{
@@ -369,12 +365,12 @@ namespace Lyriser.Models
 	{
 		protected LyricsNode(SourceSpan span) : base(span) { }
 
-		public abstract void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore);
+		public abstract void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore? syllableStore);
 	}
 
 	public interface IPhoneticNode : ILyricsNodeBase
 	{
-		void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore);
+		void Transform(int attached, StringBuilder textBuilder, SyllableStore? syllableStore);
 
 		string PhoneticText { get; }
 	}
@@ -403,9 +399,9 @@ namespace Lyriser.Models
 
 		public string PhoneticText => PhoneticTextAndState.Item1;
 
-		public override void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore) => Transform(-1, textBuilder, syllableStore);
+		public override void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore? syllableStore) => Transform(-1, textBuilder, syllableStore);
 
-		public void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore)
+		public void Transform(int attached, StringBuilder textBuilder, SyllableStore? syllableStore)
 		{
 			var (phoneticText, state) = PhoneticTextAndState;
 			if (state == CharacterState.StartGrouping)
@@ -427,7 +423,7 @@ namespace Lyriser.Models
 			get
 			{
 				var (_, state) = PhoneticTextAndState;
-				if (state == CharacterState.StartGrouping || state == CharacterState.StopGrouping)
+				if (state is CharacterState.StartGrouping or CharacterState.StopGrouping)
 					yield return new HighlightToken("SyllableGrouping", Span);
 			}
 		}
@@ -439,7 +435,7 @@ namespace Lyriser.Models
 
 		public IReadOnlyList<LyricsNode> Nodes { get; }
 
-		public override void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore)
+		public override void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore? syllableStore)
 		{
 			foreach (var node in Nodes)
 				node.Transform(textBuilder, attachedSpecifiers, null);
@@ -470,7 +466,7 @@ namespace Lyriser.Models
 
 		public string PhoneticText => string.Concat(Nodes.Select(x => x.PhoneticText));
 
-		public void Transform(int attached, StringBuilder textBuilder, SyllableStore syllableStore)
+		public void Transform(int attached, StringBuilder textBuilder, SyllableStore? syllableStore)
 		{
 			foreach (var node in Nodes)
 				node.Transform(attached, textBuilder, null);
@@ -500,7 +496,7 @@ namespace Lyriser.Models
 
 		public bool IsComplex { get; }
 
-		public override void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore syllableStore)
+		public override void Transform(StringBuilder textBuilder, ICollection<AttachedSpecifier> attachedSpecifiers, SyllableStore? syllableStore)
 		{
 			var rubyTextBuilder = new StringBuilder();
 			var syllableDivision = true;

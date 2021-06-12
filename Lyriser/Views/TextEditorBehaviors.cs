@@ -29,7 +29,7 @@ namespace Lyriser.Views
 			base.OnDetaching();
 		}
 
-		void OnCaretPositionChanged(object sender, EventArgs e) => Location = AssociatedObject.TextArea.Caret.Location;
+		void OnCaretPositionChanged(object? sender, EventArgs e) => Location = AssociatedObject.TextArea.Caret.Location;
 	}
 
 	public class SelectionBindingBehavior : Behavior<TextEditor>
@@ -54,6 +54,6 @@ namespace Lyriser.Views
 			base.OnDetaching();
 		}
 
-		void OnSelectionChanged(object sender, EventArgs e) => Selection = AssociatedObject.TextArea.Selection;
+		void OnSelectionChanged(object? sender, EventArgs e) => Selection = AssociatedObject.TextArea.Selection;
 	}
 }

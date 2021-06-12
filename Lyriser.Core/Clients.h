@@ -12,7 +12,7 @@ namespace Lyriser::Core
 		D3D9InteropClient(System::Action<System::IntPtr>^ backBufferSetter)
 		{
 			if (backBufferSetter == nullptr)
-				throw gcnew System::ArgumentNullException(STRINGIFY(backBufferSetter));
+				throw gcnew System::ArgumentNullException(BOOST_PP_STRINGIZE(backBufferSetter));
 			{
 				msclr::lock lock(s_LockObject);
 				if (s_ActiveClients++ == 0)
@@ -39,11 +39,11 @@ namespace Lyriser::Core
 			auto format = TranslateFormat(d3D11RenderTarget);
 			auto handle = GetSharedHandle(d3D11RenderTarget);
 			if (!IsShareable(d3D11RenderTarget))
-				throw gcnew System::ArgumentException("Texture must be created with ResouceOptionFlags.Shared", STRINGIFY(renderTargetAsD3D11Texture2D));
+				throw gcnew System::ArgumentException("Texture must be created with ResouceOptionFlags.Shared", BOOST_PP_STRINGIZE(d3D11RenderTarget));
 			if (format == D3DFMT_UNKNOWN)
-				throw gcnew System::ArgumentException("Texture format is not compatible with OpenSharedResouce", STRINGIFY(renderTargetAsD3D11Texture2D));
+				throw gcnew System::ArgumentException("Texture format is not compatible with OpenSharedResouce", BOOST_PP_STRINGIZE(d3D11RenderTarget));
 			if (handle == nullptr)
-				throw gcnew System::ArgumentException("Invalid handle", STRINGIFY(renderTargetAsD3D11Texture2D));
+				throw gcnew System::ArgumentException("Invalid handle", BOOST_PP_STRINGIZE(d3D11RenderTarget));
 			{
 				PIN_COM_PTR_FOR_SET(m_D3D9RenderTarget);
 				D3D11_TEXTURE2D_DESC desc;
@@ -142,9 +142,9 @@ namespace Lyriser::Core
 		D2D3D9InteropClient(System::Action<Direct2D1::RenderTarget^>^ renderer, System::Action<Direct2D1::RenderTarget^>^ resourcesUpdater, System::Action<System::IntPtr>^ backBufferSetter) : m_InteropClient(backBufferSetter)
 		{
 			if (renderer == nullptr)
-				throw gcnew System::ArgumentNullException(STRINGIFY(renderer));
+				throw gcnew System::ArgumentNullException(BOOST_PP_STRINGIZE(renderer));
 			if (resourcesUpdater == nullptr)
-				throw gcnew System::ArgumentNullException(STRINGIFY(resourcesUpdater));
+				throw gcnew System::ArgumentNullException(BOOST_PP_STRINGIZE(resourcesUpdater));
 			m_Renderer = renderer;
 			m_ResourcesUpdater = resourcesUpdater;
 			{

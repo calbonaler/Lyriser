@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
-using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ICSharpCode.AvalonEdit.Document;
@@ -12,6 +11,7 @@ using Livet.EventListeners;
 using Livet.Messaging;
 using Lyriser.Models;
 using System.Threading;
+using System.Diagnostics;
 
 namespace Lyriser.ViewModels
 {
@@ -29,15 +29,17 @@ namespace Lyriser.ViewModels
 					case nameof(m_Model.IsModified):
 						RaisePropertyChanged(nameof(IsModified));
 						break;
-					case nameof(m_Model.SavedFileInfo):
+					case nameof(m_Model.SavedFileNameWithoutExtension):
 						RaisePropertyChanged(nameof(DocumentName));
 						break;
 				}
 			}));
+			var synchronizationContext = SynchronizationContext.Current;
+			Debug.Assert(synchronizationContext != null, "SynchronizationContext.Current is null");
 			CompositeDisposable.Add(
 				m_Model.AsPropertyChanged(nameof(m_Model.ParserErrors))
 					.Throttle(TimeSpan.FromMilliseconds(1000))
-					.ObserveOn(SynchronizationContext.Current)
+					.ObserveOn(synchronizationContext)
 					.Subscribe(_ =>
 					{
 						ParserErrors.Clear();
@@ -90,7 +92,7 @@ namespace Lyriser.ViewModels
 		}
 		public ObservableCollection<ParserError> ParserErrors { get; } = new ObservableCollection<ParserError>();
 		public bool IsModified => m_Model.IsModified;
-		public string DocumentName => m_Model.SavedFileInfo?.FileNameWithoutExtension ?? "無題";
+		public string DocumentName => m_Model.SavedFileNameWithoutExtension ?? "無題";
 
 		TextLocation m_CaretLocation;
 		public TextLocation CaretLocation
@@ -106,15 +108,15 @@ namespace Lyriser.ViewModels
 			set => RaisePropertyChangedIfSet(ref m_CurrentSyllable, value);
 		}
 
-		ParserError m_SelectedError;
-		public ParserError SelectedError
+		ParserError? m_SelectedError;
+		public ParserError? SelectedError
 		{
 			get => m_SelectedError;
 			set => RaisePropertyChangedIfSet(ref m_SelectedError, value);
 		}
 
-		Selection m_Selection;
-		public Selection Selection
+		Selection? m_Selection;
+		public Selection? Selection
 		{
 			get => m_Selection;
 			set => RaisePropertyChangedIfSet(ref m_Selection, value);
@@ -158,12 +160,12 @@ namespace Lyriser.ViewModels
 		}
 		public async Task SaveAsync()
 		{
-			if (m_Model.SavedFileInfo == null)
+			if (m_Model.SavedFileNameWithoutExtension == null)
 			{
 				await SaveAsAsync();
 				return;
 			}
-			m_Model.Save(m_Model.SavedFileInfo);
+			m_Model.Save();
 		}
 		public async Task<bool> ConfirmSaveAsync()
 		{

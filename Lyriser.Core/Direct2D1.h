@@ -28,40 +28,6 @@ namespace Lyriser::Core::Direct2D1
 		DisableColorBitmapSnapping = D2D1_DRAW_TEXT_OPTIONS_DISABLE_COLOR_BITMAP_SNAPPING,
 	};
 
-	public value struct Matrix3x2F
-	{
-	public:
-		Point2F TransformPoint(Point2F point)
-		{
-			return Point2F
-			{
-				point.X * M11 + point.Y * M21 + Dx,
-				point.X * M12 + point.Y * M22 + Dy
-			};
-		}
-		bool Invert()
-		{
-			pin_ptr<Matrix3x2F> pinnedThis = this;
-			return D2D1InvertMatrix(reinterpret_cast<D2D1_MATRIX_3X2_F*>(pinnedThis));
-		}
-
-		static Matrix3x2F Translation(float dx, float dy) { return { 1, 0, 0, 1, dx, dy }; }
-		static property Matrix3x2F Identity { Matrix3x2F get() { return { 1, 0, 0, 1, 0, 0}; } }
-
-		/// <summary>Horizontal scaling / cosine of rotation</summary>
-		float M11;
-		/// <summary>Vertical shear / sine of rotation</summary>
-		float M12;
-		/// <summary>Horizontal shear / negative sine of rotation</summary>
-		float M21;
-		/// <summary>Vertical scaling / cosine of rotation</summary>
-		float M22;
-		/// <summary>Horizontal shift (always orthogonal regardless of rotation)</summary>
-		float Dx;
-		/// <summary>Vertical shift (always orthogonal regardless of rotation)</summary>
-		float Dy;
-	};
-
 	public ref class Factory : public Interop::DisposableComPtrBase<ID2D1Factory>
 	{
 	public:
@@ -95,21 +61,28 @@ namespace Lyriser::Core::Direct2D1
 		}
 
 		void Clear(ColorF color) { p->Clear(reinterpret_cast<D2D1_COLOR_F*>(&color)); }
-		void DrawTextLayout(Point2F origin, DirectWrite::TextLayout^ textLayout, Brush^ defaultBrush, DrawTextOptions options) { p->DrawTextLayout({ origin.X, origin.Y }, textLayout->GetPointer(), defaultBrush->p, safe_cast<D2D1_DRAW_TEXT_OPTIONS>(options)); }
-		void DrawTextLayout(Point2F origin, DirectWrite::TextLayout^ textLayout, Brush^ defaultBrush) { DrawTextLayout(origin, textLayout, defaultBrush, DrawTextOptions::None); }
+		void DrawTextLayout(System::Numerics::Vector2 origin, DirectWrite::TextLayout^ textLayout, Brush^ defaultBrush, DrawTextOptions options) { p->DrawTextLayout({ origin.X, origin.Y }, textLayout->GetPointer(), defaultBrush->p, safe_cast<D2D1_DRAW_TEXT_OPTIONS>(options)); }
+		void DrawTextLayout(System::Numerics::Vector2 origin, DirectWrite::TextLayout^ textLayout, Brush^ defaultBrush) { DrawTextLayout(origin, textLayout, defaultBrush, DrawTextOptions::None); }
 		void FillRectangle(RectF rect, Brush^ brush) { p->FillRectangle(reinterpret_cast<D2D1_RECT_F*>(&rect), brush->p); }
 		void PushAxisAlignedClip(RectF clipRect, AntialiasMode antialiasMode) { p->PushAxisAlignedClip(reinterpret_cast<D2D1_RECT_F*>(&clipRect), safe_cast<D2D1_ANTIALIAS_MODE>(antialiasMode)); }
 		void PopAxisAlignedClip() { p->PopAxisAlignedClip(); }
-		property SizeF Size { SizeF get() { return SizeF(p->GetSize()); } }
-		property Matrix3x2F Transform
+		property System::Numerics::Vector2 Size
 		{
-			Matrix3x2F get()
+			System::Numerics::Vector2 get()
 			{
-				Matrix3x2F result{};
+				auto size = p->GetSize();
+				return System::Numerics::Vector2(size.width, size.height);
+			}
+		}
+		property System::Numerics::Matrix3x2 Transform
+		{
+			System::Numerics::Matrix3x2 get()
+			{
+				System::Numerics::Matrix3x2 result{};
 				p->GetTransform(reinterpret_cast<D2D1_MATRIX_3X2_F*>(&result));
 				return result;
 			}
-			void set(Matrix3x2F value) { p->SetTransform(reinterpret_cast<D2D1_MATRIX_3X2_F*>(&value)); }
+			void set(System::Numerics::Matrix3x2 value) { p->SetTransform(reinterpret_cast<D2D1_MATRIX_3X2_F*>(&value)); }
 		}
 
 	};

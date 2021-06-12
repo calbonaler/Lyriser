@@ -31,9 +31,9 @@ namespace Lyriser.Models
 				});
 		}
 
-		IMonoRubyProvider m_MonoRubyProvider;
+		readonly IMonoRubyProvider m_MonoRubyProvider;
 
-		readonly LyricsParser m_Parser = new LyricsParser();
+		readonly LyricsParser m_Parser = new();
 		ITextSourceVersion m_OriginalVersion;
 		ITextSourceVersion OriginalVersion
 		{
@@ -50,14 +50,11 @@ namespace Lyriser.Models
 
 		public bool IsModified => SourceDocument.Version != OriginalVersion;
 
-		EncodedFileInfo m_SavedFileInfo;
-		public EncodedFileInfo SavedFileInfo
-		{
-			get => m_SavedFileInfo;
-			private set => Utils.SetProperty(ref m_SavedFileInfo, value, PropertyChanged, this);
-		}
+		string? m_SavedFilePath;
+		Encoding? m_SavedEncoding;
+		public string? SavedFileNameWithoutExtension => Path.GetFileNameWithoutExtension(m_SavedFilePath);
 
-		public TextDocument SourceDocument { get; } = new TextDocument();
+		public TextDocument SourceDocument { get; } = new();
 
 		LyricsSource m_LyricsSource = LyricsSource.Empty;
 		public LyricsSource LyricsSource
@@ -66,7 +63,7 @@ namespace Lyriser.Models
 			set => Utils.SetProperty(ref m_LyricsSource, value, PropertyChanged, this);
 		}
 
-		readonly List<ParserError> m_BackingParserErrors = new List<ParserError>();
+		readonly List<ParserError> m_BackingParserErrors = new();
 		IReadOnlyList<ParserError> m_ParserErrors = Array.Empty<ParserError>();
 		public IReadOnlyList<ParserError> ParserErrors
 		{
@@ -78,37 +75,72 @@ namespace Lyriser.Models
 		{
 			SourceDocument.Remove(0, SourceDocument.TextLength);
 			SourceDocument.UndoStack.ClearAll();
-			SavedFileInfo = null;
+			m_SavedFilePath = null;
+			m_SavedEncoding = null;
+			PropertyChanged.Raise(this, nameof(SavedFileNameWithoutExtension));
 			OriginalVersion = SourceDocument.Version;
 		}
 
 		public void Open(EncodedFileInfo info)
 		{
-			if (info.Encoding == null)
+			if (info.Encoding == FileEncoding.AutoDetect)
 			{
-				using (var fs = new FileStream(info.Path, FileMode.Open, FileAccess.Read, FileShare.Read))
-				using (var reader = FileReader.OpenStream(fs, new UTF8Encoding(false)))
-				{
-					SourceDocument.Text = reader.ReadToEnd();
-					SavedFileInfo = new EncodedFileInfo(info.Path, reader.CurrentEncoding);
-				}
+				using var fs = new FileStream(info.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
+				using var reader = FileReader.OpenStream(fs, AnsiEncoding);
+				SourceDocument.Text = reader.ReadToEnd();
+				m_SavedEncoding = reader.CurrentEncoding;
 			}
 			else
 			{
-				SourceDocument.Text = File.ReadAllText(info.Path, info.Encoding);
-				SourceDocument.UndoStack.ClearAll();
-				SavedFileInfo = info;
+				var encoding = ToEncoding(info.Encoding);
+				SourceDocument.Text = File.ReadAllText(info.Path, encoding);
+				m_SavedEncoding = encoding;
 			}
+			SourceDocument.UndoStack.ClearAll();
+			m_SavedFilePath = info.Path;
+			PropertyChanged.Raise(this, nameof(SavedFileNameWithoutExtension));
 			OriginalVersion = SourceDocument.Version;
 		}
 
 		public void Save(EncodedFileInfo info)
 		{
-			using (var fs = new FileStream(info.Path, FileMode.Create, FileAccess.Write, FileShare.Read))
-			using (var writer = new StreamWriter(fs, info.Encoding))
+			if (info.Encoding == FileEncoding.AutoDetect)
+				throw new ArgumentException($"{nameof(FileEncoding.AutoDetect)} cannot be used");
+			Save(info.Path, ToEncoding(info.Encoding));
+		}
+
+		public void Save()
+		{
+			if (m_SavedFilePath == null || m_SavedEncoding == null)
+				throw new InvalidOperationException("Current document is not saved. Use Save(EncodedFileInfo) overload.");
+			Save(m_SavedFilePath, m_SavedEncoding);
+		}
+
+		public void Save(string path, Encoding encoding)
+		{
+			using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+			using (var writer = new StreamWriter(fs, encoding))
 				SourceDocument.WriteTextTo(writer);
-			SavedFileInfo = info;
+			m_SavedFilePath = path;
+			m_SavedEncoding = encoding;
+			PropertyChanged.Raise(this, nameof(SavedFileNameWithoutExtension));
 			OriginalVersion = SourceDocument.Version;
+		}
+
+		static Encoding ToEncoding(FileEncoding fileEncoding) => fileEncoding switch
+		{
+			FileEncoding.UTF8WithBom => new UTF8Encoding(true),
+			FileEncoding.Ansi => AnsiEncoding,
+			_ => new UTF8Encoding(false),
+		};
+
+		static Encoding AnsiEncoding
+		{
+			get
+			{
+				Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+				return Encoding.GetEncoding("Shift-JIS");
+			}
 		}
 
 		public void AutoSetRuby(ISegment segment)
@@ -123,7 +155,7 @@ namespace Lyriser.Models
 			foreach (var (lyricsLine, lineTerminator) in lyricsLines)
 			{
 				var (baseText, textToNodeMap) = CollectBaseText(lyricsLine);
-				if (!(m_MonoRubyProvider.GetMonoRuby(baseText) is MonoRuby monoRuby))
+				if (m_MonoRubyProvider.GetMonoRuby(baseText) is not MonoRuby monoRuby)
 				{
 					newSourceBuilder.Append(LyricsNodeBase.GenerateSource(lyricsLine));
 					newSourceBuilder.Append(lineTerminator);
@@ -153,8 +185,8 @@ namespace Lyriser.Models
 					if (monoRuby.Indexes[i] == MonoRuby.UnmatchedPosition)
 						continue;
 					// 既存ルビの作成
-					var rubyBase = baseText.Substring(rubyBaseStart, i - rubyBaseStart);
-					var ruby = monoRuby.Text.Substring(rubyStart, monoRuby.Indexes[i] - rubyStart);
+					var rubyBase = baseText[rubyBaseStart..i];
+					var ruby = monoRuby.Text[rubyStart..monoRuby.Indexes[i]];
 					// 下記のすべてに該当する場合のみルビを作成する
 					// ・ルビのベースはカテゴリLoのCode Pointまたは文字「々」のみから生成される
 					// ・ルビのベースにはひらがな、カタカナ、半角・全角形類を含まない
@@ -270,7 +302,7 @@ namespace Lyriser.Models
 			return newNodes.ToArray();
 		}
 
-		public event PropertyChangedEventHandler PropertyChanged;
+		public event PropertyChangedEventHandler? PropertyChanged;
 
 		readonly struct TextElement : IEquatable<TextElement>
 		{
@@ -287,15 +319,9 @@ namespace Lyriser.Models
 			public string Text => WholeText.Substring(Index, Length);
 
 			public bool Equals(TextElement other) => WholeText == other.WholeText && Index == other.Index && Length == other.Length;
-			public override bool Equals(object obj) => obj is TextElement other && Equals(other);
-			public override int GetHashCode()
-			{
-				var hashCode = 518592628;
-				hashCode = hashCode * -1521134295 + WholeText.GetHashCode();
-				hashCode = hashCode * -1521134295 + Index.GetHashCode();
-				hashCode = hashCode * -1521134295 + Length.GetHashCode();
-				return hashCode;
-			}
+			public override bool Equals(object? obj) => obj is TextElement other && Equals(other);
+			public override int GetHashCode() => HashCode.Combine(WholeText, Index, Length);
+
 			public static bool operator ==(TextElement left, TextElement right) => left.Equals(right);
 			public static bool operator !=(TextElement left, TextElement right) => !(left == right);
 		}
@@ -311,15 +337,10 @@ namespace Lyriser.Models
 			public readonly SimpleNode[] Text;
 			public readonly string Ruby;
 
-			public override bool Equals(object obj) => obj is RubySpecifier other && Equals(other);
+			public override bool Equals(object? obj) => obj is RubySpecifier other && Equals(other);
 			public bool Equals(RubySpecifier other) => Text == other.Text && Ruby == other.Ruby;
-			public override int GetHashCode()
-			{
-				var hashCode = 518592628;
-				hashCode = hashCode * -1521134295 + Text.GetHashCode();
-				hashCode = hashCode * -1521134295 + Ruby.GetHashCode();
-				return hashCode;
-			}
+			public override int GetHashCode() => HashCode.Combine(Text, Ruby);
+
 			public static bool operator ==(RubySpecifier left, RubySpecifier right) => left.Equals(right);
 			public static bool operator !=(RubySpecifier left, RubySpecifier right) => !(left == right);
 		}
@@ -327,14 +348,21 @@ namespace Lyriser.Models
 
 	public class EncodedFileInfo
 	{
-		public EncodedFileInfo(string path, Encoding encoding)
+		public EncodedFileInfo(string path, FileEncoding encoding)
 		{
 			Path = path ?? throw new ArgumentNullException(nameof(path));
 			Encoding = encoding;
 		}
 
 		public string Path { get; }
-		public string FileNameWithoutExtension => System.IO.Path.GetFileNameWithoutExtension(Path);
-		public Encoding Encoding { get; }
+		public FileEncoding Encoding { get; }
+	}
+
+	public enum FileEncoding
+	{
+		AutoDetect,
+		UTF8,
+		UTF8WithBom,
+		Ansi,
 	}
 }

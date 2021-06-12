@@ -32,8 +32,8 @@ namespace Lyriser.Views
 		public HighlightDecorationCollection HighlightDecorations { get; set; } = new HighlightDecorationCollection();
 		public IEnumerable<HighlightingColor> NamedHighlightingColors => HighlightDecorations.NamedHighlightingColors;
 		public IDictionary<string, string> Properties { get; } = new Dictionary<string, string>();
-		public HighlightingColor GetNamedColor(string name) => HighlightDecorations.GetNamedColor(name);
-		public HighlightingRuleSet GetNamedRuleSet(string name) => null;
+		public HighlightingColor? GetNamedColor(string name) => HighlightDecorations.GetNamedColor(name);
+		public HighlightingRuleSet? GetNamedRuleSet(string name) => null;
 	}
 
 	public struct HighlightDecoration : IEquatable<HighlightDecoration>
@@ -43,8 +43,8 @@ namespace Lyriser.Views
 		public Color BackColor { get; set; }
 
 		public bool Equals(HighlightDecoration other) => Name == other.Name && ForeColor == other.ForeColor && BackColor == other.BackColor;
-		public override bool Equals(object obj) => obj is HighlightDecoration other && Equals(other);
-		public override int GetHashCode() => Name.GetHashCode() ^ ForeColor.GetHashCode() ^ BackColor.GetHashCode();
+		public override bool Equals(object? obj) => obj is HighlightDecoration other && Equals(other);
+		public override int GetHashCode() => HashCode.Combine(Name, ForeColor, BackColor);
 		public static bool operator ==(HighlightDecoration left, HighlightDecoration right) => left.Equals(right);
 		public static bool operator !=(HighlightDecoration left, HighlightDecoration right) => !(left == right);
 	}
@@ -55,17 +55,17 @@ namespace Lyriser.Views
 		readonly Dictionary<string, int> m_Dictionary = new();
 
 		public IEnumerable<HighlightingColor> NamedHighlightingColors => m_Dictionary.Values.Select(x => m_List[x]);
-		public HighlightingColor GetNamedColor(string name) => m_Dictionary.TryGetValue(name, out var index) ? m_List[index] : null;
+		public HighlightingColor? GetNamedColor(string name) => m_Dictionary.TryGetValue(name, out var index) ? m_List[index] : null;
 
 		public HighlightDecoration this[int index]
 		{
 			get => ConvertFrom(m_List[index]);
 			set => SetItem(index, value);
 		}
-		object IList.this[int index]
+		object? IList.this[int index]
 		{
 			get => this[index];
-			set => SetItem(index, (HighlightDecoration)value);
+			set => SetItem(index, Cast(value));
 		}
 
 		public int Count => m_List.Count;
@@ -104,13 +104,13 @@ namespace Lyriser.Views
 		public IEnumerator<HighlightDecoration> GetEnumerator() => m_List.Select(ConvertFrom).GetEnumerator();
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-		int IList.Add(object value)
+		int IList.Add(object? value)
 		{
 			var index = m_List.Count;
-			InsertItem(index, (HighlightDecoration)value);
+			InsertItem(index, Cast(value));
 			return index;
 		}
-		bool IList.Contains(object value) => Contains((HighlightDecoration)value);
+		bool IList.Contains(object? value) => Contains(Cast(value));
 		void ICollection.CopyTo(Array array, int index)
 		{
 			if (array is HighlightDecoration[] typedArray)
@@ -121,10 +121,11 @@ namespace Lyriser.Views
 					array.SetValue(ConvertFrom(m_List[i]), index++);
 			}
 		}
-		int IList.IndexOf(object value) => IndexOf((HighlightDecoration)value);
-		void IList.Insert(int index, object value) => InsertItem(index, (HighlightDecoration)value);
-		void IList.Remove(object value) => Remove((HighlightDecoration)value);
+		int IList.IndexOf(object? value) => IndexOf(Cast(value));
+		void IList.Insert(int index, object? value) => InsertItem(index, Cast(value));
+		void IList.Remove(object? value) => Remove(Cast(value));
 
+		static HighlightDecoration Cast(object? value) => value is null ? throw new ArgumentNullException(nameof(value)) : (HighlightDecoration)value;
 		static HighlightingColor ConvertTo(HighlightDecoration highlightDecoration)
 		{
 			var highlightingColor = new HighlightingColor();
@@ -199,7 +200,7 @@ namespace Lyriser.Views
 
 		public IHighlightingDefinition HighlightingDefinition { get; }
 		public IDocument Document { get; }
-		public HighlightingColor DefaultTextColor => null;
+		public HighlightingColor? DefaultTextColor => null;
 
 		[Obsolete("Unused for this class", true)]
 		event HighlightingStateChangedEventHandler IHighlighter.HighlightingStateChanged
