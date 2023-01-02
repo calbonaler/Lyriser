@@ -695,6 +695,12 @@ namespace Lyriser.Views
 
 	static class FloatUtils
 	{
+		/// <summary>
+		/// 中間値を使用して完全精度の総和をとります。
+		/// これはPythonで書かれた https://code.activestate.com/recipes/393090/ のmsum関数のC#移植版です。
+		/// </summary>
+		/// <param name="values">総和をとる値</param>
+		/// <returns>総和</returns>
 		public static float RobustSum(this IEnumerable<float> values)
 		{
 			var partials = new List<float>();
