@@ -8,64 +8,63 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Lyriser.Properties
+namespace Lyriser.Properties;
+
+
+
+/// <summary>
+///   ローカライズされた文字列などを検索するための、厳密に型指定されたリソース クラスです。
+/// </summary>
+// このクラスは StronglyTypedResourceBuilder クラスによって ResGen
+// または Visual Studio のようなツールを使用して自動生成されました。
+// メンバーを追加または削除するには、.ResX ファイルを編集して、/str オプションと共に
+// ResGen を実行し直すか、または VS プロジェクトをリビルドします。
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+[global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+[global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+internal class Resources
 {
 
+	private static global::System.Resources.ResourceManager resourceMan;
+
+	private static global::System.Globalization.CultureInfo resourceCulture;
+
+	[global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+	internal Resources()
+	{
+	}
 
 	/// <summary>
-	///   ローカライズされた文字列などを検索するための、厳密に型指定されたリソース クラスです。
+	///   このクラスで使用されるキャッシュされた ResourceManager インスタンスを返します。
 	/// </summary>
-	// このクラスは StronglyTypedResourceBuilder クラスによって ResGen
-	// または Visual Studio のようなツールを使用して自動生成されました。
-	// メンバーを追加または削除するには、.ResX ファイルを編集して、/str オプションと共に
-	// ResGen を実行し直すか、または VS プロジェクトをリビルドします。
-	[global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
-	[global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-	[global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-	internal class Resources
+	[global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+	internal static global::System.Resources.ResourceManager ResourceManager
 	{
-
-		private static global::System.Resources.ResourceManager resourceMan;
-
-		private static global::System.Globalization.CultureInfo resourceCulture;
-
-		[global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-		internal Resources()
+		get
 		{
+			if ((resourceMan == null))
+			{
+				global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Lyriser.Properties.Resources", typeof(Resources).Assembly);
+				resourceMan = temp;
+			}
+			return resourceMan;
 		}
+	}
 
-		/// <summary>
-		///   このクラスで使用されるキャッシュされた ResourceManager インスタンスを返します。
-		/// </summary>
-		[global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-		internal static global::System.Resources.ResourceManager ResourceManager
+	/// <summary>
+	///   すべてについて、現在のスレッドの CurrentUICulture プロパティをオーバーライドします
+	///   現在のスレッドの CurrentUICulture プロパティをオーバーライドします。
+	/// </summary>
+	[global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
+	internal static global::System.Globalization.CultureInfo Culture
+	{
+		get
 		{
-			get
-			{
-				if ((resourceMan == null))
-				{
-					global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Lyriser.Properties.Resources", typeof(Resources).Assembly);
-					resourceMan = temp;
-				}
-				return resourceMan;
-			}
+			return resourceCulture;
 		}
-
-		/// <summary>
-		///   すべてについて、現在のスレッドの CurrentUICulture プロパティをオーバーライドします
-		///   現在のスレッドの CurrentUICulture プロパティをオーバーライドします。
-		/// </summary>
-		[global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-		internal static global::System.Globalization.CultureInfo Culture
+		set
 		{
-			get
-			{
-				return resourceCulture;
-			}
-			set
-			{
-				resourceCulture = value;
-			}
+			resourceCulture = value;
 		}
 	}
 }

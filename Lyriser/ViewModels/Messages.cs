@@ -1,14 +1,13 @@
 ﻿using System.Windows;
 using Livet.Messaging;
 
-namespace Lyriser.ViewModels
+namespace Lyriser.ViewModels;
+
+public class WarnUnsavedChangeMessage : ResponsiveInteractionMessage<bool?>
 {
-	public class WarnUnsavedChangeMessage : ResponsiveInteractionMessage<bool?>
-	{
-		public WarnUnsavedChangeMessage(string messageKey, string documentName) : base(messageKey) => DocumentName = documentName;
+	public WarnUnsavedChangeMessage(string messageKey, string documentName) : base(messageKey) => DocumentName = documentName;
 
-		public string DocumentName { get; }
+	public string DocumentName { get; }
 
-		protected override Freezable CreateInstanceCore() => new WarnUnsavedChangeMessage(MessageKey, DocumentName);
-	}
+	protected override Freezable CreateInstanceCore() => new WarnUnsavedChangeMessage(MessageKey, DocumentName);
 }
