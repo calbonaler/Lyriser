@@ -13,9 +13,9 @@ public class LyricsViewer : D2dControl
 {
 	public LyricsViewer()
 	{
-		ResourceCache.Add("TextBrush", rt => rt.CreateSolidColorBrush(new Core.ColorF(0x000000)));
-		ResourceCache.Add("NextTextBrush", rt => rt.CreateSolidColorBrush(new Core.ColorF(0xFFFFFF)));
-		ResourceCache.Add("HighlightBrush", rt => rt.CreateSolidColorBrush(new Core.ColorF(0x00FFFF)));
+		ResourceCache.Add("TextBrush", rt => rt.CreateSolidColorBrush(new Core.Direct2D1.ColorF(0x000000)));
+		ResourceCache.Add("NextTextBrush", rt => rt.CreateSolidColorBrush(new Core.Direct2D1.ColorF(0xFFFFFF)));
+		ResourceCache.Add("HighlightBrush", rt => rt.CreateSolidColorBrush(new Core.Direct2D1.ColorF(0x00FFFF)));
 		Loaded += OnLoaded;
 		Unloaded += OnUnloaded;
 		Focusable = true;
@@ -271,7 +271,7 @@ public class LyricsViewer : D2dControl
 		if (IsInDesignMode)
 			return;
 		Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
-		target.Clear(new Core.ColorF(0xFFFFFF));
+		target.Clear(new Core.Direct2D1.ColorF(0xFFFFFF));
 		var transform = ViewTransform;
 		target.Transform = transform;
 		if (Source != null && Source.SyllableLines.Count > 0)
@@ -284,7 +284,7 @@ public class LyricsViewer : D2dControl
 
 		var size = target.Size;
 		target.PushAxisAlignedClip(Core.Direct2D1.RectF.FromXYWH(0, size.Y - NextLineViewerHeight, size.X, NextLineViewerHeight), Core.Direct2D1.AntialiasMode.Aliased);
-		target.Clear(new Core.ColorF(0x808080));
+		target.Clear(new Core.Direct2D1.ColorF(0x808080));
 		target.Transform = Matrix3x2.CreateTranslation(transform.Translation.X, size.Y - NextLineViewerHeight + s_NextTopPadding);
 		m_NextRun.Draw(target, (Core.Direct2D1.Brush)ResourceCache["NextTextBrush"]);
 		target.PopAxisAlignedClip();
@@ -612,20 +612,19 @@ class TextRunBase : IDisposable
 			}
 			start += cluster.Length;
 		}
-		using var textLayout1 = Core.DirectWrite.TextLayout1.From(m_TextLayout);
 		if (metricsForRange.Count == 1)
-			textLayout1.SetCharacterSpacing(leadingSpacing, trailingSpacing, minimumAdvanceWidth, range);
+			m_TextLayout.SetCharacterSpacing(leadingSpacing, trailingSpacing, minimumAdvanceWidth, range);
 		else
 		{
 			var (leading, trailing) = (leadingSpacing, 0.0f);
 			if (metricsForRange[0].IsRightToLeft)
 				(leading, trailing) = (trailing, leading);
-			textLayout1.SetCharacterSpacing(leading, trailing, minimumAdvanceWidth, metricsForRange[0].Range);
+			m_TextLayout.SetCharacterSpacing(leading, trailing, minimumAdvanceWidth, metricsForRange[0].Range);
 
 			(leading, trailing) = (0.0f, trailingSpacing);
 			if (metricsForRange.Last().IsRightToLeft)
 				(leading, trailing) = (trailing, leading);
-			textLayout1.SetCharacterSpacing(leading, trailing, minimumAdvanceWidth, metricsForRange.Last().Range);
+			m_TextLayout.SetCharacterSpacing(leading, trailing, minimumAdvanceWidth, metricsForRange.Last().Range);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net7.0-windows8.0</TargetFramework>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <Platforms>x64</Platforms>
@@ -8,9 +8,8 @@
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Nullable>enable</Nullable>
-    <Copyright>Copyright © calbonaler 2019-2019</Copyright>
+    <Copyright>Copyright © calbonaler 2019-2023</Copyright>
     <Authors>calbonaler</Authors>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ApplicationDefinition Include="Views\App.xaml" />
@@ -36,6 +35,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Lyriser.Core\Lyriser.Core.vcxproj" />
+    <ProjectReference Include="..\Lyriser.Core\Lyriser.Core.csproj" />
   </ItemGroup>
 </Project>

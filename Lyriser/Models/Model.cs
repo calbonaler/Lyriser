@@ -155,12 +155,7 @@ public partial class Model : INotifyPropertyChanged
 		foreach (var (lyricsLine, lineTerminator) in lyricsLines)
 		{
 			var (baseText, textToNodeMap) = CollectBaseText(lyricsLine);
-			if (m_MonoRubyProvider.GetMonoRuby(baseText) is not MonoRuby monoRuby)
-			{
-				newSourceBuilder.Append(LyricsNodeBase.GenerateSource(lyricsLine));
-				newSourceBuilder.Append(lineTerminator);
-				continue;
-			}
+			var monoRuby = m_MonoRubyProvider.GetMonoRuby(baseText);
 			// GetMonoRubyでモノルビ分割がされない場合の送り仮名向け特殊処理
 			var baseTextElements = GetTextElements(baseText);
 			var rubyTextElements = GetTextElements(monoRuby.Text);
@@ -169,7 +164,7 @@ public partial class Model : INotifyPropertyChanged
 				if (baseTextElements[i].Text != rubyTextElements[j].Text)
 				{
 					// ルビとベースで対応する文字が異なる場合はモノルビの対応関係が設定されている箇所まで進める
-					while ((j = monoRuby.Indexes[baseTextElements[i].Index]) == MonoRuby.UnmatchedPosition)
+					while ((j = monoRuby.Indexes[baseTextElements[i].Index]) == Core.Ime.MonoRuby.UnmatchedPosition)
 						i--;
 				}
 				// ルビとベースで対応する文字が同じ場合はモノルビの対応関係を設定する
@@ -182,7 +177,7 @@ public partial class Model : INotifyPropertyChanged
 			var rubyStart = monoRuby.Indexes[0];
 			for (var i = 1; i <= baseText.Length; i++)
 			{
-				if (monoRuby.Indexes[i] == MonoRuby.UnmatchedPosition)
+				if (monoRuby.Indexes[i] == Core.Ime.MonoRuby.UnmatchedPosition)
 					continue;
 				// 既存ルビの作成
 				var rubyBase = baseText[rubyBaseStart..i];

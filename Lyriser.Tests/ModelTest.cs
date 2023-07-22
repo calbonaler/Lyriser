@@ -1,5 +1,6 @@
 ﻿using System;
 using ICSharpCode.AvalonEdit.Document;
+using Lyriser.Core.Ime;
 using Lyriser.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,11 +11,11 @@ public class ModelTest
 {
 	class MonoRubyPorviderMock : IMonoRubyProvider
 	{
-		public MonoRubyPorviderMock(Func<string, MonoRuby?> implementation) => m_Implementation = implementation;
+		public MonoRubyPorviderMock(Func<string, MonoRuby> implementation) => m_Implementation = implementation;
 
-		readonly Func<string, MonoRuby?> m_Implementation;
+		readonly Func<string, MonoRuby> m_Implementation;
 
-		public MonoRuby? GetMonoRuby(string text) => m_Implementation(text);
+		public MonoRuby GetMonoRuby(string text) => m_Implementation(text);
 	}
 
 	[TestMethod]
