@@ -39,7 +39,7 @@ public class LyricsViewer : D2dControl
 	TextRun? m_Run;
 	NextTextRun? m_NextRun;
 
-	public static readonly new DependencyProperty SourceProperty = DependencyProperty.Register(nameof(Source), typeof(LyricsSource), typeof(LyricsViewer), new PropertyMetadata(LyricsSource.Empty, (s, e) => ((LyricsViewer)s).OnSourceChanged(e)));
+	public static readonly DependencyProperty SourceProperty = DependencyProperty.Register(nameof(Source), typeof(LyricsSource), typeof(LyricsViewer), new PropertyMetadata(LyricsSource.Empty, (s, e) => ((LyricsViewer)s).OnSourceChanged(e)));
 	public static readonly DependencyProperty CurrentSyllableProperty = DependencyProperty.Register(
 		nameof(CurrentSyllable), typeof(SyllableLocation), typeof(LyricsViewer),
 		new FrameworkPropertyMetadata(default(SyllableLocation), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, (s, e) => ((LyricsViewer)s).UpdateNextLineViewer()));
@@ -214,7 +214,7 @@ public class LyricsViewer : D2dControl
 		ScrollPositionY += offsetY;
 	}
 
-	public new LyricsSource Source
+	public LyricsSource Source
 	{
 		get => (LyricsSource)GetValue(SourceProperty);
 		set => SetValue(SourceProperty, value);
@@ -337,7 +337,8 @@ public class LyricsViewer : D2dControl
 
 	void UpdateScrollInfo()
 	{
-		Debug.Assert(m_WriteFactory != null && m_Run != null && m_NextRun != null, "not initialized");
+		if (m_WriteFactory == null || m_Run == null || m_NextRun == null)
+			return;
 		var size = m_Run.Size;
 		// Add paddings
 		size.X += s_LeftPadding + s_RightPadding;
@@ -533,7 +534,7 @@ class TextRunBase : IDisposable
 		using (var format = writeFactory.CreateTextFormat(fontFamilyName, dwriteFontWeight, dwriteFontStyle, dwriteFontStretch, (float)fontSize))
 		{
 			format.WordWrapping = Core.DirectWrite.WordWrapping.NoWrap;
-			format.LineSpacing = (Core.DirectWrite.LineSpacingMethod.Uniform, (float)fontSize * 1.5f * (1.0f / 0.8f), (float)fontSize * 1.5f);
+			format.LineSpacing = new(Core.DirectWrite.LineSpacingMethod.Uniform, (float)fontSize * 1.5f * (1.0f / 0.8f), (float)fontSize * 1.5f);
 			Utils.AssignWithDispose(ref m_TextLayout, writeFactory.CreateTextLayout(Text, format, default));
 			Debug.Assert(m_TextLayout != null);
 		}
@@ -567,7 +568,7 @@ class TextRunBase : IDisposable
 		using (var format = writeFactory.CreateTextFormat(fontFamilyName, dwriteFontWeight, dwriteFontStyle, dwriteFontStretch, (float)fontSize))
 		{
 			format.WordWrapping = Core.DirectWrite.WordWrapping.NoWrap;
-			format.LineSpacing = (Core.DirectWrite.LineSpacingMethod.Uniform, (float)fontSize * 1.5f * (1.0f / 0.8f), (float)fontSize * 1.5f);
+			format.LineSpacing = new(Core.DirectWrite.LineSpacingMethod.Uniform, (float)fontSize * 1.5f * (1.0f / 0.8f), (float)fontSize * 1.5f);
 			Utils.AssignWithDispose(ref m_TextLayout, writeFactory.CreateTextLayout(Text, format, default));
 		}
 		using (var format = writeFactory.CreateTextFormat(fontFamilyName, dwriteFontWeight, dwriteFontStyle, dwriteFontStretch, (float)fontSize / 2))
@@ -634,7 +635,7 @@ class TextRun : TextRunBase
 	public TextRun(Core.DirectWrite.Factory writeFacotry, System.Windows.Media.FontFamily fontFamily, FontWeight fontWeight, FontStyle fontStyle, FontStretch fontStretch, double fontSize)
 		: base(writeFacotry, fontFamily, fontWeight, fontStyle, fontStretch, fontSize) { }
 
-	public (Core.DirectWrite.LineSpacingMethod LineSpacingMethod, float LineSpacing, float Baseline) LineSpacing
+	public Core.DirectWrite.LineSpacingSet LineSpacing
 	{
 		get
 		{

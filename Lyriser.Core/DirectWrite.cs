@@ -2,260 +2,367 @@
 using System.Runtime.Versioning;
 using Windows.Win32.Foundation;
 using PInvoke = Windows.Win32.PInvoke;
-using IUnknown = Windows.Win32.System.Com.IUnknown;
 using DWrite = Windows.Win32.Graphics.DirectWrite;
+using System.Runtime.CompilerServices;
 
 namespace Lyriser.Core.DirectWrite;
 
+/// <summary>フォント フェイスのスタイルを通常、斜体、イタリック体で表します。</summary>
 public enum FontStyle
 {
-	Normal = DWrite.DWRITE_FONT_STYLE.DWRITE_FONT_STYLE_NORMAL,
-	Oblique = DWrite.DWRITE_FONT_STYLE.DWRITE_FONT_STYLE_OBLIQUE,
-	Italic = DWrite.DWRITE_FONT_STYLE.DWRITE_FONT_STYLE_ITALIC,
+	/// <summary>フォント スタイル: 通常</summary>
+	Normal = 0,
+	/// <summary>フォント スタイル: 斜体</summary>
+	Oblique = 1,
+	/// <summary>フォント スタイル: イタリック体</summary>
+	Italic = 2,
 }
 
+/// <summary>特定の複数行段落で使用される単語の折り返し方法を指定します。</summary>
 public enum WordWrapping
 {
-	/// <summary>Words are broken across lines to avoid text overflowing the layout box.</summary>
-	Wrap = DWrite.DWRITE_WORD_WRAPPING.DWRITE_WORD_WRAPPING_WRAP,
+	/// <summary>割り付け矩形からはみ出さないように単語内で折り返します。</summary>
+	Wrap = 0,
 	/// <summary>
-	/// Words are kept within the same line even when it overflows the layout box.
-	/// This option is often used with scrolling to reveal overflow text. 
+	/// 割り付け矩形からはみ出す場合でも同じ行に単語を維持します。
+	/// このオプションははみ出したテキストを表示するためのスクロールとともによく使用されます。
 	/// </summary>
-	NoWrap = DWrite.DWRITE_WORD_WRAPPING.DWRITE_WORD_WRAPPING_NO_WRAP,
+	NoWrap = 1,
 	/// <summary>
-	/// Words are broken across lines to avoid text overflowing the layout box.
-	/// Emergency wrapping occurs if the word is larger than the maximum width.
+	/// 割り付け矩形からはみ出さないように単語内で折り返します。
+	/// 単語が最大幅より大きい場合は緊急折り返しが発生します。
 	/// </summary>
-	EmergencyBreak = DWrite.DWRITE_WORD_WRAPPING.DWRITE_WORD_WRAPPING_EMERGENCY_BREAK,
-	/// <summary>Only wrap whole words, never breaking words (emergency wrapping) when the layout width is too small for even a single word.</summary>
-	WholeWord = DWrite.DWRITE_WORD_WRAPPING.DWRITE_WORD_WRAPPING_WHOLE_WORD,
-	/// <summary>Wrap between any valid characters clusters.</summary>
-	Character = DWrite.DWRITE_WORD_WRAPPING.DWRITE_WORD_WRAPPING_CHARACTER,
+	[SupportedOSPlatform("windows8.1")]
+	EmergencyBreak = 2,
+	/// <summary>緊急折り返しの際、単語間での折り返しのみを行い、割り付け幅が1単語に対してすら小さすぎる場合でも単語内での折り返しは行いません。</summary>
+	[SupportedOSPlatform("windows8.1")]
+	WholeWord = 3,
+	/// <summary>任意の有効な文字クラスタ間で折り返します。</summary>
+	[SupportedOSPlatform("windows8.1")]
+	Character = 4,
 };
 
+/// <summary>テキスト レイアウトの行送りの決定に使用される方法です。</summary>
 public enum LineSpacingMethod
 {
-	/// <summary>Line spacing depends solely on the content, growing to accommodate the size of fonts and inline objects.</summary>
-	Default = DWrite.DWRITE_LINE_SPACING_METHOD.DWRITE_LINE_SPACING_METHOD_DEFAULT,
+	/// <summary>行送りはコンテンツのみに依存し、フォント サイズやインライン オブジェクトに合わせて調整されます。</summary>
+	Default = 0,
 	/// <summary>
-	/// Lines are explicitly set to uniform spacing, regardless of contained font sizes.
-	/// This can be useful to avoid the uneven appearance that can occur from font fallback.
+	/// フォント サイズやインライン オブジェクトに関係なく行送りは均等な値に明示的に設定されます。
+	/// これはフォントのフォールバックによって発生する可能性のある不均一な外観を回避するのに役立ちます。
 	/// </summary>
-	Uniform = DWrite.DWRITE_LINE_SPACING_METHOD.DWRITE_LINE_SPACING_METHOD_UNIFORM,
-	/// <summary>Line spacing and baseline distances are proportional to the computed values based on the content, the size of the fonts and inline objects.</summary>
-	Proportional = DWrite.DWRITE_LINE_SPACING_METHOD.DWRITE_LINE_SPACING_METHOD_PROPORTIONAL
+	Uniform = 1,
+	/// <summary>行送りとベースラインの距離は、コンテンツ、フォント サイズ、およびインライン オブジェクトに基づいて計算された値に比例します。</summary>
+	/// <remarks>この値はIDWriteTextLayout3::SetLineSpacingでのみ使用でき、IDWriteTextFormat::SetLineSpacingでは使用できません。</remarks>
+	[SupportedOSPlatform("windows10.0")]
+	Proportional = 2,
 };
 
-/// <summary>Alignment of paragraph text along the reading direction axis relative to the leading and trailing edge of the layout box.</summary>
+/// <summary>段落テキストの読字方向軸に沿った配置を割り付け矩形の始端と終端を基準として指定します。</summary>
 public enum TextAlignment
 {
-	/// <summary>The leading edge of the paragraph text is aligned to the layout box's leading edge.</summary>
-	Leading = DWrite.DWRITE_TEXT_ALIGNMENT.DWRITE_TEXT_ALIGNMENT_LEADING,
-	/// <summary>The trailing edge of the paragraph text is aligned to the layout box's trailing edge.</summary>
-	Trailing = DWrite.DWRITE_TEXT_ALIGNMENT.DWRITE_TEXT_ALIGNMENT_TRAILING,
-	/// <summary>The center of the paragraph text is aligned to the center of the layout box.</summary>
-	Center = DWrite.DWRITE_TEXT_ALIGNMENT.DWRITE_TEXT_ALIGNMENT_CENTER,
-	/// <summary>Align text to the leading side, and also justify text to fill the lines.</summary>
-	Justified = DWrite.DWRITE_TEXT_ALIGNMENT.DWRITE_TEXT_ALIGNMENT_JUSTIFIED
+	/// <summary>段落テキストの始端が割り付け矩形の始端に揃えられます。</summary>
+	Leading = 0,
+	/// <summary>段落テキストの終端が割り付け矩形の終端に揃えられます。</summary>
+	Trailing = 1,
+	/// <summary>段落テキストの中心が割り付け矩形の中心に揃えられます。</summary>
+	Center = 2,
+	/// <summary>テキストを始端に揃え、行を埋めるようにテキストを均等割り付けします。</summary>
+	Justified = 3,
 };
 
-/// <summary>The DWRITE_TEXT_RANGE structure specifies a range of text positions where format is applied.</summary>
+/// <summary>テキスト位置の範囲を指定します。</summary>
 public record struct TextRange
 {
+	/// <summary>開始位置と長さからテキスト範囲を作成します。</summary>
+	/// <param name="startPosition">開始位置を指定します。</param>
+	/// <param name="length">長さを指定します。</param>
+	/// <returns>開始位置と長さが設定されたテキスト範囲。</returns>
 	public static TextRange FromStartLength(int startPosition, int length) => new() { StartPosition = startPosition, Length = length };
+	/// <summary>開始位置と終了位置からテキスト範囲を作成します。</summary>
+	/// <param name="startPosition">開始位置を指定します。</param>
+	/// <param name="endPosition">終了位置を指定します。この位置は範囲に含まれません。</param>
+	/// <returns>開始位置と終了位置が指定されたテキスト範囲。</returns>
 	public static TextRange FromStartEnd(int startPosition, int endPosition) => FromStartLength(startPosition, endPosition - startPosition);
 
-	/// <summary>The end text position of the range.</summary>
+	/// <summary>テキスト範囲の終了位置です。この位置は範囲に含まれません。</summary>
 	public readonly int EndPosition => StartPosition + Length;
 
-	/// <summary>The start text position of the range.</summary>
+	/// <summary>テキスト範囲の開始位置です。</summary>
 	public int StartPosition;
-	/// <summary>The number of text positions in the range.</summary>
+	/// <summary>テキスト範囲の長さ（含まれる位置の数）です。</summary>
 	public int Length;
-
-	internal DWrite.DWRITE_TEXT_RANGE ToNative() => new() { startPosition = (uint)StartPosition, length = (uint)Length };
 };
 
-/// <summary>The DWRITE_CLUSTER_METRICS structure contains information about a glyph cluster.</summary>
+/// <summary>グリフ クラスタに関する情報を格納します。</summary>
 public record struct ClusterMetrics
 {
-	/// <summary>The total advance width of all glyphs in the cluster.</summary>
+	/// <summary>クラスタ内の全グリフの合計アドバンス幅です。</summary>
 	public float Width;
-	/// <summary>The number of text positions in the cluster.</summary>
+	/// <summary>クラスタ内のテキスト位置の数です。</summary>
 	public short Length;
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	short bitValues;
 
-	/// <summary>Indicate whether line can be broken right after the cluster.</summary>
+	/// <summary>クラスタ直後で改行できるかどうかを示します。</summary>
 	public readonly bool CanWrapLineAfter => (bitValues & 1) != 0;
-	/// <summary>Indicate whether the cluster corresponds to whitespace character.</summary>
+	/// <summary>クラスタが空白文字に対応しているかどうかを示します。</summary>
 	public readonly bool IsWhitespace => (bitValues & 2) != 0;
-	/// <summary>Indicate whether the cluster corresponds to a newline character.</summary>
+	/// <summary>クラスタが改行文字に対応しているかどうかを示します。</summary>
 	public readonly bool IsNewline => (bitValues & 4) != 0;
-	/// <summary>Indicate whether the cluster corresponds to soft hyphen character.</summary>
+	/// <summary>クラスタがソフトハイフン文字に対応しているかどうかを示します。</summary>
 	public readonly bool IsSoftHyphen => (bitValues & 8) != 0;
-	/// <summary>Indicate whether the cluster is read from right to left.</summary>
+	/// <summary>クラスタが右から左に読まれるかどうかを示します。</summary>
 	public readonly bool IsRightToLeft => (bitValues & 16) != 0;
 };
 
 /// <summary>
-/// Overall metrics associated with text after layout.
-/// All coordinates are in device independent pixels (DIPs).
+/// 割り付け後のテキストに関連付けられた計量情報を格納します。
+/// 座標の単位はデバイス独立ピクセル (DIP) です。
 /// </summary>
 public record struct TextMetrics
 {
-	/// <summary>Top-left point of formatted text relative to layout box (excluding any glyph overhang).</summary>
+	/// <summary>グリフのオーバーハングを除いた、割り付け矩形を基準とした書式設定されたテキストの左上の点です。</summary>
 	public System.Numerics.Vector2 TopLeft;
-	/// <summary>The width of the formatted text ignoring trailing whitespace at the end of each line.</summary>
+	/// <summary>各行末の空白を無視した書式設定されたテキストの幅です。</summary>
 	public float Width;
-	/// <summary>The width of the formatted text taking into account the trailing whitespace at the end of each line.</summary>
+	/// <summary>各行末の空白を考慮した書式設定されたテキストの幅です。</summary>
 	public float WidthIncludingTrailingWhitespace;
-	/// <summary>The height of the formatted text. The height of an empty string is determined by the size of the default font's line height.</summary>
+	/// <summary>
+	/// 書式設定されたテキストの高さです。
+	/// 空文字列の高さは既定のフォントのそれと同じ値に設定されます。
+	/// </summary>
 	public float Height;
-	/// <summary>Initial size given to the layout. Depending on whether the text was wrapped or not and the length of the text, it may be larger or smaller than the text content size.</summary>
+	/// <summary>
+	/// レイアウトに与えられた大きさの初期値です。
+	/// テキストの折り返しや長さによってテキスト内容の大きさと異なる値になる場合があります。
+	/// </summary>
 	public System.Numerics.Vector2 LayoutSize;
 	/// <summary>
-	/// The maximum reordering count of any line of text, used to calculate the most number of hit-testing boxes needed.
-	/// If the layout has no bidirectional text or no text at all, the minimum level is 1.
+	/// 必要となるヒット テスト ボックスの最大数の計算に使用される任意のテキスト行の最大並び替え数です。
+	/// レイアウトに双方向テキストがないかテキストが全くない場合、最小レベルは1です。
 	/// </summary>
 	public int MaxBidiReorderingDepth;
-	/// <summary>Total number of lines.</summary>
+	/// <summary>総行数です。</summary>
 	public int LineCount;
 }
 
-/// <summary>Geometry enclosing of text positions.</summary>
+/// <summary>ヒット テストで得られた領域を記述します。</summary>
 public record struct HitTestMetrics
 {
-	/// <summary>Text range within the geometry.</summary>
+	/// <summary>ヒット領域内のテキスト範囲です。</summary>
 	public TextRange TextRange;
-	/// <summary>Position of the top-left coordinate of the geometry.</summary>
+	/// <summary>ヒット領域の左上隅です。</summary>
 	public System.Numerics.Vector2 TopLeft;
-	/// <summary>Geometry's size.</summary>
+	/// <summary>ヒット領域の大きさです。</summary>
 	public System.Numerics.Vector2 Size;
-	/// <summary>Bidi level of text positions enclosed within the geometry.</summary>
+	/// <summary>ヒット領域内のテキスト位置の双方向レベルです。</summary>
 	public int BidiLevel;
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	int isText;
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	int isTrimmed;
 
-	/// <summary>Geometry encloses text?</summary>
+	/// <summary>ヒット領域にテキストがあるかどうかを示します。</summary>
 	public readonly bool IsText => isText != 0;
-	/// <summary>Range is trimmed.</summary>
+	/// <summary>テキスト範囲がトリミングされているかどうかを示します。</summary>
 	public readonly bool IsTrimmed => isTrimmed != 0;
+	/// <summary>ヒット領域の右下隅です。</summary>
 	public readonly System.Numerics.Vector2 BottomRight => TopLeft + Size;
 };
 
-public unsafe class TextFormat : Interop.DisposableComPtrBase
+/// <summary>複数行のテキスト段落に関する行送りの調整情報を表します。</summary>
+/// <param name="LineSpacingMethod">行送りの決定方法を示す値です。</param>
+/// <param name="LineSpacing">行送り、すなわち、ベースライン間の距離です。</param>
+/// <param name="Baseline">
+/// 行の編成方向における行の始端からベースラインまでの距離です。
+/// <see cref="LineSpacing"/> に対する適切な比率は 80% です。
+/// </param>
+public record struct LineSpacingSet(LineSpacingMethod LineSpacingMethod, float LineSpacing, float Baseline);
+
+/// <summary>テキストの書式設定に使用されるフォントおよび段落に関するプロパティおよびロケール情報を記述します。</summary>
+public unsafe class TextFormat : Interop.ComPtr
 {
 	internal TextFormat() { }
 
-	public (LineSpacingMethod LineSpacingMethod, float LineSpacing, float Baseline) LineSpacing
+	/// <summary>複数行のテキスト段落に関する行送りの調整情報を取得または設定します。</summary>
+	public LineSpacingSet LineSpacing
 	{
 		get
 		{
-			Pointer->GetLineSpacing(out var lineSpacingMethod, out var lineSpacing, out var baseline);
-			return ((LineSpacingMethod)lineSpacingMethod, lineSpacing, baseline);
+			var lineSpacingMethod = LineSpacingMethod.Default;
+			var lineSpacing = 0f;
+			var baseline = 0f;
+			Pointer->GetLineSpacing(&lineSpacingMethod, &lineSpacing, &baseline);
+			return new(lineSpacingMethod, lineSpacing, baseline);
 		}
-		set => Pointer->SetLineSpacing((DWrite.DWRITE_LINE_SPACING_METHOD)value.LineSpacingMethod, value.LineSpacing, value.Baseline);
+		set => Pointer->SetLineSpacing(value.LineSpacingMethod, value.LineSpacing, value.Baseline);
 	}
+	/// <summary>単語の折り返し方法を取得または設定します。</summary>
 	public WordWrapping WordWrapping
 	{
-		get => (WordWrapping)Pointer->GetWordWrapping();
-		set => Pointer->SetWordWrapping((DWrite.DWRITE_WORD_WRAPPING)value);
+		get => Pointer->GetWordWrapping();
+		set => Pointer->SetWordWrapping(value);
+	}
+	/// <summary>割り付け矩形の始端および終端を基準としたテキストの配置方法を取得または設定します。</summary>
+	public TextAlignment TextAlignment
+	{
+		get => Pointer->GetTextAlignment();
+		set => Pointer->SetTextAlignment(value);
 	}
 
 	internal new DWrite.IDWriteTextFormat* Pointer => (DWrite.IDWriteTextFormat*)base.Pointer;
-	internal new ref DWrite.IDWriteTextFormat* Put() => ref Interop.ComUtils.As<IUnknown, DWrite.IDWriteTextFormat>(ref base.Put());
+	internal ref DWrite.IDWriteTextFormat* Put() => ref Interop.ComUtils.IntPtrAs<DWrite.IDWriteTextFormat>(ref PutIntPtr());
 }
 
+/// <summary>完全に分析および書式設定された後のテキスト ブロックを表します。</summary>
 public unsafe class TextLayout : TextFormat
 {
 	internal TextLayout() { }
 
+	/// <summary>各グリフ クラスタの論理プロパティおよび測定情報を取得します。</summary>
+	/// <returns>改行や合計アドバンス幅といったグリフ クラスタに関する計量情報。</returns>
 	public ClusterMetrics[] GetClusterMetrics()
 	{
-		var hr = Pointer->GetClusterMetrics(default, out var actualClusterCount);
+		var actualClusterCount = 0u;
+		var hr = Pointer->GetClusterMetrics(null, 0, &actualClusterCount);
 		if (hr != PInvoke.HRESULT_FROM_WIN32(WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER))
 			hr.ThrowOnFailure();
 		if (actualClusterCount == 0) return Array.Empty<ClusterMetrics>();
 		var clusterMetrics = new ClusterMetrics[actualClusterCount];
 		fixed (ClusterMetrics* ptr = &clusterMetrics[0])
-			Pointer->GetClusterMetrics((DWrite.DWRITE_CLUSTER_METRICS*)ptr, actualClusterCount, &actualClusterCount).ThrowOnFailure();
+			Pointer->GetClusterMetrics(ptr, actualClusterCount, &actualClusterCount).ThrowOnFailure();
 		return clusterMetrics;
 	}
+	/// <summary>テキスト位置と位置の論理的な方向を指定して、割り付け矩形の左上を基準とした相対的なピクセル位置を取得します。</summary>
+	/// <param name="textPosition">ピクセル位置を取得するために使用されるテキスト位置です。</param>
+	/// <param name="isTrailingHit">ピクセル位置が指定されたテキスト位置の始端側にあるのか、あるいは終端側にあるのかを示します。</param>
+	/// <returns>割り付け矩形の左上を基準としたピクセル位置、および指定されたテキスト位置を完全に囲む出力ジオメトリ。</returns>
 	public (System.Numerics.Vector2 Point, HitTestMetrics HitTestMetrics) HitTestTextPosition(int textPosition, bool isTrailingHit)
 	{
 		var hitTestMetrics = new HitTestMetrics();
 		var pointX = 0f;
 		var pointY = 0f;
-		Pointer->HitTestTextPosition((uint)textPosition, isTrailingHit, &pointX, &pointY, (DWrite.DWRITE_HIT_TEST_METRICS*)&hitTestMetrics);
+		Pointer->HitTestTextPosition((uint)textPosition, isTrailingHit, &pointX, &pointY, &hitTestMetrics);
 		return (new System.Numerics.Vector2(pointX, pointY), hitTestMetrics);
 	}
-	public bool HitTestTextRange(TextRange textRange, System.Numerics.Vector2 origin, out HitTestMetrics hitTestMetrics)
+	/// <summary>テキスト位置の範囲に対応するヒット テスト計量情報のセットを取得します。</summary>
+	/// <param name="textRange">テキスト位置の範囲です。</param>
+	/// <param name="origin">
+	/// 割り付け矩形の左上の原点ピクセルの位置です。
+	/// このオフセットは返されるヒット テスト計量情報に加算されます。
+	/// </param>
+	/// <param name="hitTestMetrics">
+	/// 指定された位置範囲を完全に囲む出力ジオメトリのバッファです。
+	/// このバッファの初期サイズとして適した値は <see cref="Metrics"/> で取得できる値を用いた次の式から計算できます。
+	/// <code><see cref="TextMetrics.LineCount"/> * <see cref="TextMetrics.MaxBidiReorderingDepth"/></code>
+	/// </param>
+	/// <returns>
+	/// <paramref name="hitTestMetrics"/> のバッファに実際に保持されるジオメトリの数。
+	/// バッファが小さすぎて計算されたすべての領域を保持できない場合は -1。
+	/// </returns>
+	public int HitTestTextRange(TextRange textRange, System.Numerics.Vector2 origin, Span<HitTestMetrics> hitTestMetrics)
 	{
 		HRESULT hr;
 		var actualHitTestMetricsCount = 0u;
-		fixed (HitTestMetrics* pHitTestMetrics = &hitTestMetrics)
-			hr = Pointer->HitTestTextRange((uint)textRange.StartPosition, (uint)textRange.Length, origin.X, origin.Y, (DWrite.DWRITE_HIT_TEST_METRICS*)pHitTestMetrics, 1, &actualHitTestMetricsCount);
+		fixed (HitTestMetrics* pHitTestMetrics = hitTestMetrics)
+			hr = Pointer->HitTestTextRange((uint)textRange.StartPosition, (uint)textRange.Length, origin.X, origin.Y, pHitTestMetrics, (uint)hitTestMetrics.Length, &actualHitTestMetricsCount);
 		if (hr == PInvoke.HRESULT_FROM_WIN32(WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER))
-			return false;
+			return -1;
 		hr.ThrowOnFailure();
-		return true;
+		return (int)actualHitTestMetricsCount;
 	}
+	/// <summary>テキスト位置の範囲に対応するヒット テスト計量情報を取得します。</summary>
+	/// <param name="textRange">テキスト位置の範囲です。</param>
+	/// <param name="origin">
+	/// 割り付け矩形の左上の原点ピクセルの位置です。
+	/// このオフセットは返されるヒット テスト計量情報に加算されます。
+	/// </param>
+	/// <param name="hitTestMetrics">指定された位置範囲を完全に囲む出力ジオメトリです。</param>
+	/// <returns>ジオメトリが 1 つのために <paramref name="hitTestMetrics"/> にジオメトリが出力された場合は <see langword="true"/>。それ以外の場合は <see langword="false"/>。</returns>
+	public bool HitTestTextRange(TextRange textRange, System.Numerics.Vector2 origin, out HitTestMetrics hitTestMetrics)
+	{
+		Unsafe.SkipInit(out hitTestMetrics);
+		return HitTestTextRange(textRange, origin, new(ref hitTestMetrics)) >= 0;
+	}
+	/// <summary>字間を設定します。</summary>
+	/// <param name="leadingSpacing">読字方向において各文字の前にある間隔です。</param>
+	/// <param name="trailingSpacing">読字方向において各文字の次にある間隔です。</param>
+	/// <param name="minimumAdvanceWidth">
+	/// 文字の幅が小さすぎたり 0 になったりするのを防ぐための各文字の最小アドバンス幅です。
+	/// これは 0 以上でなければなりません。
+	/// </param>
+	/// <param name="textRange">この変更が適用されるテキスト範囲です。</param>
 	[SupportedOSPlatform("windows8.0")]
 	public void SetCharacterSpacing(float leadingSpacing, float trailingSpacing, float minimumAdvanceWidth, TextRange textRange)
 	{
 		using var textLayout1 = Interop.ComUtils.Cast<DWrite.IDWriteTextLayout1>(Pointer);
-		textLayout1.Pointer->SetCharacterSpacing(leadingSpacing, trailingSpacing, minimumAdvanceWidth, textRange.ToNative());
+		textLayout1.Pointer->SetCharacterSpacing(leadingSpacing, trailingSpacing, minimumAdvanceWidth, textRange);
 	}
 
+	/// <summary>割り付け矩形の最大幅を取得または設定します。</summary>
 	public float MaxWidth
 	{
 		get => Pointer->GetMaxWidth();
 		set => Pointer->SetMaxWidth(value);
 	}
+	/// <summary>書式設定された文字列の全体的な計量情報を取得します。</summary>
 	public TextMetrics Metrics
 	{
 		get
 		{
 			var textMetrics = new TextMetrics();
-			Pointer->GetMetrics((DWrite.DWRITE_TEXT_METRICS*)&textMetrics);
+			Pointer->GetMetrics(&textMetrics);
 			return textMetrics;
 		}
-	}
-	public TextAlignment TextAlignment
-	{
-		get => (TextAlignment)Pointer->GetTextAlignment();
-		set => Pointer->SetTextAlignment((DWrite.DWRITE_TEXT_ALIGNMENT)value);
 	}
 
 	internal new DWrite.IDWriteTextLayout* Pointer => (DWrite.IDWriteTextLayout*)base.Pointer;
 	internal new ref DWrite.IDWriteTextLayout* Put() => ref Interop.ComUtils.As<DWrite.IDWriteTextFormat, DWrite.IDWriteTextLayout>(ref base.Put());
 }
 
-public unsafe class Factory : Interop.DisposableComPtrBase
+/// <summary>すべての DirectWrite オブジェクトの作成に使用されるルート ファクトリです。</summary>
+public unsafe class Factory : Interop.ComPtr
 {
-	public Factory() =>
-		PInvoke.DWriteCreateFactory(DWrite.DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_SHARED, typeof(DWrite.IDWriteFactory).GUID, out PutVoid()).ThrowOnFailure();
+	/// <summary>個別の DirectWrite オブジェクトの後続の作成に使用される DirectWrite ファクトリ オブジェクトを作成します。</summary>
+	/// <remarks>作成されるファクトリ オブジェクトは共有ファクトリ オブジェクトになります。</remarks>
+	public Factory()
+	{
+		var guid = typeof(DWrite.IDWriteFactory).GUID;
+		fixed (nint* pp = &PutIntPtr())
+			PInvoke.DWriteCreateFactory(DWrite.DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_SHARED, &guid, pp).ThrowOnFailure();
+	}
 
-	public unsafe TextFormat CreateTextFormat(string fontFamilyName, int fontWeight, FontStyle fontStyle, int fontStretch, float fontSize)
+	/// <summary>テキストの割り付けに使用されるテキスト書式設定オブジェクトを作成します。</summary>
+	/// <param name="fontFamilyName">フォント ファミリの名前です。</param>
+	/// <param name="fontWeight">このメソッドで作成されるテキスト オブジェクトのフォントの太さを表す1-999の値です。標準値は400です。</param>
+	/// <param name="fontStyle">このメソッドで作成されるテキスト オブジェクトのフォント スタイルです。</param>
+	/// <param name="fontStretch">このメソッドで作成されるテキスト オブジェクトのフォントの幅の引き伸ばし度合いを表す1-9の整数値です。標準値は5です。0は不明を意味します。</param>
+	/// <param name="fontSize">DIP（デバイス独立ピクセル）単位で表されるフォントの論理サイズです。1 DIP は 1/96 インチです。</param>
+	/// <returns>新しく作成されたテキスト書式設定オブジェクトです。</returns>
+	public TextFormat CreateTextFormat(string fontFamilyName, int fontWeight, FontStyle fontStyle, int fontStretch, float fontSize)
 	{
 		var emptyString = '\0';
 		var result = new TextFormat();
 		fixed (DWrite.IDWriteTextFormat** ppResult = &result.Put())
 		fixed (char* pFontFamilyName = fontFamilyName)
-		{
-			Pointer->CreateTextFormat(pFontFamilyName, null,
-				(DWrite.DWRITE_FONT_WEIGHT)fontWeight, (DWrite.DWRITE_FONT_STYLE)fontStyle, (DWrite.DWRITE_FONT_STRETCH)fontStretch, fontSize,
-				&emptyString, ppResult);
-		}
+			Pointer->CreateTextFormat(pFontFamilyName, null, fontWeight, fontStyle, fontStretch, fontSize, &emptyString, ppResult);
 		return result;
 	}
-	public unsafe TextLayout CreateTextLayout(string text, TextFormat textFormat, System.Numerics.Vector2 maxSize)
+	/// <summary>文字列、テキスト書式設定および関連付けられた制約から完全に分析および書式設定された結果を表すオブジェクトを生成します。</summary>
+	/// <param name="text">新しい <see cref="TextLayout"/> オブジェクトを作成する文字列です。</param>
+	/// <param name="textFormat">文字列に適用される書式設定を示すオブジェクトです。</param>
+	/// <param name="maxSize">割り付け矩形の大きさです。</param>
+	/// <returns>結果のテキスト レイアウト オブジェクトです。</returns>
+	public TextLayout CreateTextLayout(ReadOnlySpan<char> text, TextFormat textFormat, System.Numerics.Vector2 maxSize)
 	{
 		var result = new TextLayout();
-		fixed (DWrite.IDWriteTextLayout ** ppResult = &result.Put())
-		fixed (char* pText = text)
-			Pointer->CreateTextLayout(pText, (uint)text.Length, textFormat.Pointer, maxSize.X, maxSize.Y, ppResult);
+		fixed (DWrite.IDWriteTextLayout** ppResult = &result.Put())
+		fixed (char* pinnedText = text)
+		{
+			char emptyString = '\0';
+			Pointer->CreateTextLayout(pinnedText != null ? pinnedText : &emptyString, (uint)text.Length, textFormat.Pointer, maxSize.X, maxSize.Y, ppResult);
+		}
 		return result;
 	}
 

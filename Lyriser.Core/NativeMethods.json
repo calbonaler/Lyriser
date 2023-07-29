@@ -1,10 +1,4 @@
 ﻿{
   "$schema": "https://aka.ms/CsWin32.schema.json",
-  "comInterop": {
-    "preserveSigMethods": [
-      "IDWriteTextLayout.GetClusterMetrics",
-      "IDWriteTextLayout.HitTestTextRange"
-    ]
-  },
   "allowMarshaling": false
 }

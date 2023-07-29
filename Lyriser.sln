@@ -9,6 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lyriser.Tests", "Lyriser.Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lyriser.Core", "Lyriser.Core\Lyriser.Core.csproj", "{36E86CF8-14D1-4373-AEF3-471FF84B557C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ソリューション項目", "ソリューション項目", "{CCC9F36C-13DC-4F17-A233-89730BA44840}"
+	ProjectSection(SolutionItems) = preProject
+		NOTICE.md = NOTICE.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

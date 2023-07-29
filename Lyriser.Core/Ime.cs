@@ -14,7 +14,7 @@ public static class Ime
 			return new MonoRuby() { Text = string.Empty, Indexes = new ushort[] { 0 } };
 		var languageType = Type.GetTypeFromProgID("MSIME.Japan");
 		Debug.Assert(languageType is not null);
-		var language = (IFELanguage.Interface?)Activator.CreateInstance(languageType);
+		var language = (IFELanguage?)Activator.CreateInstance(languageType);
 		Debug.Assert(language is not null);
 		try
 		{

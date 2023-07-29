@@ -11,5 +11,5 @@ public class ImeLanguage : IMonoRubyProvider
 
 	public static readonly IMonoRubyProvider Instance = new ImeLanguage();
 
-	public Core.Ime.MonoRuby GetMonoRuby(string text) { return Core.Ime.Ime.GetMonoRuby(text); }
+	public Core.Ime.MonoRuby GetMonoRuby(string text) => Core.Ime.Ime.GetMonoRuby(text);
 }

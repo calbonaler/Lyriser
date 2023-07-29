@@ -2,19 +2,20 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Threading;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace Lyriser.Views;
 
-public abstract class D2dControl : System.Windows.Controls.Image
+public abstract class D2dControl : FrameworkElement
 {
-	const int RenderWait = 2; // default: 2ms
-
 	// - field -----------------------------------------------------------------------
-	D3DImage? m_D3DImage;
+	const double UnconstrainedContentSize = 1;
+	static readonly TimeSpan RenderTargetParmChangesThrottleInterval = TimeSpan.FromMilliseconds(250);
+	readonly D3DImage m_D3DImage;
 	Core.D2D3D9InteropClient? m_InteropClient;
+	DateTime _lastRenderTargetParamChanged = DateTime.MaxValue;
 
 	// - property --------------------------------------------------------------------
 	public static bool IsInDesignMode
@@ -31,53 +32,66 @@ public abstract class D2dControl : System.Windows.Controls.Image
 	// - public methods --------------------------------------------------------------
 	protected D2dControl()
 	{
+		m_D3DImage = new D3DImage();
+		if (IsInDesignMode)
+			return;
+		m_D3DImage.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
 		Loaded += OnLoaded;
 		Unloaded += OnUnloaded;
-		Stretch = System.Windows.Media.Stretch.Fill;
 	}
 	public abstract void Render(Core.Direct2D1.RenderTarget target);
+	protected override Size MeasureOverride(Size constraint)
+	{
+		if (double.IsPositiveInfinity(constraint.Width))
+			constraint.Width = UnconstrainedContentSize;
+		if (double.IsPositiveInfinity(constraint.Height))
+			constraint.Height = UnconstrainedContentSize;
+		return constraint;
+	}
 
 	// - event handler ---------------------------------------------------------------
 	void OnLoaded(object sender, RoutedEventArgs e)
 	{
-		if (IsInDesignMode)
-			return;
-		m_D3DImage = new D3DImage();
-		m_D3DImage.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
-		m_InteropClient = new Core.D2D3D9InteropClient(Render, ResourceCache.UpdateResources, OnSetBackBuffer);
-		var dpiScaleFactor = DpiScaleFactor;
-		m_InteropClient.CreateAndBindTargets(ActualWidth, ActualHeight, dpiScaleFactor.X, dpiScaleFactor.Y);
-		Source = m_D3DImage;
+		m_InteropClient = new();
+		RecreateRenderTarget();
 		StartRendering();
 	}
 	void OnUnloaded(object sender, RoutedEventArgs e)
 	{
-		if (IsInDesignMode)
-			return;
-		Debug.Assert(m_D3DImage != null, "Unloaded is called but Loaded is not");
 		StopRendering();
 		m_D3DImage.IsFrontBufferAvailableChanged -= OnIsFrontBufferAvailableChanged;
-		Source = null;
 		Utils.SafeDispose(ref m_InteropClient);
 	}
 	void OnRendering(object? sender, EventArgs e)
 	{
-		Debug.Assert(m_D3DImage != null && m_InteropClient != null, "Rendering is listened to but Loaded is not called");
-		m_InteropClient.PrepareAndCallRender();
-		if (m_InteropClient.IsD3D9RenderTargetValid)
+		Debug.Assert(m_InteropClient != null, "Rendering is listened to but Loaded is not called");
+		if (!m_D3DImage.IsFrontBufferAvailable || m_InteropClient.BackBuffer == 0 || m_InteropClient.RenderTarget == null)
+			return;
+		if (DateTime.UtcNow - _lastRenderTargetParamChanged > RenderTargetParmChangesThrottleInterval)
 		{
-			m_D3DImage.Lock();
-			Thread.Sleep(RenderWait);
-			m_D3DImage.AddDirtyRect(new Int32Rect(0, 0, m_D3DImage.PixelWidth, m_D3DImage.PixelHeight));
-			m_D3DImage.Unlock();
+			_lastRenderTargetParamChanged = DateTime.MaxValue;
+			RecreateRenderTarget();
 		}
+		m_D3DImage.Lock();
+		m_D3DImage.SetBackBuffer(D3DResourceType.IDirect3DSurface9, m_InteropClient.BackBuffer);
+		m_InteropClient.BeginDraw();
+		Render(m_InteropClient.RenderTarget);
+		m_InteropClient.EndDraw();
+		m_D3DImage.AddDirtyRect(new Int32Rect(0, 0, m_D3DImage.PixelWidth, m_D3DImage.PixelHeight));
+		m_D3DImage.Unlock();
 	}
+	protected override void OnRender(DrawingContext dc) => dc.DrawImage(m_D3DImage, new Rect(default, RenderSize));
 	protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
 	{
-		Debug.Assert(m_D3DImage != null && m_InteropClient != null, "RenderSizeChanged is called but Loaded is not");
-		var dpiScaleFactor = DpiScaleFactor;
-		m_InteropClient.CreateAndBindTargets(ActualWidth, ActualHeight, dpiScaleFactor.X, dpiScaleFactor.Y);
+		if (m_InteropClient != null)
+			_lastRenderTargetParamChanged = DateTime.UtcNow;
 		base.OnRenderSizeChanged(sizeInfo);
+	}
+	protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+	{
+		if (m_InteropClient != null)
+			_lastRenderTargetParamChanged = DateTime.UtcNow;
+		base.OnDpiChanged(oldDpi, newDpi);
 	}
 	void OnIsFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)
 	{
@@ -86,27 +100,17 @@ public abstract class D2dControl : System.Windows.Controls.Image
 		else
 			StopRendering();
 	}
-	void OnSetBackBuffer(IntPtr newBackBuffer)
-	{
-		Debug.Assert(m_D3DImage != null && m_InteropClient != null, "OnSetBackBuffer is called but Loaded is not");
-		m_D3DImage.Lock();
-		m_D3DImage.SetBackBuffer(D3DResourceType.IDirect3DSurface9, newBackBuffer);
-		m_D3DImage.Unlock();
-	}
 
 	// - private methods -------------------------------------------------------------
-	void StartRendering() => System.Windows.Media.CompositionTarget.Rendering += OnRendering;
-	void StopRendering() => System.Windows.Media.CompositionTarget.Rendering -= OnRendering;
-	Vector DpiScaleFactor
+	void RecreateRenderTarget()
 	{
-		get
-		{
-			var source = PresentationSource.FromVisual(this);
-			return source != null && source.CompositionTarget != null
-				? new Vector(source.CompositionTarget.TransformToDevice.M11, source.CompositionTarget.TransformToDevice.M22)
-				: new Vector(1, 1);
-		}
+		Debug.Assert(m_InteropClient != null, "Not initialized");
+		var dpiScale = VisualTreeHelper.GetDpi(this);
+		m_InteropClient.RecreateRenderTarget(ActualWidth, ActualHeight, dpiScale.DpiScaleX, dpiScale.DpiScaleY);
+		ResourceCache.UpdateResources(m_InteropClient.RenderTarget);
 	}
+	void StartRendering() => CompositionTarget.Rendering += OnRendering;
+	void StopRendering() => CompositionTarget.Rendering -= OnRendering;
 }
 
 public class ResourceCache
