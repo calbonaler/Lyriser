@@ -192,7 +192,7 @@ public partial class Model : INotifyPropertyChanged
 					{
 						var node = textToNodeMap[j];
 						nodes.Add(node);
-						j += node.PhoneticText.Length;
+						j += node.Text.Length;
 					}
 					rubySpecifiers.Enqueue(new(nodes.ToArray(), ruby));
 				}
@@ -200,7 +200,7 @@ public partial class Model : INotifyPropertyChanged
 				rubyBaseStart = i;
 				rubyStart = monoRuby.Indexes[i];
 			}
-			newSourceBuilder.Append(LyricsNodeBase.GenerateSource(SetRuby(lyricsLine, rubySpecifiers)));
+			newSourceBuilder.Append(LyricsNode.GenerateSource(SetRuby(lyricsLine, rubySpecifiers)));
 			newSourceBuilder.Append(lineTerminator);
 			Debug.Assert(rubySpecifiers.Count == 0);
 		}
@@ -237,14 +237,14 @@ public partial class Model : INotifyPropertyChanged
 			if (node is SimpleNode simpleNode)
 			{
 				textToNodeMap[sb.Length] = simpleNode;
-				sb.Append(simpleNode.PhoneticText);
+				sb.Append(simpleNode.Text);
 			}
 			else if (node is CompositeNode compositeNode)
 			{
-				foreach (var subNode in compositeNode.Text)
+				foreach (var subNode in compositeNode.Base)
 				{
 					textToNodeMap[sb.Length] = subNode;
-					sb.Append(subNode.PhoneticText);
+					sb.Append(subNode.Text);
 				}
 			}
 			else
@@ -264,13 +264,13 @@ public partial class Model : INotifyPropertyChanged
 
 		void ProcessSimpleNode(SimpleNode simpleNode)
 		{
-			var nodeIndex = rubySpecifiers.Count <= 0 ? -1 : Array.IndexOf(rubySpecifiers.Peek().Text, simpleNode);
+			var nodeIndex = rubySpecifiers.Count <= 0 ? -1 : Array.IndexOf(rubySpecifiers.Peek().Base, simpleNode);
 			if (nodeIndex < 0)
 			{
 				newNodes.Add(simpleNode);
 				return;
 			}
-			if (nodeIndex == rubySpecifiers.Peek().Text.Length - 1)
+			if (nodeIndex == rubySpecifiers.Peek().Base.Length - 1)
 			{
 				var rubySpec = rubySpecifiers.Dequeue();
 				var rubyNodes = new List<SimpleNode>();
@@ -280,7 +280,7 @@ public partial class Model : INotifyPropertyChanged
 					rubyNodes.Add(new SimpleNode(rubySpec.Ruby.Substring(i, textLength), default));
 					i += textLength;
 				}
-				newNodes.Add(new CompositeNode(rubySpec.Text, rubyNodes, default));
+				newNodes.Add(new CompositeNode(rubySpec.Base, rubyNodes, default));
 			}
 		}
 
@@ -290,7 +290,7 @@ public partial class Model : INotifyPropertyChanged
 				ProcessSimpleNode(simpleNode);
 			else if (node is CompositeNode compositeNode)
 			{
-				foreach (var subNode in compositeNode.Text)
+				foreach (var subNode in compositeNode.Base)
 					ProcessSimpleNode(subNode);
 			}
 			else
@@ -307,7 +307,7 @@ public partial class Model : INotifyPropertyChanged
 		public string Text => WholeText.Substring(Index, Length);
 	}
 
-	readonly record struct RubySpecifier(SimpleNode[] Text, string Ruby);
+	readonly record struct RubySpecifier(SimpleNode[] Base, string Ruby);
 }
 
 public class EncodedFileInfo
