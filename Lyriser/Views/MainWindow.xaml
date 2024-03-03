@@ -331,8 +331,8 @@
 						Source="{Binding LyricsSource}"
 						CurrentSyllable="{Binding CurrentSyllable}">
 						<i:Interaction.Triggers>
-							<l:InteractionMessageTrigger MessageKey="FocusViewSyllable" Messenger="{Binding Messenger}">
-								<v:FocusSyllableAction/>
+							<l:InteractionMessageTrigger MessageKey="ScrollViewerIntoCurrentSyllable" Messenger="{Binding Messenger}">
+								<v:ScrollIntoCurrentSyllableAction/>
 							</l:InteractionMessageTrigger>
 							<l:InteractionMessageTrigger MessageKey="HighlightLyrics" Messenger="{Binding Messenger}">
 								<v:HighlightLyricsAction/>
@@ -379,12 +379,12 @@
 						<avalonedit:TextEditorOptions EnableEmailHyperlinks="False" EnableHyperlinks="False" EnableRectangularSelection="False"/>
 					</v:LyricsTextEditor.Options>
 					<i:Interaction.Triggers>
-						<l:InteractionMessageTrigger MessageKey="FocusEditorCharacter" Messenger="{Binding Messenger}">
-							<v:FocusCharacterAction/>
+						<l:InteractionMessageTrigger MessageKey="ScrollEditorIntoCaret" Messenger="{Binding Messenger}">
+							<v:ScrollIntoCaretAction/>
 						</l:InteractionMessageTrigger>
 					</i:Interaction.Triggers>
 					<i:Interaction.Behaviors>
-						<v:CaretPositionBindingBehavior Location="{Binding CaretLocation, Mode=OneWayToSource}"/>
+						<v:CaretPositionBindingBehavior Location="{Binding CaretLocation, Mode=TwoWay}"/>
 						<v:SelectionBindingBehavior Selection="{Binding Selection, Mode=OneWayToSource}"/>
 					</i:Interaction.Behaviors>
 					<v:LyricsTextEditor.SyntaxHighlighting>

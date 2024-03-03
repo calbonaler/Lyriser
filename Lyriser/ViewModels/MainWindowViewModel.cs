@@ -55,15 +55,22 @@ class MainWindowViewModel : ViewModel
 					if (LyricsSource != null)
 					{
 						var logicalLineIndex = LyricsSource.LineMap.GetLogicalLineIndexByPhysical(CaretLocation.Line - 1);
-						if (logicalLineIndex >= 0)
-							await ForcusViewSyllableAsync(logicalLineIndex, 0);
+						if (logicalLineIndex >= 0 && CurrentSyllable.Line != logicalLineIndex)
+						{
+							CurrentSyllable = new SyllableLocation(logicalLineIndex, 0);
+							await ScrollViewerIntoCurrentSyllableAsync();
+						}
 					}
 					break;
 				case nameof(CurrentSyllable):
 					if (LyricsSource != null)
 					{
-						var physicalLineIndex = LyricsSource.LineMap.GetPhysicalLineIndexByLogical(CurrentSyllable.Line);
-						await FocusEditorCharacterAsync(physicalLineIndex + 1, -1, false);
+						var physicalLineNumber = LyricsSource.LineMap.GetPhysicalLineIndexByLogical(CurrentSyllable.Line) + 1;
+						if (CaretLocation.Line != physicalLineNumber)
+						{
+							CaretLocation = new TextLocation(physicalLineNumber, 0);
+							await ScrollEditorIntoCaretAsync(false);
+						}
 					}
 					break;
 			}
@@ -200,13 +207,15 @@ class MainWindowViewModel : ViewModel
 		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<EncodedFileInfo>("GetSavingFile"));
 		return message.Response;
 	}
-	Task ForcusViewSyllableAsync(int line, int column) => Messenger.RaiseAsync(new GenericInteractionMessage<SyncFocusArgument>(new SyncFocusArgument(line, column, false), "FocusViewSyllable"));
-	Task FocusEditorCharacterAsync(int line, int column, bool force) => Messenger.RaiseAsync(new GenericInteractionMessage<SyncFocusArgument>(new SyncFocusArgument(line, column, force), "FocusEditorCharacter"));
+	Task ScrollViewerIntoCurrentSyllableAsync() => Messenger.RaiseAsync(new InteractionMessage("ScrollViewerIntoCurrentSyllable"));
+	Task ScrollEditorIntoCaretAsync(bool focus) => Messenger.RaiseAsync(new GenericInteractionMessage<bool>(focus, "ScrollEditorIntoCaret"));
 	Task HighlightLyricsAsync(LyricsHighlightRequest request) => Messenger.RaiseAsync(new GenericInteractionMessage<LyricsHighlightRequest>(request, "HighlightLyrics"));
 	async Task MoveCaretToSelectedErrorAsync()
 	{
-		if (SelectedError != null)
-			await FocusEditorCharacterAsync(SelectedError.Location.Line, SelectedError.Location.Column, true);
+		if (SelectedError == null)
+			return;
+		CaretLocation = new TextLocation(SelectedError.Location.Line, SelectedError.Location.Column);
+		await ScrollEditorIntoCaretAsync(true);
 	}
 }
 
@@ -219,18 +228,4 @@ public enum LyricsHighlightRequest
 	PreviousLine,
 	First,
 	Last,
-}
-
-public class SyncFocusArgument
-{
-	public SyncFocusArgument(int line, int column, bool force)
-	{
-		Line = line;
-		Column = column;
-		Force = force;
-	}
-
-	public int Line { get; }
-	public int Column { get; }
-	public bool Force { get; }
 }

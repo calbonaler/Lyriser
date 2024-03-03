@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Interop;
 using ICSharpCode.AvalonEdit;
-using ICSharpCode.AvalonEdit.Document;
 using Livet.Behaviors.Messaging;
 using Livet.Messaging;
 using Lyriser.Models;
@@ -154,35 +153,21 @@ public class SaveEncodedFileMessageAction : EncodedFileMessageAction
 	}
 }
 
-public class FocusSyllableAction : InteractionMessageAction<LyricsViewer>
+public class ScrollIntoCurrentSyllableAction : InteractionMessageAction<LyricsViewer>
 {
-	protected override void InvokeAction(InteractionMessage message)
-	{
-		if (message is not GenericInteractionMessage<SyncFocusArgument> actualMessage)
-			return;
-		var arg = actualMessage.Value;
-		if (arg.Force)
-			AssociatedObject.Focus();
-		else if (AssociatedObject.IsFocused || AssociatedObject.IsKeyboardFocused || AssociatedObject.IsKeyboardFocusWithin)
-			return;
-		AssociatedObject.CurrentSyllable = new SyllableLocation(arg.Line, arg.Column);
-		AssociatedObject.ScrollIntoCurrentSyllable();
-	}
+	protected override void InvokeAction(InteractionMessage message) => AssociatedObject.ScrollIntoCurrentSyllable();
 }
 
-public class FocusCharacterAction : InteractionMessageAction<TextEditor>
+public class ScrollIntoCaretAction : InteractionMessageAction<TextEditor>
 {
 	protected override void InvokeAction(InteractionMessage message)
 	{
-		if (message is not GenericInteractionMessage<SyncFocusArgument> actualMessage)
+		if (message is not GenericInteractionMessage<bool> actualMessage)
 			return;
-		var arg = actualMessage.Value;
-		if (arg.Force)
+		if (actualMessage.Value)
 			AssociatedObject.Focus();
-		else if (AssociatedObject.IsFocused || AssociatedObject.IsKeyboardFocused || AssociatedObject.IsKeyboardFocusWithin)
-			return;
-		AssociatedObject.TextArea.Caret.Location = new TextLocation(arg.Line, arg.Column >= 1 ? arg.Column : 1);
-		AssociatedObject.ScrollTo(arg.Line, arg.Column);
+		var caretLocation = AssociatedObject.TextArea.Caret.Location;
+		AssociatedObject.ScrollTo(caretLocation.Line, caretLocation.Column);
 	}
 }
 
