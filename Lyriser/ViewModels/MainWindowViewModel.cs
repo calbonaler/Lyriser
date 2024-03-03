@@ -19,17 +19,17 @@ class MainWindowViewModel : ViewModel
 {
 	public MainWindowViewModel()
 	{
-		CompositeDisposable.Add(new PropertyChangedEventListener(m_Model, (s, ev) =>
+		CompositeDisposable.Add(new PropertyChangedEventListener(_model, (s, ev) =>
 		{
 			switch (ev.PropertyName)
 			{
-				case nameof(m_Model.LyricsSource):
+				case nameof(_model.LyricsSource):
 					RaisePropertyChanged(nameof(LyricsSource));
 					break;
-				case nameof(m_Model.IsModified):
+				case nameof(_model.IsModified):
 					RaisePropertyChanged(nameof(IsModified));
 					break;
-				case nameof(m_Model.SavedFileNameWithoutExtension):
+				case nameof(_model.SavedFileNameWithoutExtension):
 					RaisePropertyChanged(nameof(DocumentName));
 					break;
 			}
@@ -37,13 +37,13 @@ class MainWindowViewModel : ViewModel
 		var synchronizationContext = SynchronizationContext.Current;
 		Debug.Assert(synchronizationContext != null, "SynchronizationContext.Current is null");
 		CompositeDisposable.Add(
-			m_Model.AsPropertyChanged(nameof(m_Model.ParserErrors))
+			_model.AsPropertyChanged(nameof(_model.ParserErrors))
 				.Throttle(TimeSpan.FromMilliseconds(1000))
 				.ObserveOn(synchronizationContext)
 				.Subscribe(_ =>
 				{
 					ParserErrors.Clear();
-					foreach (var item in m_Model.ParserErrors)
+					foreach (var item in _model.ParserErrors)
 						ParserErrors.Add(item);
 				})
 		);
@@ -89,44 +89,44 @@ class MainWindowViewModel : ViewModel
 		MoveCaretToSelectedErrorCommand = new ViewModelCommand(async () => await MoveCaretToSelectedErrorAsync());
 	}
 
-	readonly Model m_Model = new(ImeLanguage.Instance);
+	readonly Model _model = new(ImeLanguage.Instance);
 
-	public TextDocument SourceDocument => m_Model.SourceDocument;
+	public TextDocument SourceDocument => _model.SourceDocument;
 	public LyricsSource LyricsSource
 	{
-		get => m_Model.LyricsSource;
-		set => m_Model.LyricsSource = value;
+		get => _model.LyricsSource;
+		set => _model.LyricsSource = value;
 	}
-	public ObservableCollection<ParserError> ParserErrors { get; } = new ObservableCollection<ParserError>();
-	public bool IsModified => m_Model.IsModified;
-	public string DocumentName => m_Model.SavedFileNameWithoutExtension ?? "無題";
+	public ObservableCollection<ParserError> ParserErrors { get; } = [];
+	public bool IsModified => _model.IsModified;
+	public string DocumentName => _model.SavedFileNameWithoutExtension ?? "無題";
 
-	TextLocation m_CaretLocation;
+	TextLocation _caretLocation;
 	public TextLocation CaretLocation
 	{
-		get => m_CaretLocation;
-		set => RaisePropertyChangedIfSet(ref m_CaretLocation, value);
+		get => _caretLocation;
+		set => RaisePropertyChangedIfSet(ref _caretLocation, value);
 	}
 
-	SyllableLocation m_CurrentSyllable;
+	SyllableLocation _currentSyllable;
 	public SyllableLocation CurrentSyllable
 	{
-		get => m_CurrentSyllable;
-		set => RaisePropertyChangedIfSet(ref m_CurrentSyllable, value);
+		get => _currentSyllable;
+		set => RaisePropertyChangedIfSet(ref _currentSyllable, value);
 	}
 
-	ParserError? m_SelectedError;
+	ParserError? _selectedError;
 	public ParserError? SelectedError
 	{
-		get => m_SelectedError;
-		set => RaisePropertyChangedIfSet(ref m_SelectedError, value);
+		get => _selectedError;
+		set => RaisePropertyChangedIfSet(ref _selectedError, value);
 	}
 
-	Selection? m_Selection;
+	Selection? _selection;
 	public Selection? Selection
 	{
-		get => m_Selection;
-		set => RaisePropertyChangedIfSet(ref m_Selection, value);
+		get => _selection;
+		set => RaisePropertyChangedIfSet(ref _selection, value);
 	}
 
 	public HotKeyCommand NewCommand { get; }
@@ -145,7 +145,7 @@ class MainWindowViewModel : ViewModel
 	{
 		if (!await ConfirmSaveAsync())
 			return;
-		m_Model.New();
+		_model.New();
 		await HighlightLyricsAsync(LyricsHighlightRequest.First);
 	}
 	public async Task OpenAsync()
@@ -155,7 +155,7 @@ class MainWindowViewModel : ViewModel
 		var metadata = await GetOpeningFileAysnc();
 		if (metadata == null)
 			return;
-		m_Model.Open(metadata);
+		_model.Open(metadata);
 		await HighlightLyricsAsync(LyricsHighlightRequest.First);
 	}
 	public async Task SaveAsAsync()
@@ -163,20 +163,20 @@ class MainWindowViewModel : ViewModel
 		var metadata = await GetSavingFileAsync();
 		if (metadata == null)
 			return;
-		m_Model.Save(metadata);
+		_model.Save(metadata);
 	}
 	public async Task SaveAsync()
 	{
-		if (m_Model.SavedFileNameWithoutExtension == null)
+		if (_model.SavedFileNameWithoutExtension == null)
 		{
 			await SaveAsAsync();
 			return;
 		}
-		m_Model.Save();
+		_model.Save();
 	}
 	public async Task<bool> ConfirmSaveAsync()
 	{
-		if (m_Model.IsModified)
+		if (_model.IsModified)
 		{
 			var action = await WarnUnsavedChangeAsync();
 			if (action == null)
@@ -189,7 +189,7 @@ class MainWindowViewModel : ViewModel
 	public void AutoSetRubyInSelection()
 	{
 		if (Selection != null)
-			m_Model.AutoSetRuby(Selection.SurroundingSegment);
+			_model.AutoSetRuby(Selection.SurroundingSegment);
 	}
 
 	async Task<bool?> WarnUnsavedChangeAsync()

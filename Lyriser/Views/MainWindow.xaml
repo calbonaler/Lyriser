@@ -182,6 +182,7 @@
 		<l:InteractionMessageTrigger MessageKey="GetOpeningFile" Messenger="{Binding Messenger}">
 			<v:OpenEncodedFileMessageAction
 				EncodingLabelText="文字コード(&amp;E): "
+				AutoDetectEncodingDisplayName="自動検出"
 				FilterDisplayName="テキストファイル"
 				FilterExtensionList="*.txt"/>
 		</l:InteractionMessageTrigger>

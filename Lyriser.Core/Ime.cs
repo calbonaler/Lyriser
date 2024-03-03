@@ -11,7 +11,7 @@ public static class Ime
 	public static unsafe MonoRuby GetMonoRuby(ReadOnlySpan<char> text)
 	{
 		if (text.Length == 0)
-			return new MonoRuby() { Text = string.Empty, Indexes = new ushort[] { 0 } };
+			return new MonoRuby() { Text = string.Empty, Indexes = [0] };
 		var languageType = Type.GetTypeFromProgID("MSIME.Japan");
 		Debug.Assert(languageType is not null);
 		var language = (IFELanguage?)Activator.CreateInstance(languageType);

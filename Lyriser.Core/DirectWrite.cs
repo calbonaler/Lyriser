@@ -190,25 +190,46 @@ public unsafe class TextFormat : Interop.ComPtr
 	{
 		get
 		{
+			ThrowIfDisposed();
 			var lineSpacingMethod = LineSpacingMethod.Default;
 			var lineSpacing = 0f;
 			var baseline = 0f;
 			Pointer->GetLineSpacing(&lineSpacingMethod, &lineSpacing, &baseline);
 			return new(lineSpacingMethod, lineSpacing, baseline);
 		}
-		set => Pointer->SetLineSpacing(value.LineSpacingMethod, value.LineSpacing, value.Baseline);
+		set
+		{
+			ThrowIfDisposed();
+			Pointer->SetLineSpacing(value.LineSpacingMethod, value.LineSpacing, value.Baseline);
+		}
 	}
 	/// <summary>単語の折り返し方法を取得または設定します。</summary>
 	public WordWrapping WordWrapping
 	{
-		get => Pointer->GetWordWrapping();
-		set => Pointer->SetWordWrapping(value);
+		get
+		{
+			ThrowIfDisposed();
+			return Pointer->GetWordWrapping();
+		}
+		set
+		{
+			ThrowIfDisposed();
+			Pointer->SetWordWrapping(value);
+		}
 	}
 	/// <summary>割り付け矩形の始端および終端を基準としたテキストの配置方法を取得または設定します。</summary>
 	public TextAlignment TextAlignment
 	{
-		get => Pointer->GetTextAlignment();
-		set => Pointer->SetTextAlignment(value);
+		get
+		{
+			ThrowIfDisposed();
+			return Pointer->GetTextAlignment();
+		}
+		set
+		{
+			ThrowIfDisposed();
+			Pointer->SetTextAlignment(value);
+		}
 	}
 
 	internal new DWrite.IDWriteTextFormat* Pointer => (DWrite.IDWriteTextFormat*)base.Pointer;
@@ -224,11 +245,12 @@ public unsafe class TextLayout : TextFormat
 	/// <returns>改行や合計アドバンス幅といったグリフ クラスタに関する計量情報。</returns>
 	public ClusterMetrics[] GetClusterMetrics()
 	{
+		ThrowIfDisposed();
 		var actualClusterCount = 0u;
 		var hr = Pointer->GetClusterMetrics(null, 0, &actualClusterCount);
 		if (hr != PInvoke.HRESULT_FROM_WIN32(WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER))
 			hr.ThrowOnFailure();
-		if (actualClusterCount == 0) return Array.Empty<ClusterMetrics>();
+		if (actualClusterCount == 0) return [];
 		var clusterMetrics = new ClusterMetrics[actualClusterCount];
 		fixed (ClusterMetrics* ptr = &clusterMetrics[0])
 			Pointer->GetClusterMetrics(ptr, actualClusterCount, &actualClusterCount).ThrowOnFailure();
@@ -240,6 +262,7 @@ public unsafe class TextLayout : TextFormat
 	/// <returns>割り付け矩形の左上を基準としたピクセル位置、および指定されたテキスト位置を完全に囲む出力ジオメトリ。</returns>
 	public (System.Numerics.Vector2 Point, HitTestMetrics HitTestMetrics) HitTestTextPosition(int textPosition, bool isTrailingHit)
 	{
+		ThrowIfDisposed();
 		var hitTestMetrics = new HitTestMetrics();
 		var pointX = 0f;
 		var pointY = 0f;
@@ -263,6 +286,7 @@ public unsafe class TextLayout : TextFormat
 	/// </returns>
 	public int HitTestTextRange(TextRange textRange, System.Numerics.Vector2 origin, Span<HitTestMetrics> hitTestMetrics)
 	{
+		ThrowIfDisposed();
 		HRESULT hr;
 		var actualHitTestMetricsCount = 0u;
 		fixed (HitTestMetrics* pHitTestMetrics = hitTestMetrics)
@@ -282,6 +306,7 @@ public unsafe class TextLayout : TextFormat
 	/// <returns>ジオメトリが 1 つのために <paramref name="hitTestMetrics"/> にジオメトリが出力された場合は <see langword="true"/>。それ以外の場合は <see langword="false"/>。</returns>
 	public bool HitTestTextRange(TextRange textRange, System.Numerics.Vector2 origin, out HitTestMetrics hitTestMetrics)
 	{
+		ThrowIfDisposed();
 		Unsafe.SkipInit(out hitTestMetrics);
 		return HitTestTextRange(textRange, origin, new(ref hitTestMetrics)) >= 0;
 	}
@@ -296,6 +321,7 @@ public unsafe class TextLayout : TextFormat
 	[SupportedOSPlatform("windows8.0")]
 	public void SetCharacterSpacing(float leadingSpacing, float trailingSpacing, float minimumAdvanceWidth, TextRange textRange)
 	{
+		ThrowIfDisposed();
 		using var textLayout1 = Interop.ComUtils.Cast<DWrite.IDWriteTextLayout1>(Pointer);
 		textLayout1.Pointer->SetCharacterSpacing(leadingSpacing, trailingSpacing, minimumAdvanceWidth, textRange);
 	}
@@ -303,14 +329,23 @@ public unsafe class TextLayout : TextFormat
 	/// <summary>割り付け矩形の最大幅を取得または設定します。</summary>
 	public float MaxWidth
 	{
-		get => Pointer->GetMaxWidth();
-		set => Pointer->SetMaxWidth(value);
+		get
+		{
+			ThrowIfDisposed();
+			return Pointer->GetMaxWidth();
+		}
+		set
+		{
+			ThrowIfDisposed();
+			Pointer->SetMaxWidth(value);
+		}
 	}
 	/// <summary>書式設定された文字列の全体的な計量情報を取得します。</summary>
 	public TextMetrics Metrics
 	{
 		get
 		{
+			ThrowIfDisposed();
 			var textMetrics = new TextMetrics();
 			Pointer->GetMetrics(&textMetrics);
 			return textMetrics;
@@ -342,6 +377,7 @@ public unsafe class Factory : Interop.ComPtr
 	/// <returns>新しく作成されたテキスト書式設定オブジェクトです。</returns>
 	public TextFormat CreateTextFormat(string fontFamilyName, int fontWeight, FontStyle fontStyle, int fontStretch, float fontSize)
 	{
+		ThrowIfDisposed();
 		var emptyString = '\0';
 		var result = new TextFormat();
 		fixed (DWrite.IDWriteTextFormat** ppResult = &result.Put())
@@ -356,6 +392,9 @@ public unsafe class Factory : Interop.ComPtr
 	/// <returns>結果のテキスト レイアウト オブジェクトです。</returns>
 	public TextLayout CreateTextLayout(ReadOnlySpan<char> text, TextFormat textFormat, System.Numerics.Vector2 maxSize)
 	{
+		ThrowIfDisposed();
+		ArgumentNullException.ThrowIfNull(textFormat);
+		textFormat.ThrowIfDisposed();
 		var result = new TextLayout();
 		fixed (DWrite.IDWriteTextLayout** ppResult = &result.Put())
 		fixed (char* pinnedText = text)

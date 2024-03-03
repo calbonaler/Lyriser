@@ -1,6 +1,7 @@
 ﻿using System;
 using PInvoke = Windows.Win32.PInvoke;
 using D2D = Windows.Win32.Graphics.Direct2D;
+using System.Text;
 
 namespace Lyriser.Core.Direct2D1;
 
@@ -179,6 +180,7 @@ public unsafe class RenderTarget
 	/// <returns>新しく作成されたブラシ。</returns>
 	public SolidColorBrush CreateSolidColorBrush(ColorF color)
 	{
+		ThrowIfDisposed();
 		var result = new SolidColorBrush();
 		fixed (D2D.ID2D1SolidColorBrush** p = &result.Put())
 			ComPtr.Pointer->CreateSolidColorBrush(&color, null, p);
@@ -188,7 +190,11 @@ public unsafe class RenderTarget
 	/// <summary>描画領域を指定された色でクリアします。</summary>
 	/// <param name="color">描画領域をクリアする色を指定します。</param>
 	/// <remarks>レンダー ターゲットに（<see cref="PushAxisAlignedClip(RectF, AntialiasMode)"/>で指定される）アクティブなクリップがある場合、クリア コマンドはクリップ領域内にのみ適用されます。</remarks>
-	public void Clear(ColorF color) => ComPtr.Pointer->Clear(&color);
+	public void Clear(ColorF color)
+	{
+		ThrowIfDisposed();
+		ComPtr.Pointer->Clear(&color);
+	}
 	/// <summary>指定された <see cref="DirectWrite.TextLayout"/> オブジェクトによって記述される書式設定されたテキストを描画します。</summary>
 	/// <param name="origin"><paramref name="textLayout"/> によって記述されるテキストの左上隅が描画されるデバイス独立ピクセル単位で記述される点です。</param>
 	/// <param name="textLayout">描画する書式設定されたテキストです。</param>
@@ -197,12 +203,25 @@ public unsafe class RenderTarget
 	/// テキストをピクセル境界にスナップするべきか、および、テキストを割り付け矩形でクリップすべきかを示す値です。
 	/// 既定値は <see cref="DrawTextOptions.None"/> で、テキストをピクセル境界にスナップし割り付け矩形でクリップしません。
 	/// </param>
-	public void DrawTextLayout(System.Numerics.Vector2 origin, DirectWrite.TextLayout textLayout, Brush defaultBrush, DrawTextOptions options = DrawTextOptions.None) =>
+	public void DrawTextLayout(System.Numerics.Vector2 origin, DirectWrite.TextLayout textLayout, Brush defaultBrush, DrawTextOptions options = DrawTextOptions.None)
+	{
+		ThrowIfDisposed();
+		ArgumentNullException.ThrowIfNull(textLayout);
+		ArgumentNullException.ThrowIfNull(defaultBrush);
+		textLayout.ThrowIfDisposed();
+		defaultBrush.ThrowIfDisposed();
 		ComPtr.Pointer->DrawTextLayout(origin, textLayout.Pointer, defaultBrush.Pointer, options);
+	}
 	/// <summary>指定された矩形の内部を塗りつぶします。</summary>
 	/// <param name="rect">デバイス独立ピクセルで記述された塗りつぶし対象の矩形です。</param>
 	/// <param name="brush">矩形内部の塗りつぶしに使用されるブラシです。</param>
-	public void FillRectangle(RectF rect, Brush brush) => ComPtr.Pointer->FillRectangle(&rect, brush.Pointer);
+	public void FillRectangle(RectF rect, Brush brush)
+	{
+		ThrowIfDisposed();
+		ArgumentNullException.ThrowIfNull(brush);
+		brush.ThrowIfDisposed();
+		ComPtr.Pointer->FillRectangle(&rect, brush.Pointer);
+	}
 	/// <summary>以降のすべての描画操作がクリップされる矩形を設定します。</summary>
 	/// <param name="clipRect">デバイス独立ピクセルで記述されたクリッピング領域の位置と大きさです。</param>
 	/// <param name="antialiasMode">
@@ -216,16 +235,30 @@ public unsafe class RenderTarget
 	/// </para>
 	/// <para><see cref="PushAxisAlignedClip(RectF, AntialiasMode)"/> と <see cref="PopAxisAlignedClip"/> は一致しなければなりません。</para>
 	/// </remarks>
-	public void PushAxisAlignedClip(RectF clipRect, AntialiasMode antialiasMode) =>
+	public void PushAxisAlignedClip(RectF clipRect, AntialiasMode antialiasMode)
+	{
+		ThrowIfDisposed();
 		ComPtr.Pointer->PushAxisAlignedClip(&clipRect, antialiasMode);
+	}
 	/// <summary>
 	/// 最後に設定された軸整列クリップをレンダー ターゲットから取り除きます。
 	/// このメソッドの呼び出し以降、クリップは描画操作に適用されなくなります。
 	/// </summary>
 	/// <remarks>このメソッドは <see cref="PushAxisAlignedClip(RectF, AntialiasMode)"/> の各呼び出しに対して 1 回呼び出されなければなりません。</remarks>
-	public void PopAxisAlignedClip() => ComPtr.Pointer->PopAxisAlignedClip();
+	public void PopAxisAlignedClip()
+	{
+		ThrowIfDisposed();
+		ComPtr.Pointer->PopAxisAlignedClip();
+	}
 	/// <summary>レンダー ターゲットの大きさをデバイス独立ピクセルで取得します。</summary>
-	public System.Numerics.Vector2 Size => ComPtr.Pointer->GetSize();
+	public System.Numerics.Vector2 Size
+	{
+		get
+		{
+			ThrowIfDisposed();
+			return ComPtr.Pointer->GetSize();
+		}
+	}
 	/// <summary>
 	/// レンダー ターゲットの現在の変換を取得または設定します。
 	/// 設定すると以降のすべての描画操作が変換された空間で実行されます。
@@ -234,12 +267,19 @@ public unsafe class RenderTarget
 	{
 		get
 		{
+			ThrowIfDisposed();
 			var result = new System.Numerics.Matrix3x2();
 			ComPtr.Pointer->GetTransform(&result);
 			return result;
 		}
-		set => ComPtr.Pointer->SetTransform(&value);
+		set
+		{
+			ThrowIfDisposed();
+			ComPtr.Pointer->SetTransform(&value);
+		}
 	}
+
+	void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(ComPtr.IsNull, this);
 
 	internal Interop.ComPtr<D2D.ID2D1RenderTarget> ComPtr { get; }
 }

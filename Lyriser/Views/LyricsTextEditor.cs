@@ -16,11 +16,9 @@ public class LyricsTextEditor : TextEditor
 	protected override IVisualLineTransformer CreateColorizer(IHighlightingDefinition highlightingDefinition) => new LyricsHighlightingColorizer(highlightingDefinition);
 }
 
-public class LyricsHighlightingColorizer : HighlightingColorizer
+public class LyricsHighlightingColorizer(IHighlightingDefinition highlightingDefinition) : HighlightingColorizer(highlightingDefinition)
 {
-	public LyricsHighlightingColorizer(IHighlightingDefinition highlightingDefinition) : base(highlightingDefinition) => HighlightingDefinition = highlightingDefinition;
-
-	protected IHighlightingDefinition HighlightingDefinition { get; }
+	protected IHighlightingDefinition HighlightingDefinition { get; } = highlightingDefinition;
 
 	protected override IHighlighter CreateHighlighter(TextView textView, TextDocument document) => new LyricsSyntaxHighlighter(document, HighlightingDefinition);
 }
@@ -29,7 +27,7 @@ public class HighlightingDefinition : IHighlightingDefinition
 {
 	public string Name => nameof(HighlightingDefinition);
 	public HighlightingRuleSet MainRuleSet { get; } = new HighlightingRuleSet();
-	public HighlightDecorationCollection HighlightDecorations { get; set; } = new HighlightDecorationCollection();
+	public HighlightDecorationCollection HighlightDecorations { get; set; } = [];
 	public IEnumerable<HighlightingColor> NamedHighlightingColors => HighlightDecorations.NamedHighlightingColors;
 	public IDictionary<string, string> Properties { get; } = new Dictionary<string, string>();
 	public HighlightingColor? GetNamedColor(string name) => HighlightDecorations.GetNamedColor(name);
@@ -40,15 +38,15 @@ public record struct HighlightDecoration(string Name, Color ForeColor, Color Bac
 
 public class HighlightDecorationCollection : IList<HighlightDecoration>, IList
 {
-	readonly List<HighlightingColor> m_List = new();
-	readonly Dictionary<string, int> m_Dictionary = new();
+	readonly List<HighlightingColor> _list = [];
+	readonly Dictionary<string, int> _dictionary = [];
 
-	public IEnumerable<HighlightingColor> NamedHighlightingColors => m_Dictionary.Values.Select(x => m_List[x]);
-	public HighlightingColor? GetNamedColor(string name) => m_Dictionary.TryGetValue(name, out var index) ? m_List[index] : null;
+	public IEnumerable<HighlightingColor> NamedHighlightingColors => _dictionary.Values.Select(x => _list[x]);
+	public HighlightingColor? GetNamedColor(string name) => _dictionary.TryGetValue(name, out var index) ? _list[index] : null;
 
 	public HighlightDecoration this[int index]
 	{
-		get => ConvertFrom(m_List[index]);
+		get => ConvertFrom(_list[index]);
 		set => SetItem(index, value);
 	}
 	object? IList.this[int index]
@@ -57,25 +55,25 @@ public class HighlightDecorationCollection : IList<HighlightDecoration>, IList
 		set => SetItem(index, Cast(value));
 	}
 
-	public int Count => m_List.Count;
+	public int Count => _list.Count;
 	public bool IsReadOnly => false;
 	bool IList.IsFixedSize => false;
 	object ICollection.SyncRoot => this;
 	bool ICollection.IsSynchronized => false;
 
-	public void Add(HighlightDecoration item) => InsertItem(m_List.Count, item);
+	public void Add(HighlightDecoration item) => InsertItem(_list.Count, item);
 	public void Clear() => ClearItems();
 	public bool Contains(HighlightDecoration item) => IndexOf(item) >= 0;
 	public void CopyTo(HighlightDecoration[] array, int arrayIndex)
 	{
 		for (var i = 0; i < Count; i++)
-			array[arrayIndex++] = ConvertFrom(m_List[i]);
+			array[arrayIndex++] = ConvertFrom(_list[i]);
 	}
 	public int IndexOf(HighlightDecoration item)
 	{
 		for (var i = 0; i < Count; i++)
 		{
-			if (ConvertFrom(m_List[i]) == item)
+			if (ConvertFrom(_list[i]) == item)
 				return i;
 		}
 		return -1;
@@ -90,12 +88,12 @@ public class HighlightDecorationCollection : IList<HighlightDecoration>, IList
 		return true;
 	}
 	public void RemoveAt(int index) => RemoveItem(index);
-	public IEnumerator<HighlightDecoration> GetEnumerator() => m_List.Select(ConvertFrom).GetEnumerator();
+	public IEnumerator<HighlightDecoration> GetEnumerator() => _list.Select(ConvertFrom).GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 	int IList.Add(object? value)
 	{
-		var index = m_List.Count;
+		var index = _list.Count;
 		InsertItem(index, Cast(value));
 		return index;
 	}
@@ -107,7 +105,7 @@ public class HighlightDecorationCollection : IList<HighlightDecoration>, IList
 		else
 		{
 			for (var i = 0; i < Count; i++)
-				array.SetValue(ConvertFrom(m_List[i]), index++);
+				array.SetValue(ConvertFrom(_list[i]), index++);
 		}
 	}
 	int IList.IndexOf(object? value) => IndexOf(Cast(value));
@@ -150,45 +148,39 @@ public class HighlightDecorationCollection : IList<HighlightDecoration>, IList
 	void InsertItem(int index, HighlightDecoration item)
 	{
 		if (item.Name != null)
-			m_Dictionary.Add(item.Name, index);
-		m_List.Insert(index, ConvertTo(item));
+			_dictionary.Add(item.Name, index);
+		_list.Insert(index, ConvertTo(item));
 	}
 	void SetItem(int index, HighlightDecoration item)
 	{
-		var oldItem = m_List[index];
+		var oldItem = _list[index];
 		if (oldItem.Name != item.Name)
 		{
 			if (oldItem.Name != null)
-				m_Dictionary.Remove(oldItem.Name);
+				_dictionary.Remove(oldItem.Name);
 			if (item.Name != null)
-				m_Dictionary.Add(item.Name, index);
+				_dictionary.Add(item.Name, index);
 		}
-		m_List[index] = ConvertTo(item);
+		_list[index] = ConvertTo(item);
 	}
 	void RemoveItem(int index)
 	{
-		var oldItem = m_List[index];
+		var oldItem = _list[index];
 		if (oldItem.Name != null)
-			m_Dictionary.Remove(oldItem.Name);
-		m_List.RemoveAt(index);
+			_dictionary.Remove(oldItem.Name);
+		_list.RemoveAt(index);
 	}
 	void ClearItems()
 	{
-		m_Dictionary.Clear();
-		m_List.Clear();
+		_dictionary.Clear();
+		_list.Clear();
 	}
 }
 
-public sealed class LyricsSyntaxHighlighter : IHighlighter
+public sealed class LyricsSyntaxHighlighter(IDocument document, IHighlightingDefinition highlightingDefinition) : IHighlighter
 {
-	public LyricsSyntaxHighlighter(IDocument document, IHighlightingDefinition highlightingDefinition)
-	{
-		Document = document;
-		HighlightingDefinition = highlightingDefinition;
-	}
-
-	public IHighlightingDefinition HighlightingDefinition { get; }
-	public IDocument Document { get; }
+	public IHighlightingDefinition HighlightingDefinition { get; } = highlightingDefinition;
+	public IDocument Document { get; } = document;
 	public HighlightingColor? DefaultTextColor => null;
 
 	[Obsolete("Unused for this class", true)]
@@ -202,7 +194,7 @@ public sealed class LyricsSyntaxHighlighter : IHighlighter
 
 	public void BeginHighlighting() { }
 	public void EndHighlighting() { }
-	public IEnumerable<HighlightingColor> GetColorStack(int lineNumber) => Enumerable.Empty<HighlightingColor>();
+	public IEnumerable<HighlightingColor> GetColorStack(int lineNumber) => [];
 	public HighlightingColor GetNamedColor(string name) => HighlightingDefinition.GetNamedColor(name);
 	public HighlightedLine HighlightLine(int lineNumber)
 	{

@@ -61,6 +61,7 @@ public sealed unsafe class D2D3D9InteropClient : IDisposable
 	[MemberNotNull(nameof(RenderTarget))]
 	public void RecreateRenderTarget(double width, double height, double dpiScaleX, double dpiScaleY)
 	{
+		ThrowIfDisposed();
 		RenderTarget?.ComPtr.Dispose();
 		RenderTarget = null;
 		m_D3D9RenderTarget?.Dispose();
@@ -100,11 +101,25 @@ public sealed unsafe class D2D3D9InteropClient : IDisposable
 		}
 		finally { renderTarget?.Dispose(); }
 	}
-	public void BeginDraw() => RenderTarget!.ComPtr.Pointer->BeginDraw();
+	public void BeginDraw()
+	{
+		ThrowIfDisposed();
+		ThrowIfRenderTargetNotCreated();
+		RenderTarget.ComPtr.Pointer->BeginDraw();
+	}
 	public void EndDraw()
 	{
-		RenderTarget!.ComPtr.Pointer->EndDraw(null, null);
+		ThrowIfDisposed();
+		ThrowIfRenderTargetNotCreated();
+		RenderTarget.ComPtr.Pointer->EndDraw(null, null);
 		m_D3D11Context.Pointer->Flush();
+	}
+	void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(m_D3D11Context.IsNull || m_D3D11Device.IsNull || m_D3D9Device.IsNull || D2D1Factory.IsNull, this);
+	[MemberNotNull(nameof(RenderTarget))]
+	void ThrowIfRenderTargetNotCreated()
+	{
+		if (RenderTarget == null)
+			throw new InvalidOperationException($"{nameof(RenderTarget)} has not been created via {nameof(RecreateRenderTarget)}");
 	}
 
 	public Direct2D1.Factory D2D1Factory { get; } = new();

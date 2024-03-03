@@ -3,11 +3,9 @@ using Livet.Messaging;
 
 namespace Lyriser.ViewModels;
 
-public class WarnUnsavedChangeMessage : ResponsiveInteractionMessage<bool?>
+public class WarnUnsavedChangeMessage(string messageKey, string documentName) : ResponsiveInteractionMessage<bool?>(messageKey)
 {
-	public WarnUnsavedChangeMessage(string messageKey, string documentName) : base(messageKey) => DocumentName = documentName;
-
-	public string DocumentName { get; }
+	public string DocumentName { get; } = documentName;
 
 	protected override Freezable CreateInstanceCore() => new WarnUnsavedChangeMessage(MessageKey, DocumentName);
 }

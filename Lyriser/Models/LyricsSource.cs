@@ -11,8 +11,7 @@ public class LyricsSource
 
 	public LyricsSource(IEnumerable<LyricsNode[]> lyrics)
 	{
-		if (lyrics == null)
-			throw new ArgumentNullException(nameof(lyrics));
+		ArgumentNullException.ThrowIfNull(lyrics);
 		var attachedSpecs = new List<AttachedSpecifier>();
 		var baseTextBuilder = new StringBuilder();
 		var physicalLines = new List<PhysicalLine>();
@@ -37,16 +36,16 @@ public class LyricsSource
 			firstLine = false;
 		}
 		Text = baseTextBuilder.ToString();
-		AttachedSpecifiers = attachedSpecs.ToArray();
+		AttachedSpecifiers = [.. attachedSpecs];
 		LineMap = new LineMap(physicalLines, logicalToPhysicalMap);
-		SyllableLines = syllableLines.ToArray();
+		SyllableLines = [.. syllableLines];
 	}
 	LyricsSource()
 	{
 		Text = string.Empty;
-		AttachedSpecifiers = Array.Empty<AttachedSpecifier>();
+		AttachedSpecifiers = [];
 		LineMap = new LineMap();
-		SyllableLines = Array.Empty<SubSyllable[][]>();
+		SyllableLines = [];
 	}
 
 	public string Text { get; }
@@ -55,29 +54,23 @@ public class LyricsSource
 	public IReadOnlyList<SubSyllable[][]> SyllableLines { get; }
 }
 
-public abstract class AttachedSpecifier
+public abstract class AttachedSpecifier(Core.DirectWrite.TextRange range)
 {
-	protected AttachedSpecifier(Core.DirectWrite.TextRange range) => Range = range;
-
-	public Core.DirectWrite.TextRange Range { get; }
+	public Core.DirectWrite.TextRange Range { get; } = range;
 
 	public abstract AttachedSpecifier Move(int distance);
 }
 
-public class RubySpecifier : AttachedSpecifier
+public class RubySpecifier(Core.DirectWrite.TextRange range, string text) : AttachedSpecifier(range)
 {
-	public RubySpecifier(Core.DirectWrite.TextRange range, string text) : base(range) => Text = text;
-
-	public string Text { get; }
+	public string Text { get; } = text;
 
 	public override AttachedSpecifier Move(int distance) => new RubySpecifier(Core.DirectWrite.TextRange.FromStartLength(Range.StartPosition + distance, Range.Length), Text);
 }
 
-public class SyllableDivisionSpecifier : AttachedSpecifier
+public class SyllableDivisionSpecifier(Core.DirectWrite.TextRange range, int divisionCount) : AttachedSpecifier(range)
 {
-	public SyllableDivisionSpecifier(Core.DirectWrite.TextRange range, int divisionCount) : base(range) => DivisionCount = divisionCount;
-
-	public int DivisionCount { get; }
+	public int DivisionCount { get; } = divisionCount;
 
 	public override AttachedSpecifier Move(int distance) => new SyllableDivisionSpecifier(Core.DirectWrite.TextRange.FromStartLength(Range.StartPosition + distance, Range.Length), DivisionCount);
 }
@@ -95,23 +88,23 @@ public class LineMap
 {
 	public LineMap()
 	{
-		m_PhysicalLines = Array.Empty<PhysicalLine>();
-		m_LogicalToPhysicalMap = Array.Empty<int>();
+		_physicalLines = [];
+		_logicalToPhysicalMap = [];
 	}
 	public LineMap(IEnumerable<PhysicalLine> physicalLines, IEnumerable<int> logicalToPhysicalMap)
 	{
-		m_PhysicalLines = physicalLines.ToArray();
-		m_LogicalToPhysicalMap = logicalToPhysicalMap.ToArray();
+		_physicalLines = physicalLines.ToArray();
+		_logicalToPhysicalMap = logicalToPhysicalMap.ToArray();
 	}
 
-	readonly PhysicalLine[] m_PhysicalLines;
-	readonly int[] m_LogicalToPhysicalMap;
+	readonly PhysicalLine[] _physicalLines;
+	readonly int[] _logicalToPhysicalMap;
 
-	public int LogicalLineCount => m_LogicalToPhysicalMap.Length;
-	public int PhysicalLineCount => m_PhysicalLines.Length;
+	public int LogicalLineCount => _logicalToPhysicalMap.Length;
+	public int PhysicalLineCount => _physicalLines.Length;
 
-	public PhysicalLine GetPhysicalLineByLogical(int logicalLineIndex) => m_PhysicalLines[m_LogicalToPhysicalMap[logicalLineIndex]];
-	public PhysicalLine GetPhysicalLineByPhysical(int physicalLineIndex) => m_PhysicalLines[physicalLineIndex];
-	public int GetPhysicalLineIndexByLogical(int logicalLineIndex) => m_LogicalToPhysicalMap[logicalLineIndex];
-	public int GetLogicalLineIndexByPhysical(int physicalLineIndex) => Array.BinarySearch(m_LogicalToPhysicalMap, physicalLineIndex);
+	public PhysicalLine GetPhysicalLineByLogical(int logicalLineIndex) => _physicalLines[_logicalToPhysicalMap[logicalLineIndex]];
+	public PhysicalLine GetPhysicalLineByPhysical(int physicalLineIndex) => _physicalLines[physicalLineIndex];
+	public int GetPhysicalLineIndexByLogical(int logicalLineIndex) => _logicalToPhysicalMap[logicalLineIndex];
+	public int GetLogicalLineIndexByPhysical(int physicalLineIndex) => Array.BinarySearch(_logicalToPhysicalMap, physicalLineIndex);
 }

@@ -166,11 +166,9 @@ public class LyricsParser
 	}
 }
 
-class Scanner
+class Scanner(string text)
 {
-	public Scanner(string text) => _text = text;
-
-	readonly string _text;
+	readonly string _text = text;
 	int _lineIndex = 0;
 	int _lineStartIndex = 0;
 	int _textIndex = 0;
@@ -214,18 +212,11 @@ class Scanner
 	}
 }
 
-public class ParserError : INotifyPropertyChanged
+public class ParserError(string code, string description, SourceLocation location) : INotifyPropertyChanged
 {
-	public ParserError(string code, string description, SourceLocation location)
-	{
-		Code = code;
-		Description = description;
-		Location = location;
-	}
-
-	public string Code { get; }
-	public string Description { get; }
-	public SourceLocation Location { get; }
+	public string Code { get; } = code;
+	public string Description { get; } = description;
+	public SourceLocation Location { get; } = location;
 
 	[Obsolete("Workaround for .NET memory leak bug", true)]
 	event PropertyChangedEventHandler? INotifyPropertyChanged.PropertyChanged
@@ -235,18 +226,11 @@ public class ParserError : INotifyPropertyChanged
 	}
 }
 
-public readonly struct SourceLocation : IEquatable<SourceLocation>, IComparable<SourceLocation>
+public readonly struct SourceLocation(int index, int line, int column) : IEquatable<SourceLocation>, IComparable<SourceLocation>
 {
-	public SourceLocation(int index, int line, int column)
-	{
-		Index = index;
-		Line = line;
-		Column = column;
-	}
-
-	public int Index { get; }
-	public int Line { get; }
-	public int Column { get; }
+	public int Index { get; } = index;
+	public int Line { get; } = line;
+	public int Column { get; } = column;
 
 	public bool Equals(SourceLocation other) => Index == other.Index;
 	public int CompareTo(SourceLocation other) => Index.CompareTo(other.Index);
@@ -272,17 +256,17 @@ public readonly record struct HighlightToken(string Label, SourceSpan Span);
 
 public class SyllableStore
 {
-	readonly List<SubSyllable[]> _syllables = new();
+	readonly List<SubSyllable[]> _syllables = [];
 	List<SubSyllable>? _subSyllables;
 	int _attachedIndex;
 
-	public void StartGrouping() => _subSyllables ??= new List<SubSyllable>();
+	public void StartGrouping() => _subSyllables ??= [];
 
 	public void StopGrouping()
 	{
 		if (_subSyllables != null)
 		{
-			_syllables.Add(_subSyllables.ToArray());
+			_syllables.Add([.. _subSyllables]);
 			_subSyllables = null;
 		}
 	}
@@ -297,19 +281,17 @@ public class SyllableStore
 		if (_subSyllables != null)
 			_subSyllables.Add(subSyllable);
 		else
-			_syllables.Add(new[] { subSyllable });
+			_syllables.Add([subSyllable]);
 	}
 
 	public bool HasAnySyllable => _syllables.Count > 0;
 
-	public SubSyllable[][] ToArray() => _syllables.ToArray();
+	public SubSyllable[][] ToArray() => [.. _syllables];
 }
 
-public abstract class LyricsNode
+public abstract class LyricsNode(SourceSpan span)
 {
-	protected LyricsNode(SourceSpan span) => Span = span;
-
-	public SourceSpan Span { get; }
+	public SourceSpan Span { get; } = span;
 
 	public abstract string GenerateSource();
 
@@ -322,22 +304,16 @@ public abstract class LyricsNode
 	public abstract string Text { get; }
 }
 
-public class SimpleNode : LyricsNode
+public class SimpleNode(string code, bool escaped, SourceSpan span) : LyricsNode(span)
 {
-	public SimpleNode(string code, bool escaped, SourceSpan span) : base(span)
-	{
-		Code = code;
-		IsEscaped = escaped;
-	}
-
 	public SimpleNode(string code, SourceSpan span) : this(code, LyricsParser.IsEscapeRequired(code) || code == StartGroupingChar || code == StopGroupingChar, span) { }
 
 	const string StartGroupingChar = "{";
 	const string StopGroupingChar = "}";
 
-	public string Code { get; }
+	public string Code { get; } = code;
 
-	public bool IsEscaped { get; }
+	public bool IsEscaped { get; } = escaped;
 
 	public (string, CharacterState) TextAndState =>
 		!IsEscaped && Code == StartGroupingChar ? (string.Empty, CharacterState.StartGrouping) :
@@ -376,11 +352,9 @@ public class SimpleNode : LyricsNode
 	}
 }
 
-public class SilentNode : LyricsNode
+public class SilentNode(IEnumerable<LyricsNode> nodes, SourceSpan span) : LyricsNode(span)
 {
-	public SilentNode(IEnumerable<LyricsNode> nodes, SourceSpan span) : base(span) => Nodes = nodes.ToArray();
-
-	public IReadOnlyList<LyricsNode> Nodes { get; }
+	public IReadOnlyList<LyricsNode> Nodes { get; } = nodes.ToArray();
 
 	public override string Text => string.Concat(Nodes.Select(x => x.Text));
 

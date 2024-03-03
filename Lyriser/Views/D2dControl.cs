@@ -13,8 +13,8 @@ public abstract class D2dControl : FrameworkElement
 	// - field -----------------------------------------------------------------------
 	const double UnconstrainedContentSize = 1;
 	static readonly TimeSpan RenderTargetParmChangesThrottleInterval = TimeSpan.FromMilliseconds(250);
-	readonly D3DImage m_D3DImage;
-	Core.D2D3D9InteropClient? m_InteropClient;
+	readonly D3DImage _d3DImage;
+	Core.D2D3D9InteropClient? _interopClient;
 	DateTime _lastRenderTargetParamChanged = DateTime.MaxValue;
 
 	// - property --------------------------------------------------------------------
@@ -32,10 +32,10 @@ public abstract class D2dControl : FrameworkElement
 	// - public methods --------------------------------------------------------------
 	protected D2dControl()
 	{
-		m_D3DImage = new D3DImage();
+		_d3DImage = new D3DImage();
 		if (IsInDesignMode)
 			return;
-		m_D3DImage.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
+		_d3DImage.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
 		Loaded += OnLoaded;
 		Unloaded += OnUnloaded;
 	}
@@ -52,44 +52,44 @@ public abstract class D2dControl : FrameworkElement
 	// - event handler ---------------------------------------------------------------
 	void OnLoaded(object sender, RoutedEventArgs e)
 	{
-		m_InteropClient = new();
+		_interopClient = new();
 		RecreateRenderTarget();
 		StartRendering();
 	}
 	void OnUnloaded(object sender, RoutedEventArgs e)
 	{
 		StopRendering();
-		m_D3DImage.IsFrontBufferAvailableChanged -= OnIsFrontBufferAvailableChanged;
-		Utils.SafeDispose(ref m_InteropClient);
+		_d3DImage.IsFrontBufferAvailableChanged -= OnIsFrontBufferAvailableChanged;
+		Utils.SafeDispose(ref _interopClient);
 	}
 	void OnRendering(object? sender, EventArgs e)
 	{
-		Debug.Assert(m_InteropClient != null, "Rendering is listened to but Loaded is not called");
-		if (!m_D3DImage.IsFrontBufferAvailable || m_InteropClient.BackBuffer == 0 || m_InteropClient.RenderTarget == null)
+		Debug.Assert(_interopClient != null, "Rendering is listened to but Loaded is not called");
+		if (!_d3DImage.IsFrontBufferAvailable || _interopClient.BackBuffer == 0 || _interopClient.RenderTarget == null)
 			return;
 		if (DateTime.UtcNow - _lastRenderTargetParamChanged > RenderTargetParmChangesThrottleInterval)
 		{
 			_lastRenderTargetParamChanged = DateTime.MaxValue;
 			RecreateRenderTarget();
 		}
-		m_D3DImage.Lock();
-		m_D3DImage.SetBackBuffer(D3DResourceType.IDirect3DSurface9, m_InteropClient.BackBuffer);
-		m_InteropClient.BeginDraw();
-		Render(m_InteropClient.RenderTarget);
-		m_InteropClient.EndDraw();
-		m_D3DImage.AddDirtyRect(new Int32Rect(0, 0, m_D3DImage.PixelWidth, m_D3DImage.PixelHeight));
-		m_D3DImage.Unlock();
+		_d3DImage.Lock();
+		_d3DImage.SetBackBuffer(D3DResourceType.IDirect3DSurface9, _interopClient.BackBuffer);
+		_interopClient.BeginDraw();
+		Render(_interopClient.RenderTarget);
+		_interopClient.EndDraw();
+		_d3DImage.AddDirtyRect(new Int32Rect(0, 0, _d3DImage.PixelWidth, _d3DImage.PixelHeight));
+		_d3DImage.Unlock();
 	}
-	protected override void OnRender(DrawingContext dc) => dc.DrawImage(m_D3DImage, new Rect(default, RenderSize));
+	protected override void OnRender(DrawingContext dc) => dc.DrawImage(_d3DImage, new Rect(default, RenderSize));
 	protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
 	{
-		if (m_InteropClient != null)
+		if (_interopClient != null)
 			_lastRenderTargetParamChanged = DateTime.UtcNow;
 		base.OnRenderSizeChanged(sizeInfo);
 	}
 	protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 	{
-		if (m_InteropClient != null)
+		if (_interopClient != null)
 			_lastRenderTargetParamChanged = DateTime.UtcNow;
 		base.OnDpiChanged(oldDpi, newDpi);
 	}
@@ -104,10 +104,10 @@ public abstract class D2dControl : FrameworkElement
 	// - private methods -------------------------------------------------------------
 	void RecreateRenderTarget()
 	{
-		Debug.Assert(m_InteropClient != null, "Not initialized");
+		Debug.Assert(_interopClient != null, "Not initialized");
 		var dpiScale = VisualTreeHelper.GetDpi(this);
-		m_InteropClient.RecreateRenderTarget(ActualWidth, ActualHeight, dpiScale.DpiScaleX, dpiScale.DpiScaleY);
-		ResourceCache.UpdateResources(m_InteropClient.RenderTarget);
+		_interopClient.RecreateRenderTarget(ActualWidth, ActualHeight, dpiScale.DpiScaleX, dpiScale.DpiScaleY);
+		ResourceCache.UpdateResources(_interopClient.RenderTarget);
 	}
 	void StartRendering() => CompositionTarget.Rendering += OnRendering;
 	void StopRendering() => CompositionTarget.Rendering -= OnRendering;
@@ -116,32 +116,32 @@ public abstract class D2dControl : FrameworkElement
 public class ResourceCache
 {
 	// - field -----------------------------------------------------------------------
-	readonly Dictionary<string, Func<Core.Direct2D1.RenderTarget, object>> m_Generators = new();
-	readonly Dictionary<string, object> m_Resources = new();
-	Core.Direct2D1.RenderTarget? m_RenderTarget = null;
+	readonly Dictionary<string, Func<Core.Direct2D1.RenderTarget, object>> _generators = [];
+	readonly Dictionary<string, object> _resources = [];
+	Core.Direct2D1.RenderTarget? _renderTarget = null;
 
 	// - property --------------------------------------------------------------------
-	public object this[string key] => m_Resources[key];
+	public object this[string key] => _resources[key];
 
 	// - public methods --------------------------------------------------------------
 	public void Add(string key, Func<Core.Direct2D1.RenderTarget, object> generator)
 	{
-		m_Generators.Add(key, generator);
-		if (m_Resources.TryGetValue(key, out var resOld))
+		_generators.Add(key, generator);
+		if (_resources.TryGetValue(key, out var resOld))
 			(resOld as IDisposable)?.Dispose();
-		if (m_RenderTarget != null)
-			m_Resources[key] = generator(m_RenderTarget);
+		if (_renderTarget != null)
+			_resources[key] = generator(_renderTarget);
 	}
 	public void UpdateResources(Core.Direct2D1.RenderTarget renderTarget)
 	{
-		m_RenderTarget = renderTarget;
-		if (m_RenderTarget == null)
+		_renderTarget = renderTarget;
+		if (_renderTarget == null)
 			return;
-		foreach (var kvp in m_Generators)
+		foreach (var kvp in _generators)
 		{
-			if (m_Resources.TryGetValue(kvp.Key, out var resOld))
+			if (_resources.TryGetValue(kvp.Key, out var resOld))
 				(resOld as IDisposable)?.Dispose();
-			m_Resources[kvp.Key] = kvp.Value(m_RenderTarget);
+			_resources[kvp.Key] = kvp.Value(_renderTarget);
 		}
 	}
 }

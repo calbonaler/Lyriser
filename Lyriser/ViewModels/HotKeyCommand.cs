@@ -5,25 +5,19 @@ using System.Windows.Input;
 
 namespace Lyriser.ViewModels;
 
-public class HotKeyCommand : ICommand, INotifyPropertyChanged
+public class HotKeyCommand(Action execute, Func<bool> canExecute) : ICommand, INotifyPropertyChanged
 {
 	public HotKeyCommand(Action execute) : this(execute, AlwaysExecute) { }
 
-	public HotKeyCommand(Action execute, Func<bool> canExecute)
-	{
-		_execute = execute;
-		_canExecute = canExecute;
-	}
-
-	readonly Action _execute;
-	readonly Func<bool> _canExecute;
+	readonly Action _execute = execute;
+	readonly Func<bool> _canExecute = canExecute;
 	static readonly Func<bool> AlwaysExecute = () => true;
 
 	KeyGesture? _gesture;
 	public KeyGesture? Gesture
 	{
 		get => _gesture;
-		set => Utils.SetPropertyWithRelated(ref _gesture, value, PropertyChanged, this, new[] { nameof(GestureText) });
+		set => Utils.SetPropertyWithRelated(ref _gesture, value, PropertyChanged, this, [nameof(GestureText)]);
 	}
 
 	public string? GestureText => Gesture?.GetDisplayStringForCulture(CultureInfo.CurrentUICulture);

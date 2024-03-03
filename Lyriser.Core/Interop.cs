@@ -50,6 +50,9 @@ public class ComPtr : IDisposable
 		}
 	}
 
+	internal bool IsNull => _pointer == 0;
+	internal void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(IsNull, this);
+
 	internal nint Pointer => _pointer;
 }
 

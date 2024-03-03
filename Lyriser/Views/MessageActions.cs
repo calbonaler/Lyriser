@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Interop;
 using ICSharpCode.AvalonEdit;
@@ -92,23 +94,27 @@ public abstract class EncodedFileMessageAction : InteractionMessageAction<Depend
 		set => SetValue(EncodingLabelTextProperty, value);
 	}
 
-	protected void SetFilterToDialog(CommonFileDialog dialog)
+	protected virtual IEnumerable<(string DisplayName, FileEncoding Encoding)> SupportedEncodings
 	{
+		get
+		{
+			yield return ("UTF-8",       FileEncoding.UTF8);
+			yield return ("UTF-8 (BOM)", FileEncoding.UTF8WithBom);
+			yield return ("ANSI",        FileEncoding.Ansi);
+		}
+	}
+	protected abstract CommonFileDialog CreateFileDialog();
+
+	protected override void InvokeAction(InteractionMessage message)
+	{
+		if (message is not ResponsiveInteractionMessage<EncodedFileInfo?> actualMessage)
+			return;
+		var encodings = SupportedEncodings.ToArray();
+		using var dialog = CreateFileDialog();
+		dialog.EnsurePathExists = true;
 		dialog.Filters.Add(new CommonFileDialogFilter(FilterDisplayName, FilterExtensionList));
 		dialog.DefaultExtension = dialog.Filters[0].Extensions[0];
-	}
-
-	protected Func<FileEncoding> AddEncodingSelectorToDialog(CommonFileDialog dialog, bool addAutoDetect)
-	{
 		var encodingComboBox = new CommonFileDialogComboBox();
-		var encodings = new List<(string DisplayName, FileEncoding Encoding)>()
-		{
-			("UTF-8",       FileEncoding.UTF8),
-			("UTF-8 (BOM)", FileEncoding.UTF8WithBom),
-			("ANSI",        FileEncoding.Ansi),
-		};
-		if (addAutoDetect)
-			encodings.Insert(0, ("自動検出", FileEncoding.AutoDetect));
 		foreach (var (displayName, _) in encodings)
 			encodingComboBox.Items.Add(new CommonFileDialogComboBoxItem(displayName));
 		encodingComboBox.SelectedIndex = 0;
@@ -116,40 +122,34 @@ public abstract class EncodedFileMessageAction : InteractionMessageAction<Depend
 		group.Items.Add(encodingComboBox);
 		group.IsProminent = true;
 		dialog.Controls.Add(group);
-		return () => encodings[encodingComboBox.SelectedIndex].Encoding;
+		actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new EncodedFileInfo(dialog.FileName, encodings[encodingComboBox.SelectedIndex].Encoding) : null;
 	}
 }
 
 public class OpenEncodedFileMessageAction : EncodedFileMessageAction
 {
-	protected override void InvokeAction(InteractionMessage message)
+	public static readonly DependencyProperty AutoDetectEncodingDisplayNameProperty = DependencyProperty.Register(nameof(AutoDetectEncodingDisplayName), typeof(string), typeof(EncodedFileMessageAction));
+	public string AutoDetectEncodingDisplayName
 	{
-		if (message is not ResponsiveInteractionMessage<EncodedFileInfo?> actualMessage)
-			return;
-		using var dialog = new CommonOpenFileDialog();
-		dialog.EnsureFileExists = true;
-		dialog.EnsurePathExists = true;
-		SetFilterToDialog(dialog);
-		var selector = AddEncodingSelectorToDialog(dialog, true);
-		actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new EncodedFileInfo(dialog.FileName, selector()) : null;
+		get => (string)GetValue(AutoDetectEncodingDisplayNameProperty);
+		set => SetValue(AutoDetectEncodingDisplayNameProperty, value);
 	}
+
+	protected override IEnumerable<(string DisplayName, FileEncoding Encoding)> SupportedEncodings => base.SupportedEncodings.Prepend((AutoDetectEncodingDisplayName, FileEncoding.AutoDetect));
+	protected override CommonFileDialog CreateFileDialog() => new CommonOpenFileDialog { EnsureFileExists = true };
 }
 
 public class SaveEncodedFileMessageAction : EncodedFileMessageAction
 {
-	protected override void InvokeAction(InteractionMessage message)
+	protected override CommonFileDialog CreateFileDialog()
 	{
-		if (message is not ResponsiveInteractionMessage<EncodedFileInfo?> actualMessage)
-			return;
-		using var dialog = new CommonSaveFileDialog();
-		dialog.AlwaysAppendDefaultExtension = true;
-		dialog.CreatePrompt = true;
-		dialog.EnsurePathExists = true;
-		dialog.EnsureValidNames = true;
-		dialog.OverwritePrompt = true;
-		SetFilterToDialog(dialog);
-		var selector = AddEncodingSelectorToDialog(dialog, false);
-		actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new EncodedFileInfo(dialog.FileName, selector()) : null;
+		return new CommonSaveFileDialog
+		{
+			AlwaysAppendDefaultExtension = true,
+			CreatePrompt = true,
+			EnsureValidNames = true,
+			OverwritePrompt = true
+		};
 	}
 }
 

@@ -17,32 +17,32 @@ public partial class Model : INotifyPropertyChanged
 {
 	public Model(IMonoRubyProvider monoRubyProvider)
 	{
-		m_MonoRubyProvider = monoRubyProvider;
-		m_Parser.ErrorReporter = m_BackingParserErrors.Add;
-		m_OriginalVersion = SourceDocument.Version;
+		_monoRubyProvider = monoRubyProvider;
+		_parser.ErrorReporter = _backingParserErrors.Add;
+		_originalVersion = SourceDocument.Version;
 		Observable.FromEventPattern(x => SourceDocument.TextChanged += x, x => SourceDocument.TextChanged -= x)
 			.Do(_ => PropertyChanged.Raise(this, nameof(IsModified)))
 			.Throttle(TimeSpan.FromMilliseconds(500))
 			.Subscribe(_ =>
 			{
-				m_BackingParserErrors.Clear();
-				LyricsSource = new LyricsSource(m_Parser.Parse(SourceDocument.CreateSnapshot().Text).Select(x => x.Line));
-				ParserErrors = m_BackingParserErrors.ToArray();
+				_backingParserErrors.Clear();
+				LyricsSource = new LyricsSource(_parser.Parse(SourceDocument.CreateSnapshot().Text).Select(x => x.Line));
+				ParserErrors = [.. _backingParserErrors];
 			});
 	}
 
-	readonly IMonoRubyProvider m_MonoRubyProvider;
+	readonly IMonoRubyProvider _monoRubyProvider;
 
-	readonly LyricsParser m_Parser = new();
-	ITextSourceVersion m_OriginalVersion;
+	readonly LyricsParser _parser = new();
+	ITextSourceVersion _originalVersion;
 	ITextSourceVersion OriginalVersion
 	{
-		get => m_OriginalVersion;
+		get => _originalVersion;
 		set
 		{
-			if (m_OriginalVersion != value)
+			if (_originalVersion != value)
 			{
-				m_OriginalVersion = value;
+				_originalVersion = value;
 				PropertyChanged?.Raise(this, nameof(IsModified));
 			}
 		}
@@ -50,33 +50,33 @@ public partial class Model : INotifyPropertyChanged
 
 	public bool IsModified => SourceDocument.Version != OriginalVersion;
 
-	string? m_SavedFilePath;
-	Encoding? m_SavedEncoding;
-	public string? SavedFileNameWithoutExtension => Path.GetFileNameWithoutExtension(m_SavedFilePath);
+	string? _savedFilePath;
+	Encoding? _savedEncoding;
+	public string? SavedFileNameWithoutExtension => Path.GetFileNameWithoutExtension(_savedFilePath);
 
 	public TextDocument SourceDocument { get; } = new();
 
-	LyricsSource m_LyricsSource = LyricsSource.Empty;
+	LyricsSource _lyricsSource = LyricsSource.Empty;
 	public LyricsSource LyricsSource
 	{
-		get => m_LyricsSource;
-		set => Utils.SetProperty(ref m_LyricsSource, value, PropertyChanged, this);
+		get => _lyricsSource;
+		set => Utils.SetProperty(ref _lyricsSource, value, PropertyChanged, this);
 	}
 
-	readonly List<ParserError> m_BackingParserErrors = new();
-	IReadOnlyList<ParserError> m_ParserErrors = Array.Empty<ParserError>();
+	readonly List<ParserError> _backingParserErrors = [];
+	IReadOnlyList<ParserError> _parserErrors = [];
 	public IReadOnlyList<ParserError> ParserErrors
 	{
-		get => m_ParserErrors;
-		private set => Utils.SetProperty(ref m_ParserErrors, value, PropertyChanged, this);
+		get => _parserErrors;
+		private set => Utils.SetProperty(ref _parserErrors, value, PropertyChanged, this);
 	}
 
 	public void New()
 	{
 		SourceDocument.Remove(0, SourceDocument.TextLength);
 		SourceDocument.UndoStack.ClearAll();
-		m_SavedFilePath = null;
-		m_SavedEncoding = null;
+		_savedFilePath = null;
+		_savedEncoding = null;
 		PropertyChanged.Raise(this, nameof(SavedFileNameWithoutExtension));
 		OriginalVersion = SourceDocument.Version;
 	}
@@ -88,16 +88,16 @@ public partial class Model : INotifyPropertyChanged
 			using var fs = new FileStream(info.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
 			using var reader = FileReader.OpenStream(fs, AnsiEncoding);
 			SourceDocument.Text = reader.ReadToEnd();
-			m_SavedEncoding = reader.CurrentEncoding;
+			_savedEncoding = reader.CurrentEncoding;
 		}
 		else
 		{
 			var encoding = ToEncoding(info.Encoding);
 			SourceDocument.Text = File.ReadAllText(info.Path, encoding);
-			m_SavedEncoding = encoding;
+			_savedEncoding = encoding;
 		}
 		SourceDocument.UndoStack.ClearAll();
-		m_SavedFilePath = info.Path;
+		_savedFilePath = info.Path;
 		PropertyChanged.Raise(this, nameof(SavedFileNameWithoutExtension));
 		OriginalVersion = SourceDocument.Version;
 	}
@@ -111,9 +111,9 @@ public partial class Model : INotifyPropertyChanged
 
 	public void Save()
 	{
-		if (m_SavedFilePath == null || m_SavedEncoding == null)
+		if (_savedFilePath == null || _savedEncoding == null)
 			throw new InvalidOperationException("Current document is not saved. Use Save(EncodedFileInfo) overload.");
-		Save(m_SavedFilePath, m_SavedEncoding);
+		Save(_savedFilePath, _savedEncoding);
 	}
 
 	public void Save(string path, Encoding encoding)
@@ -121,8 +121,8 @@ public partial class Model : INotifyPropertyChanged
 		using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
 		using (var writer = new StreamWriter(fs, encoding))
 			SourceDocument.WriteTextTo(writer);
-		m_SavedFilePath = path;
-		m_SavedEncoding = encoding;
+		_savedFilePath = path;
+		_savedEncoding = encoding;
 		PropertyChanged.Raise(this, nameof(SavedFileNameWithoutExtension));
 		OriginalVersion = SourceDocument.Version;
 	}
@@ -139,7 +139,7 @@ public partial class Model : INotifyPropertyChanged
 		get
 		{
 			Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-			return Encoding.GetEncoding("Shift-JIS");
+			return Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.ANSICodePage);
 		}
 	}
 
@@ -155,7 +155,7 @@ public partial class Model : INotifyPropertyChanged
 		foreach (var (lyricsLine, lineTerminator) in lyricsLines)
 		{
 			var (baseText, textToNodeMap) = CollectBaseText(lyricsLine);
-			var monoRuby = m_MonoRubyProvider.GetMonoRuby(baseText);
+			var monoRuby = _monoRubyProvider.GetMonoRuby(baseText);
 			// GetMonoRubyでモノルビ分割がされない場合の送り仮名向け特殊処理
 			var baseTextElements = GetTextElements(baseText);
 			var rubyTextElements = GetTextElements(monoRuby.Text);
@@ -194,7 +194,7 @@ public partial class Model : INotifyPropertyChanged
 						nodes.Add(node);
 						j += node.Text.Length;
 					}
-					rubySpecifiers.Enqueue(new(nodes.ToArray(), ruby));
+					rubySpecifiers.Enqueue(new([.. nodes], ruby));
 				}
 				// 新規ルビの記録開始
 				rubyBaseStart = i;
@@ -223,7 +223,7 @@ public partial class Model : INotifyPropertyChanged
 				var length = (result ? enumerator.ElementIndex : text.Length) - oldIndex;
 				indexes.Add(new TextElement(text, oldIndex, length));
 			}
-			if (!result) return indexes.ToArray();
+			if (!result) return [.. indexes];
 			oldIndex = enumerator.ElementIndex;
 		}
 	}
@@ -297,7 +297,7 @@ public partial class Model : INotifyPropertyChanged
 				newNodes.Add(new SilentNode(SetRuby(((SilentNode)node).Nodes, rubySpecifiers), default));
 		}
 
-		return newNodes.ToArray();
+		return [.. newNodes];
 	}
 
 	public event PropertyChangedEventHandler? PropertyChanged;
@@ -310,16 +310,10 @@ public partial class Model : INotifyPropertyChanged
 	readonly record struct RubySpecifier(SimpleNode[] Base, string Ruby);
 }
 
-public class EncodedFileInfo
+public class EncodedFileInfo(string path, FileEncoding encoding)
 {
-	public EncodedFileInfo(string path, FileEncoding encoding)
-	{
-		Path = path ?? throw new ArgumentNullException(nameof(path));
-		Encoding = encoding;
-	}
-
-	public string Path { get; }
-	public FileEncoding Encoding { get; }
+	public string Path { get; } = path ?? throw new ArgumentNullException(nameof(path));
+	public FileEncoding Encoding { get; } = encoding;
 }
 
 public enum FileEncoding

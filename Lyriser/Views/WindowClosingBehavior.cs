@@ -54,10 +54,6 @@ public class ReturnMethodBinder<T>
 
 	public Task<T> Invoke(object target, string name)
 	{
-		if (target == null)
-			throw new ArgumentNullException(nameof(target));
-		if (name == null)
-			throw new ArgumentNullException(nameof(name));
 		var targetType = target.GetType();
 		if (_cachedTargetType == targetType && _cachedName == name)
 		{
@@ -67,14 +63,13 @@ public class ReturnMethodBinder<T>
 
 		_cachedTargetType = targetType;
 		_cachedName = name;
-		var method = targetType.GetMethod(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy, null, Type.EmptyTypes, null);
-		if (method == null)
+		var method = targetType.GetMethod(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy, null, Type.EmptyTypes, null) ??
 			throw new ArgumentException($"指定されたオブジェクトの型 ({targetType}) に指定されたメソッド ({name}) は存在しません。");
 		if (method.ReturnType == typeof(T))
 		{
 			var targetParam = Ast.Parameter(typeof(object), nameof(target));
 			_cachedDelegate = Ast.Lambda<Func<object, Task<T>>>(
-				Ast.Call(typeof(Task), "FromResult", new[] { typeof(T) }, Ast.Call(Ast.Convert(targetParam, targetType), method)),
+				Ast.Call(typeof(Task), "FromResult", [typeof(T)], Ast.Call(Ast.Convert(targetParam, targetType), method)),
 				targetParam
 			).Compile();
 			return _cachedDelegate(target);
