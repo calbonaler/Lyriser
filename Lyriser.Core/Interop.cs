@@ -12,11 +12,16 @@ static class ComUtils
 	public static unsafe ref TTo* IntPtrAs<TTo>(ref nint from) where TTo : unmanaged
 		=> ref ((delegate*<ref nint, ref TTo*>)IdPtr)(ref from);
 
+	public static unsafe void Cast<T>(void* obj, out nint ppv) where T : unmanaged
+	{
+		var iid = typeof(T).GUID;
+		new HRESULT(Marshal.QueryInterface((nint)obj, ref iid, out ppv)).ThrowOnFailure();
+	}
+
 	public static unsafe ComPtr<T> Cast<T>(void* obj) where T : unmanaged
 	{
 		var result = new ComPtr<T>();
-		var guid = typeof(T).GUID;
-		new HRESULT(Marshal.QueryInterface((nint)obj, ref guid, out result.PutIntPtr())).ThrowOnFailure();
+		Cast<T>(obj, out result.PutIntPtr());
 		return result;
 	}
 	
