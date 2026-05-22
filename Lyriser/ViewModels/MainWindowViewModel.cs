@@ -54,7 +54,7 @@ class MainWindowViewModel : ViewModel
 				case nameof(CaretLocation):
 					if (LyricsSource != null)
 					{
-						var logicalLineIndex = LyricsSource.LineMap.GetLogicalLineIndexByPhysical(CaretLocation.Line - 1);
+						var logicalLineIndex = LyricsSource.SyllableLines.FindIndexByPhysicalLineIndex(CaretLocation.Line - 1);
 						if (logicalLineIndex >= 0 && CurrentSyllable.Line != logicalLineIndex)
 						{
 							CurrentSyllable = new SyllableLocation(logicalLineIndex, 0);
@@ -65,7 +65,7 @@ class MainWindowViewModel : ViewModel
 				case nameof(CurrentSyllable):
 					if (LyricsSource != null)
 					{
-						var physicalLineNumber = LyricsSource.LineMap.GetPhysicalLineIndexByLogical(CurrentSyllable.Line) + 1;
+						var physicalLineNumber = LyricsSource.SyllableLines[CurrentSyllable.Line].PhysicalLineIndex + 1;
 						if (CaretLocation.Line != physicalLineNumber)
 						{
 							CaretLocation = new TextLocation(physicalLineNumber, 0);

@@ -9,12 +9,6 @@ namespace Lyriser;
 
 static class Utils
 {
-	public static void SafeDispose<T>(ref T? storage) where T : IDisposable?
-	{
-		storage?.Dispose();
-		storage = default;
-	}
-
 	public static void Raise(this PropertyChangedEventHandler? handler, INotifyPropertyChanged @this, [CallerMemberName]string propertyName = "") => handler?.Invoke(@this, new PropertyChangedEventArgs(propertyName));
 
 	public static void SetPropertyWithRelated<T>(ref T storage, T value, PropertyChangedEventHandler? handler, INotifyPropertyChanged @this, IEnumerable<string> relatedPropertyNames, [CallerMemberName]string propertyName = "")

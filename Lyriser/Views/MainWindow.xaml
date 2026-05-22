@@ -318,15 +318,7 @@
 				<ColumnDefinition/>
 			</Grid.ColumnDefinitions>
 			<Border Grid.Column="0" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" BorderThickness="1">
-				<Grid>
-					<Grid.RowDefinitions>
-						<RowDefinition/>
-						<RowDefinition Height="Auto"/>
-					</Grid.RowDefinitions>
-					<Grid.ColumnDefinitions>
-						<ColumnDefinition/>
-						<ColumnDefinition Width="Auto"/>
-					</Grid.ColumnDefinitions>
+				<ScrollViewer HorizontalScrollBarVisibility="Visible" CanContentScroll="True" Focusable="False">
 					<v:LyricsViewer
 						x:Name="LyricsViewer"
 						Source="{Binding LyricsSource}"
@@ -340,25 +332,7 @@
 							</l:InteractionMessageTrigger>
 						</i:Interaction.Triggers>
 					</v:LyricsViewer>
-					<ScrollBar
-						x:Name="HorizontalScrollBar"
-						Grid.Row="1" Orientation="Horizontal"
-						ViewportSize="{Binding ActualWidth, ElementName=LyricsViewer, Mode=OneWay}"
-						LargeChange="{Binding ActualWidth, ElementName=LyricsViewer, Mode=OneWay}"
-						SmallChange="1"
-						Maximum="{Binding ScrollMaximumX, ElementName=LyricsViewer, Mode=OneWay}"
-						Value="{Binding ScrollPositionX, ElementName=LyricsViewer, Mode=TwoWay}"
-						/>
-					<ScrollBar
-						Grid.Column="1" Orientation="Vertical"
-						ViewportSize="{Binding ActualHeight, ElementName=LyricsViewer, Mode=OneWay}"
-						LargeChange="{Binding ActualHeight, ElementName=LyricsViewer, Mode=OneWay}"
-						SmallChange="1"
-						Maximum="{Binding ScrollMaximumY, ElementName=LyricsViewer, Mode=OneWay}"
-						Value="{Binding ScrollPositionY, ElementName=LyricsViewer, Mode=TwoWay}"
-						/>
-					<Rectangle Grid.Row="1" Grid.Column="1" Fill="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
-				</Grid>
+				</ScrollViewer>
 			</Border>
 			<GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"/>
 			<Grid Grid.Column="2">
