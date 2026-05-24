@@ -17,4 +17,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Lyriser\Lyriser.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EditorConfigFiles Remove="D:\Source\Repos\Lyriser\Lyriser.Tests\.editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Source\Repos\Lyriser\Lyriser.Tests\.editorconfig" />
+  </ItemGroup>
 </Project>

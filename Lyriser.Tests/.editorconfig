@@ -1,0 +1,4 @@
+[*.cs]
+
+# CA1707: 識別子はアンダースコアを含むことはできません
+dotnet_diagnostic.CA1707.severity = none

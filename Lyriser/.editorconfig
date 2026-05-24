@@ -1,4 +1,0 @@
-﻿[*.cs]
-
-# IDE0040: アクセシビリティ修飾子を追加します
-dotnet_style_require_accessibility_modifiers = never:silent
