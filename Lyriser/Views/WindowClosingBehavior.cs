@@ -11,8 +11,8 @@ namespace Lyriser.Views;
 
 public class WindowClosingBehavior : Behavior<Window>
 {
-	public static readonly DependencyProperty MethodTargetProperty = DependencyProperty.Register(nameof(MethodTarget), typeof(object), typeof(WindowClosingBehavior), new PropertyMetadata(null));
-	public static readonly DependencyProperty MethodNameProperty = DependencyProperty.Register(nameof(MethodName), typeof(string), typeof(WindowClosingBehavior), new PropertyMetadata(null));
+	public static readonly DependencyProperty MethodTargetProperty = DependencyProperty.Register(nameof(MethodTarget), typeof(object), typeof(WindowClosingBehavior));
+	public static readonly DependencyProperty MethodNameProperty = DependencyProperty.Register(nameof(MethodName), typeof(string), typeof(WindowClosingBehavior));
 
 	readonly ReturnMethodBinder<bool> binder = new();
 
@@ -30,18 +30,16 @@ public class WindowClosingBehavior : Behavior<Window>
 
 	protected override void OnAttached()
 	{
-		var associatedObject = AssociatedObject ?? throw new InvalidOperationException();
 		base.OnAttached();
 		var canContinue = false;
-		associatedObject.Closing += async (sender, e) =>
+		AssociatedObject.Closing += async (sender, e) =>
 		{
 			if (canContinue) return;
 			if (MethodTarget == null || MethodName == null) return;
 			e.Cancel = true;
 			canContinue = await binder.Invoke(MethodTarget, MethodName);
-			DispatcherOperation op;
 			if (canContinue)
-				op = Dispatcher.BeginInvoke(new Action(associatedObject.Close));
+				_ = Dispatcher.BeginInvoke(new Action(AssociatedObject.Close));
 		};
 	}
 }
@@ -69,7 +67,7 @@ public class ReturnMethodBinder<T>
 		{
 			var targetParam = Ast.Parameter(typeof(object), nameof(target));
 			_cachedDelegate = Ast.Lambda<Func<object, Task<T>>>(
-				Ast.Call(typeof(Task), "FromResult", [typeof(T)], Ast.Call(Ast.Convert(targetParam, targetType), method)),
+				Ast.Call(typeof(Task), nameof(Task.FromResult), [typeof(T)], Ast.Call(Ast.Convert(targetParam, targetType), method)),
 				targetParam
 			).Compile();
 			return _cachedDelegate(target);

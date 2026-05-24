@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Frozen;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Interop;
@@ -55,14 +54,14 @@ public class WarnUnsavedChangeAction : InteractionMessageAction<Window>
 		using var dialog = new TaskDialog();
 		dialog.Cancelable = true;
 		dialog.Caption = Title;
-		dialog.InstructionText = string.Format(MessageFormat, actualMessage.DocumentName);
-		TaskDialogButton SaveButton = new TaskDialogButton(nameof(SaveButton), SaveButtonText);
+		dialog.InstructionText = string.Format(CultureInfo.CurrentCulture, MessageFormat, actualMessage.DocumentName);
+		TaskDialogButton SaveButton = new(nameof(SaveButton), SaveButtonText);
 		SaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Yes);
 		dialog.Controls.Add(SaveButton);
-		TaskDialogButton DontSaveButton = new TaskDialogButton(nameof(DontSaveButton), DoNotSaveButtonText);
+		TaskDialogButton DontSaveButton = new(nameof(DontSaveButton), DoNotSaveButtonText);
 		DontSaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.No);
 		dialog.Controls.Add(DontSaveButton);
-		TaskDialogButton CancelButton = new TaskDialogButton(nameof(CancelButton), CancelButtonText);
+		TaskDialogButton CancelButton = new(nameof(CancelButton), CancelButtonText);
 		CancelButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Cancel);
 		dialog.Controls.Add(CancelButton);
 		dialog.StartupLocation = TaskDialogStartupLocation.CenterOwner;
@@ -98,9 +97,11 @@ public abstract class EncodedFileMessageAction : InteractionMessageAction<Depend
 	{
 		get
 		{
+#pragma warning disable format
 			yield return ("UTF-8",       FileEncoding.UTF8);
 			yield return ("UTF-8 (BOM)", FileEncoding.UTF8WithBom);
 			yield return ("ANSI",        FileEncoding.Ansi);
+#pragma warning restore format
 		}
 	}
 	protected abstract CommonFileDialog CreateFileDialog();
@@ -112,17 +113,17 @@ public abstract class EncodedFileMessageAction : InteractionMessageAction<Depend
 		var encodings = SupportedEncodings.ToArray();
 		using var dialog = CreateFileDialog();
 		dialog.EnsurePathExists = true;
-		dialog.Filters.Add(new CommonFileDialogFilter(FilterDisplayName, FilterExtensionList));
+		dialog.Filters.Add(new(FilterDisplayName, FilterExtensionList));
 		dialog.DefaultExtension = dialog.Filters[0].Extensions[0];
 		var encodingComboBox = new CommonFileDialogComboBox();
 		foreach (var (displayName, _) in encodings)
-			encodingComboBox.Items.Add(new CommonFileDialogComboBoxItem(displayName));
+			encodingComboBox.Items.Add(new(displayName));
 		encodingComboBox.SelectedIndex = 0;
 		var group = new CommonFileDialogGroupBox(EncodingLabelText);
 		group.Items.Add(encodingComboBox);
 		group.IsProminent = true;
 		dialog.Controls.Add(group);
-		actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new EncodedFileInfo(dialog.FileName, encodings[encodingComboBox.SelectedIndex].Encoding) : null;
+		actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new(dialog.FileName, encodings[encodingComboBox.SelectedIndex].Encoding) : null;
 	}
 }
 
@@ -141,16 +142,13 @@ public class OpenEncodedFileMessageAction : EncodedFileMessageAction
 
 public class SaveEncodedFileMessageAction : EncodedFileMessageAction
 {
-	protected override CommonFileDialog CreateFileDialog()
+	protected override CommonFileDialog CreateFileDialog() => new CommonSaveFileDialog
 	{
-		return new CommonSaveFileDialog
-		{
-			AlwaysAppendDefaultExtension = true,
-			CreatePrompt = true,
-			EnsureValidNames = true,
-			OverwritePrompt = true
-		};
-	}
+		AlwaysAppendDefaultExtension = true,
+		CreatePrompt = true,
+		EnsureValidNames = true,
+		OverwritePrompt = true
+	};
 }
 
 public class ScrollIntoCurrentSyllableAction : InteractionMessageAction<LyricsViewer>
@@ -165,7 +163,7 @@ public class ScrollIntoCaretAction : InteractionMessageAction<TextEditor>
 		if (message is not GenericInteractionMessage<bool> actualMessage)
 			return;
 		if (actualMessage.Value)
-			AssociatedObject.Focus();
+			_ = AssociatedObject.Focus();
 		var caretLocation = AssociatedObject.TextArea.Caret.Location;
 		AssociatedObject.ScrollTo(caretLocation.Line, caretLocation.Column);
 	}

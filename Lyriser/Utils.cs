@@ -9,9 +9,9 @@ namespace Lyriser;
 
 static class Utils
 {
-	public static void Raise(this PropertyChangedEventHandler? handler, INotifyPropertyChanged @this, [CallerMemberName]string propertyName = "") => handler?.Invoke(@this, new PropertyChangedEventArgs(propertyName));
+	public static void Raise(this PropertyChangedEventHandler? handler, INotifyPropertyChanged @this, [CallerMemberName] string propertyName = "") => handler?.Invoke(@this, new(propertyName));
 
-	public static void SetPropertyWithRelated<T>(ref T storage, T value, PropertyChangedEventHandler? handler, INotifyPropertyChanged @this, IEnumerable<string> relatedPropertyNames, [CallerMemberName]string propertyName = "")
+	public static void SetPropertyWithRelated<T>(ref T storage, T value, PropertyChangedEventHandler? handler, INotifyPropertyChanged @this, IEnumerable<string> relatedPropertyNames, [CallerMemberName] string propertyName = "")
 	{
 		if (!EqualityComparer<T>.Default.Equals(storage, value))
 		{

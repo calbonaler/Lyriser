@@ -21,7 +21,7 @@ public class LyricsSource
 			var syllableStore = new SyllableStore();
 			foreach (var node in nodes)
 				node.Transform(baseTextBuilder, attachedSpecs, syllableStore);
-			physicalLines.Add(new PhysicalLine(baseTextBuilder.ToString(), [.. attachedSpecs]));
+			physicalLines.Add(new(baseTextBuilder.ToString(), [.. attachedSpecs]));
 			if (syllableStore.HasAnySyllable)
 				syllableLines.Add(new(syllableStore.ToArray(), physicalLines.Count - 1));
 		}
@@ -68,7 +68,7 @@ public class SyllableLineCollection : ReadOnlyCollection<SyllableLine>, ISyllabl
 
 	static SyllableLineCollection ISyllableLineCollection.FromSorted(SyllableLine[] syllableLines) => new(syllableLines);
 
-	public int FindIndexByPhysicalLineIndex(int physicalLineIndex) => Array.BinarySearch((SyllableLine[])Items, new SyllableLine([], physicalLineIndex), Comparer<SyllableLine>.Create((x, y) => x.PhysicalLineIndex.CompareTo(y.PhysicalLineIndex)));
+	public int FindIndexByPhysicalLineIndex(int physicalLineIndex) => Array.BinarySearch((SyllableLine[])Items, new([], physicalLineIndex), Comparer<SyllableLine>.Create((x, y) => x.PhysicalLineIndex.CompareTo(y.PhysicalLineIndex)));
 }
 
 public readonly record struct SubSyllable(int AttachedIndex, int CharacterIndex)

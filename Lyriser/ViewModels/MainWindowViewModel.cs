@@ -57,7 +57,7 @@ class MainWindowViewModel : ViewModel
 						var logicalLineIndex = LyricsSource.SyllableLines.FindIndexByPhysicalLineIndex(CaretLocation.Line - 1);
 						if (logicalLineIndex >= 0 && CurrentSyllable.Line != logicalLineIndex)
 						{
-							CurrentSyllable = new SyllableLocation(logicalLineIndex, 0);
+							CurrentSyllable = new(logicalLineIndex, 0);
 							await ScrollViewerIntoCurrentSyllableAsync();
 						}
 					}
@@ -68,7 +68,7 @@ class MainWindowViewModel : ViewModel
 						var physicalLineNumber = LyricsSource.SyllableLines[CurrentSyllable.Line].PhysicalLineIndex + 1;
 						if (CaretLocation.Line != physicalLineNumber)
 						{
-							CaretLocation = new TextLocation(physicalLineNumber, 0);
+							CaretLocation = new(physicalLineNumber, 0);
 							await ScrollEditorIntoCaretAsync(false);
 						}
 					}
@@ -76,17 +76,17 @@ class MainWindowViewModel : ViewModel
 			}
 		}));
 
-		NewCommand = new HotKeyCommand(async () => await NewAsync()) { Gesture = new KeyGesture(Key.N, ModifierKeys.Control) };
-		OpenCommand = new HotKeyCommand(async () => await OpenAsync()) { Gesture = new KeyGesture(Key.O, ModifierKeys.Control) };
-		SaveAsCommand = new ViewModelCommand(async () => await SaveAsAsync());
-		SaveCommand = new HotKeyCommand(async () => await SaveAsync()) { Gesture = new KeyGesture(Key.S, ModifierKeys.Control) };
-		AutoSetRubyInSelectionCommand = new ViewModelCommand(AutoSetRubyInSelection);
-		HighlightFirstCommand = new ViewModelCommand(async () => await HighlightLyricsAsync(LyricsHighlightRequest.First));
-		HighlightNextCommand = new ViewModelCommand(async () => await HighlightLyricsAsync(LyricsHighlightRequest.Next));
-		HighlightPreviousCommand = new ViewModelCommand(async () => await HighlightLyricsAsync(LyricsHighlightRequest.Previous));
-		HighlightNextLineCommand = new ViewModelCommand(async () => await HighlightLyricsAsync(LyricsHighlightRequest.NextLine));
-		HighlightPreviousLineCommand = new ViewModelCommand(async () => await HighlightLyricsAsync(LyricsHighlightRequest.PreviousLine));
-		MoveCaretToSelectedErrorCommand = new ViewModelCommand(async () => await MoveCaretToSelectedErrorAsync());
+		NewCommand = new(async () => await NewAsync()) { Gesture = new(Key.N, ModifierKeys.Control) };
+		OpenCommand = new(async () => await OpenAsync()) { Gesture = new(Key.O, ModifierKeys.Control) };
+		SaveAsCommand = new(async () => await SaveAsAsync());
+		SaveCommand = new(async () => await SaveAsync()) { Gesture = new(Key.S, ModifierKeys.Control) };
+		AutoSetRubyInSelectionCommand = new(AutoSetRubyInSelection);
+		HighlightFirstCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.First));
+		HighlightNextCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.Next));
+		HighlightPreviousCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.Previous));
+		HighlightNextLineCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.NextLine));
+		HighlightPreviousLineCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.PreviousLine));
+		MoveCaretToSelectedErrorCommand = new(async () => await MoveCaretToSelectedErrorAsync());
 	}
 
 	readonly Model _model = new(ImeLanguage.Instance);
@@ -101,33 +101,10 @@ class MainWindowViewModel : ViewModel
 	public bool IsModified => _model.IsModified;
 	public string DocumentName => _model.SavedFileNameWithoutExtension ?? "無題";
 
-	TextLocation _caretLocation;
-	public TextLocation CaretLocation
-	{
-		get => _caretLocation;
-		set => RaisePropertyChangedIfSet(ref _caretLocation, value);
-	}
-
-	SyllableLocation _currentSyllable;
-	public SyllableLocation CurrentSyllable
-	{
-		get => _currentSyllable;
-		set => RaisePropertyChangedIfSet(ref _currentSyllable, value);
-	}
-
-	ParserError? _selectedError;
-	public ParserError? SelectedError
-	{
-		get => _selectedError;
-		set => RaisePropertyChangedIfSet(ref _selectedError, value);
-	}
-
-	Selection? _selection;
-	public Selection? Selection
-	{
-		get => _selection;
-		set => RaisePropertyChangedIfSet(ref _selection, value);
-	}
+	public TextLocation CaretLocation { get; set => RaisePropertyChangedIfSet(ref field, value); }
+	public SyllableLocation CurrentSyllable { get; set => RaisePropertyChangedIfSet(ref field, value); }
+	public ParserError? SelectedError { get; set => RaisePropertyChangedIfSet(ref field, value); }
+	public Selection? Selection { get; set => RaisePropertyChangedIfSet(ref field, value); }
 
 	public HotKeyCommand NewCommand { get; }
 	public HotKeyCommand OpenCommand { get; }
@@ -197,14 +174,14 @@ class MainWindowViewModel : ViewModel
 		var message = await Messenger.GetResponseAsync(new WarnUnsavedChangeMessage("WarnUnsavedChange", DocumentName));
 		return message.Response;
 	}
-	async Task<EncodedFileInfo> GetOpeningFileAysnc()
+	async Task<EncodedFileInfo?> GetOpeningFileAysnc()
 	{
-		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<EncodedFileInfo>("GetOpeningFile"));
+		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<EncodedFileInfo?>("GetOpeningFile"));
 		return message.Response;
 	}
-	async Task<EncodedFileInfo> GetSavingFileAsync()
+	async Task<EncodedFileInfo?> GetSavingFileAsync()
 	{
-		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<EncodedFileInfo>("GetSavingFile"));
+		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<EncodedFileInfo?>("GetSavingFile"));
 		return message.Response;
 	}
 	Task ScrollViewerIntoCurrentSyllableAsync() => Messenger.RaiseAsync(new InteractionMessage("ScrollViewerIntoCurrentSyllable"));
@@ -214,14 +191,13 @@ class MainWindowViewModel : ViewModel
 	{
 		if (SelectedError == null)
 			return;
-		CaretLocation = new TextLocation(SelectedError.Location.Line, SelectedError.Location.Column);
+		CaretLocation = new(SelectedError.Location.Line, SelectedError.Location.Column);
 		await ScrollEditorIntoCaretAsync(true);
 	}
 }
 
 public enum LyricsHighlightRequest
 {
-	None,
 	Next,
 	Previous,
 	NextLine,

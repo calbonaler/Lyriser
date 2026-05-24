@@ -10,6 +10,7 @@ public class LyricsParser
 {
 	public Action<ParserError>? ErrorReporter { get; set; }
 
+#pragma warning disable format
 	static ParserError ErrorSilentImproperlyEnded       (SourceLocation location) => new("E0001", "非発音領域が適切に終了されていません。",       location);
 	static ParserError ErrorRubyBaseRequired            (SourceLocation location) => new("E0002", "ルビを振る対象を省略することはできません。",   location);
 	static ParserError ErrorRubyStartNotFound           (SourceLocation location) => new("E0003", "ルビ領域でのルビの開始位置が見つかりません。", location);
@@ -17,6 +18,7 @@ public class LyricsParser
 	static ParserError ErrorRubyRequired                (SourceLocation location) => new("E0005", "ルビを省略することはできません。",             location);
 	static ParserError ErrorRubyMustNotBeOnlyWhitespaces(SourceLocation location) => new("E0006", "ルビを空白文字のみとすることはできません。",   location);
 	static ParserError ErrorAnyCharacterRequired        (SourceLocation location) => new("E0007", "何らかの文字が必要です。",                     location);
+#pragma warning restore format
 
 	internal const char RubyBaseStartChar = '|';
 	internal const char RubyStartChar = '(';
@@ -29,7 +31,7 @@ public class LyricsParser
 	{
 		if (scanner.Peek() == ch)
 		{
-			scanner.Read();
+			_ = scanner.Read();
 			return true;
 		}
 		return false;
@@ -66,22 +68,22 @@ public class LyricsParser
 			if (rubyBase.Count <= 0)
 			{
 				ErrorReporter?.Invoke(ErrorRubyBaseRequired(scanner.Location));
-				rubyBase.Add(new SimpleNode("_", false, new SourceSpan(scanner.Location, scanner.Location)));
+				rubyBase.Add(new("_", false, new(scanner.Location, scanner.Location)));
 			}
 			var rubyNodes = ParseRubyNodes(scanner);
 			if (rubyNodes.Count <= 0)
 			{
 				ErrorReporter?.Invoke(ErrorRubyStartNotFound(scanner.Location));
-				rubyNodes.Add(new SimpleNode("_", false, new SourceSpan(scanner.Location, scanner.Location)));
+				rubyNodes.Add(new SimpleNode("_", false, new(scanner.Location, scanner.Location)));
 			}
-			return new CompositeNode(rubyBase, rubyNodes, true, new SourceSpan(start, scanner.Location));
+			return new CompositeNode(rubyBase, rubyNodes, true, new(start, scanner.Location));
 		}
 		else
 		{
 			var simpleNode = ParseSimpleNode(scanner);
 			var rubyNodes = ParseRubyNodes(scanner);
 			return rubyNodes.Count > 0
-				? new CompositeNode(Enumerable.Repeat(simpleNode, 1), rubyNodes, false, new SourceSpan(start, scanner.Location))
+				? new CompositeNode(Enumerable.Repeat(simpleNode, 1), rubyNodes, false, new(start, scanner.Location))
 				: simpleNode;
 		}
 	}
@@ -104,12 +106,12 @@ public class LyricsParser
 			if (rubyNodes.Count <= 0)
 			{
 				ErrorReporter?.Invoke(ErrorRubyRequired(rubyStart));
-				rubyNodes.Add(new SimpleNode("_", false, new SourceSpan(rubyStart, rubyStart)));
+				rubyNodes.Add(new SimpleNode("_", false, new(rubyStart, rubyStart)));
 			}
 			else if (rubyNodes.All(x => string.IsNullOrWhiteSpace(x.Text)))
 			{
 				ErrorReporter?.Invoke(ErrorRubyMustNotBeOnlyWhitespaces(rubyStart));
-				rubyNodes.Add(new SimpleNode("_", false, new SourceSpan(rubyNodes[^1].Span.End, rubyNodes[^1].Span.End)));
+				rubyNodes.Add(new SimpleNode("_", false, new(rubyNodes[^1].Span.End, rubyNodes[^1].Span.End)));
 			}
 		}
 		return rubyNodes;
@@ -130,7 +132,7 @@ public class LyricsParser
 			}
 			nodes.Add(subParser(scanner));
 		}
-		return new SilentNode(nodes, new SourceSpan(start, scanner.Location));
+		return new(nodes, new(start, scanner.Location));
 	}
 
 	SimpleNode ParseSimpleNode(Scanner scanner)
@@ -141,21 +143,21 @@ public class LyricsParser
 			escaping = true;
 		var sb = new StringBuilder();
 		if (scanner.Peek() != null)
-			sb.Append(scanner.Read());
+			_ = sb.Append(scanner.Read());
 		else
 		{
 			ErrorReporter?.Invoke(ErrorAnyCharacterRequired(scanner.Location));
-			sb.Append('_');
+			_ = sb.Append('_');
 		}
 		// nullability: Because Peek() is tested immediately before, Peek() must not be null
 		if (char.IsHighSurrogate(sb[^1]) && scanner.Peek() != null && char.IsLowSurrogate((char)scanner.Peek()!))
-			sb.Append(scanner.Read());
-		return new SimpleNode(sb.ToString(), escaping, new SourceSpan(start, scanner.Location));
+			_ = sb.Append(scanner.Read());
+		return new(sb.ToString(), escaping, new(start, scanner.Location));
 	}
 
 	public IEnumerable<(LyricsNode[] Line, string Terminator)> Parse(string source) => Parse(new Scanner(source));
 
-	public IEnumerable<LyricsNode> ParseLine(string line) => ParseLyricsLine(new Scanner(line));
+	public IEnumerable<LyricsNode> ParseLine(string line) => ParseLyricsLine(new(line));
 
 	public static bool IsEscapeRequired(string code)
 	{
@@ -169,9 +171,9 @@ public class LyricsParser
 class Scanner(string text)
 {
 	readonly string _text = text;
-	int _lineIndex = 0;
-	int _lineStartIndex = 0;
-	int _textIndex = 0;
+	int _lineIndex;
+	int _lineStartIndex;
+	int _textIndex;
 
 	public SourceLocation Location => new(_textIndex, _lineIndex + 1, _textIndex - _lineStartIndex + 1);
 
@@ -315,10 +317,12 @@ public class SimpleNode(string code, bool escaped, SourceSpan span) : LyricsNode
 
 	public bool IsEscaped { get; } = escaped;
 
+#pragma warning disable format
 	public (string, CharacterState) TextAndState =>
 		!IsEscaped && Code == StartGroupingChar ? (string.Empty, CharacterState.StartGrouping) :
 		!IsEscaped && Code == StopGroupingChar  ? (string.Empty, CharacterState.StopGrouping ) :
 		                                          (Code,         CharacterState.Default      );
+#pragma warning restore format
 
 	public override string Text => TextAndState.Item1;
 
@@ -347,14 +351,14 @@ public class SimpleNode(string code, bool escaped, SourceSpan span) : LyricsNode
 		{
 			var (_, state) = TextAndState;
 			if (state is CharacterState.StartGrouping or CharacterState.StopGrouping)
-				yield return new HighlightToken("SyllableGrouping", Span);
+				yield return new("SyllableGrouping", Span);
 		}
 	}
 }
 
 public class SilentNode(IEnumerable<LyricsNode> nodes, SourceSpan span) : LyricsNode(span)
 {
-	public IReadOnlyList<LyricsNode> Nodes { get; } = nodes.ToArray();
+	public IReadOnlyList<LyricsNode> Nodes { get; } = [.. nodes];
 
 	public override string Text => string.Concat(Nodes.Select(x => x.Text));
 
@@ -370,7 +374,7 @@ public class SilentNode(IEnumerable<LyricsNode> nodes, SourceSpan span) : Lyrics
 	{
 		get
 		{
-			yield return new HighlightToken("Silent", Span);
+			yield return new("Silent", Span);
 			foreach (var node in Nodes)
 			{
 				foreach (var token in node.Tokens)
@@ -384,10 +388,10 @@ public class CompositeNode : LyricsNode
 {
 	public CompositeNode(IEnumerable<SimpleNode> @base, IEnumerable<LyricsNode> ruby, bool complex, SourceSpan span) : base(span)
 	{
-		Base = @base.ToArray();
+		Base = [.. @base];
 		if (Base.Count <= 0)
 			throw new ArgumentException($"Must contains at least one item", nameof(@base));
-		Ruby = ruby.ToArray();
+		Ruby = [.. ruby];
 		IsComplex = complex;
 	}
 
@@ -431,10 +435,10 @@ public class CompositeNode : LyricsNode
 		get
 		{
 			var syllableDivision = Ruby.All(IsSyllableDivisionComponent);
-			yield return new HighlightToken("AttachedBase", new SourceSpan(Base[0].Span.Start, Base[Base.Count - 1].Span.End));
+			yield return new("AttachedBase", new(Base[0].Span.Start, Base[Base.Count - 1].Span.End));
 			foreach (var ruby in Ruby)
 			{
-				yield return new HighlightToken(syllableDivision ? "SyllableDivision" : "Ruby", ruby.Span);
+				yield return new(syllableDivision ? "SyllableDivision" : "Ruby", ruby.Span);
 				foreach (var token in ruby.Tokens)
 					yield return token;
 			}

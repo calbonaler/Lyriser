@@ -19,7 +19,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		UseLayoutRounding = true;
 	}
 
-	FontFamily FontFamily { get; } = new FontFamily("Meiryo");
+	FontFamily FontFamily { get; } = new("Meiryo");
 
 	static FontWeight FontWeight => FontWeights.Normal;
 	static FontStyle FontStyle => FontStyles.Normal;
@@ -38,8 +38,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		All = Source | CurrentSyllable,
 	}
 
-	static Core.DirectWrite.Factory? _directWriteFactory;
-	static Core.DirectWrite.Factory DirectWriteFactory => _directWriteFactory ??= new();
+	static Core.DirectWrite.Factory DirectWriteFactory => field ??= new();
 	InvalidatedItems _invalidatedItems = InvalidatedItems.All;
 	DrawingVisual[] _lineVisuals = [];
 	DrawingVisual? _nextLineBackgroundVisual;
@@ -48,7 +47,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 
 	public static readonly DependencyProperty SourceProperty = DependencyProperty.Register(
 		nameof(Source), typeof(LyricsSource), typeof(LyricsViewer),
-		new PropertyMetadata(LyricsSource.Empty, (s, e) => ((LyricsViewer)s).OnSourceChanged(e)));
+		new(LyricsSource.Empty, (s, e) => ((LyricsViewer)s).OnSourceChanged(e)));
 	public static readonly DependencyProperty CurrentSyllableProperty = DependencyProperty.Register(
 		nameof(CurrentSyllable), typeof(SyllableLocation), typeof(LyricsViewer),
 		new FrameworkPropertyMetadata(default(SyllableLocation), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
@@ -73,14 +72,14 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		var newLineIndex = CurrentSyllable.Line;
 		var newColumnIndex = CurrentSyllable.Column + (forward ? 1 : -1);
 		if (newColumnIndex >= 0 && newColumnIndex < Source.SyllableLines[newLineIndex].Syllables.Count)
-			CurrentSyllable = new SyllableLocation(newLineIndex, newColumnIndex);
+			CurrentSyllable = new(newLineIndex, newColumnIndex);
 		else
 		{
 			newLineIndex += forward ? 1 : -1;
 			if (newLineIndex >= 0 && newLineIndex < Source.SyllableLines.Count)
 			{
 				newColumnIndex = forward ? 0 : Source.SyllableLines[newLineIndex].Syllables.Count - 1;
-				CurrentSyllable = new SyllableLocation(newLineIndex, newColumnIndex);
+				CurrentSyllable = new(newLineIndex, newColumnIndex);
 			}
 		}
 		ScrollIntoCurrentSyllable();
@@ -97,7 +96,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		if (newLineIndex >= 0 && newLineIndex < Source.SyllableLines.Count)
 		{
 			using var nextLineRun = new TextRun(DirectWriteFactory, Source.PhysicalLines[Source.SyllableLines[newLineIndex].PhysicalLineIndex], FontFamily, FontWeight, FontStyle, FontStretch, FontSize);
-			CurrentSyllable = new SyllableLocation(newLineIndex, FindNearestSyllableIndex(newLineIndex, centerX, nextLineRun));
+			CurrentSyllable = new(newLineIndex, FindNearestSyllableIndex(newLineIndex, centerX, nextLineRun));
 			ScrollIntoSyllable(CurrentSyllable, nextLineRun);
 		}
 		else
@@ -105,14 +104,14 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 	}
 	public void HighlightFirst()
 	{
-		CurrentSyllable = new SyllableLocation(0, 0);
-		ScrollOffset = new Vector(0, 0);
+		CurrentSyllable = default;
+		ScrollOffset = default;
 	}
 	public void HighlightLast()
 	{
 		if (Source.SyllableLines.Count <= 0)
 			return;
-		CurrentSyllable = new SyllableLocation(Source.SyllableLines.Count - 1, Source.SyllableLines[^1].Syllables.Count - 1);
+		CurrentSyllable = new(Source.SyllableLines.Count - 1, Source.SyllableLines[^1].Syllables.Count - 1);
 		ScrollOffset = (Vector)ExtentSize - (Vector)ViewportSize;
 	}
 	void CoerceHighlight()
@@ -125,7 +124,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 			line = Source.SyllableLines.Count - 1;
 		if (column >= Source.SyllableLines[line].Syllables.Count)
 			column = Source.SyllableLines[line].Syllables.Count - 1;
-		CurrentSyllable = new SyllableLocation(line, column);
+		CurrentSyllable = new(line, column);
 	}
 	int FindNearestLineIndex(double y)
 	{
@@ -149,7 +148,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		TextRun? allocatedRun = null;
 		try
 		{
-			lineRun ??= allocatedRun = new TextRun(DirectWriteFactory, Source.PhysicalLines[Source.SyllableLines[lineIndex].PhysicalLineIndex], FontFamily, FontWeight, FontStyle, FontStretch, FontSize);
+			lineRun ??= allocatedRun = new(DirectWriteFactory, Source.PhysicalLines[Source.SyllableLines[lineIndex].PhysicalLineIndex], FontFamily, FontWeight, FontStyle, FontStretch, FontSize);
 			for (var i = 0; i < Source.SyllableLines[lineIndex].Syllables.Count; i++)
 			{
 				foreach (var subSyllable in Source.SyllableLines[lineIndex].Syllables[i])
@@ -167,7 +166,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 	SyllableLocation HitTestPoint(Point point)
 	{
 		var lineIndex = FindNearestLineIndex(point.Y);
-		return lineIndex < 0 ? new SyllableLocation(0, 0) : new SyllableLocation(lineIndex, FindNearestSyllableIndex(lineIndex, point.X, null));
+		return lineIndex < 0 ? default : new(lineIndex, FindNearestSyllableIndex(lineIndex, point.X, null));
 	}
 	public void ScrollIntoCurrentSyllable() => ScrollIntoSyllable(CurrentSyllable, null);
 	void ScrollIntoSyllable(SyllableLocation syllableLocation, TextRun? lineRun)
@@ -177,11 +176,11 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		TextRun? allocatedRun = null;
 		try
 		{
-			lineRun ??= allocatedRun = new TextRun(DirectWriteFactory, Source.PhysicalLines[syllableLine.PhysicalLineIndex], FontFamily, FontWeight, FontStyle, FontStretch, FontSize);
+			lineRun ??= allocatedRun = new(DirectWriteFactory, Source.PhysicalLines[syllableLine.PhysicalLineIndex], FontFamily, FontWeight, FontStyle, FontStretch, FontSize);
 			rects = [.. syllableLine.Syllables[syllableLocation.Column].Select(lineRun.GetSubSyllableBounds)];
 		}
-		finally {  allocatedRun?.Dispose(); }
-		_ = MakeVisible(_lineVisuals[syllableLine.PhysicalLineIndex], new Rect(
+		finally { allocatedRun?.Dispose(); }
+		_ = MakeVisible(_lineVisuals[syllableLine.PhysicalLineIndex], new(
 			new Point(
 				rects.Min(x => x.Left) - MainPadding.Left,
 				-MainPadding.Top
@@ -190,7 +189,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 				rects.Max(x => x.Right) + MainPadding.Right,
 				TextRun.GetLineHeight(FontSize) + MainPadding.Bottom
 			)
-		), new Size(ViewportSize.Width, ViewportSize.Height - NextLineViewerHeight));
+		), new(ViewportSize.Width, ViewportSize.Height - NextLineViewerHeight));
 	}
 
 	public LyricsSource Source
@@ -250,15 +249,13 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 			SetVisualChild(ref _nextLineVisual, null);
 			SetVisualChild(ref _nextLineVisual, CreateNextLineVisual(pixelsPerDip));
 		}
-		if (_nextLineVisual != null)
-			_nextLineVisual.Offset = new Vector(NextPadding.Left - ScrollOffset.X, finalSize.Height - NextPadding.Bottom - TextRun.GetLineHeight(FontSize));
+		_nextLineVisual?.Offset = new(NextPadding.Left - ScrollOffset.X, finalSize.Height - NextPadding.Bottom - TextRun.GetLineHeight(FontSize));
 		if ((_invalidatedItems & InvalidatedItems.Source) != 0 || (_invalidatedItems & InvalidatedItems.CurrentSyllable) != 0)
 		{
 			SetVisualChild(ref _highlightVisual, null);
 			SetVisualChild(ref _highlightVisual, CreateHighlightVisual());
 		}
-		if (_highlightVisual != null)
-			_highlightVisual.Offset = new Vector(MainPadding.Left, MainPadding.Top + Source.SyllableLines[CurrentSyllable.Line].PhysicalLineIndex * TextRun.GetLineHeight(FontSize)) - ScrollOffset;
+		_highlightVisual?.Offset = new Vector(MainPadding.Left, MainPadding.Top + Source.SyllableLines[CurrentSyllable.Line].PhysicalLineIndex * TextRun.GetLineHeight(FontSize)) - ScrollOffset;
 		_invalidatedItems = InvalidatedItems.None;
 	}
 	void CreateLineVisuals(ref DrawingVisual[] newLineVisuals, float pixelsPerDip)
@@ -287,7 +284,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		using (var dc = visual.RenderOpen())
 		{
 			dc.PushGuidelineSet(new(null, [finalSize.Height - NextLineViewerHeight]));
-			try { dc.DrawRectangle(Brushes.Gray, null, new Rect(0, finalSize.Height - NextLineViewerHeight, finalSize.Width, NextLineViewerHeight)); }
+			try { dc.DrawRectangle(Brushes.Gray, null, new(0, finalSize.Height - NextLineViewerHeight, finalSize.Width, NextLineViewerHeight)); }
 			finally { dc.Pop(); }
 		}
 		return visual;
@@ -337,7 +334,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 	{
 		if ((_invalidatedItems & InvalidatedItems.Source) != 0)
 		{
-			ExtentSize = new Size(
+			ExtentSize = new(
 				Math.Max(MainPadding.Left, NextPadding.Left) +
 					Source.PhysicalLines.Select(x =>
 					{
@@ -350,7 +347,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 					+ MainPadding.Bottom
 			);
 		}
-		return new Size(Math.Min(ExtentSize.Width, availableSize.Width), Math.Min(ExtentSize.Height, availableSize.Height));
+		return new(Math.Min(ExtentSize.Width, availableSize.Width), Math.Min(ExtentSize.Height, availableSize.Height));
 	}
 	protected override Size ArrangeOverride(Size finalSize)
 	{
@@ -371,15 +368,15 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 	//	_run.ChangeFont(_writeFactory, Font);
 	//	_nextRun.ChangeFont(_writeFactory, Font);
 	//}
-	protected override void OnRender(DrawingContext dc)
+	protected override void OnRender(DrawingContext drawingContext)
 	{
-		base.OnRender(dc);
-		dc.DrawRectangle(Brushes.White, null, new Rect(0, 0, ActualWidth, ActualHeight));
+		base.OnRender(drawingContext);
+		drawingContext.DrawRectangle(Brushes.White, null, new(0, 0, ActualWidth, ActualHeight));
 	}
 	protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
 	{
 		base.OnMouseLeftButtonDown(e);
-		Focus();
+		_ = Focus();
 		CurrentSyllable = HitTestPoint(e.GetPosition(this) + ScrollOffset - new Vector(MainPadding.Left, MainPadding.Top));
 	}
 	protected override void OnKeyDown(KeyEventArgs e)
@@ -434,7 +431,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		get => _scrollOffset;
 		set
 		{
-			_scrollOffset = new Vector(
+			_scrollOffset = new(
 				Math.Max(Math.Min(value.X, ExtentSize.Width - ViewportSize.Width), 0),
 				Math.Max(Math.Min(value.Y, ExtentSize.Height - ViewportSize.Height), 0)
 			);
@@ -484,7 +481,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		var rectangleInExtentCoord = Rect.Offset(rectangleInViewportCoord, ScrollOffset);
 		var minX = ComputeScrollOffset(viewportInExtentCoord.X, viewportInExtentCoord.Width, rectangleInExtentCoord.X, rectangleInExtentCoord.Width);
 		var minY = ComputeScrollOffset(viewportInExtentCoord.Y, viewportInExtentCoord.Height, rectangleInExtentCoord.Y, rectangleInExtentCoord.Height);
-		ScrollOffset = new Vector(minX, minY);
+		ScrollOffset = new(minX, minY);
 		var scrolledViewport = new Rect((Point)ScrollOffset, viewportSize);
 		var visibleRect = Rect.Intersect(rectangleInExtentCoord, scrolledViewport);
 		return !visibleRect.IsEmpty ? Rect.Offset(visibleRect, -ScrollOffset) : visibleRect;
@@ -529,9 +526,7 @@ class Ruby(Core.DirectWrite.Factory factory, Core.DirectWrite.TextRange range, s
 
 	public override void Draw(Core.DirectWrite.ITextRenderer textRenderer) => _textLayout.Draw(textRenderer, _origin.ToDWrite());
 	public override double Measure(Core.DirectWrite.TextLayout baseTextLayout)
-	{
-		return Math.Max((double)_textLayout.Metrics.Width - GetMetricsForRange(baseTextLayout).Size.X, 0) / 2;
-	}
+		=> Math.Max((double)_textLayout.Metrics.Width - GetMetricsForRange(baseTextLayout).Size.X, 0) / 2;
 	public override void Arrange(Core.DirectWrite.TextLayout baseTextLayout)
 	{
 		var rangeMetrics = GetMetricsForRange(baseTextLayout);
@@ -551,7 +546,7 @@ class Ruby(Core.DirectWrite.Factory factory, Core.DirectWrite.TextRange range, s
 	{
 		var metrics = GetMetricsForRange(baseTextLayout);
 		var (bounds, range) = GetCharacterBounds(textPosition);
-		return new Rect(
+		return new(
 			new Point(
 				range.StartPosition > 0 ? bounds.TopLeft.X : metrics.TopLeft.X,
 				bounds.TopLeft.Y
@@ -665,7 +660,7 @@ class TextRun : IDisposable
 			var (_, metrics) = _textLayout.HitTestTextPosition(subSyllable.CharacterIndex, false);
 			var result = _textLayout.HitTestTextRange(metrics.TextRange, default, out var rangeMetrics);
 			Debug.Assert(result, "One index must reference one script group.");
-			return new(new Point(rangeMetrics.TopLeft.X, metrics.TopLeft.Y), rangeMetrics.BottomRight.ToWpfPoint());
+			return new(new(rangeMetrics.TopLeft.X, metrics.TopLeft.Y), rangeMetrics.BottomRight.ToWpfPoint());
 		}
 		else
 			return _attacheds[subSyllable.AttachedIndex].GetSubSyllableBounds(_textLayout, subSyllable.CharacterIndex);
@@ -729,7 +724,7 @@ class TextRendererImpl(DrawingContext drawingContext, Brush foregroundBrush, flo
 		using (var fontFace = glyphRun.FetchFontFace())
 		{
 			var typeface = new Typeface(
-				new FontFamily(fontFace.GetFirstFamilyName()),
+				new(fontFace.GetFirstFamilyName()),
 				fontFace.Style.ToWpf(),
 				FontWeight.FromOpenTypeWeight(fontFace.Weight),
 				FontStretch.FromOpenTypeStretch(fontFace.Stretch)
@@ -738,7 +733,7 @@ class TextRendererImpl(DrawingContext drawingContext, Brush foregroundBrush, flo
 				return;
 		}
 		_drawingContext.DrawGlyphRun(_foregroundBrush,
-			new GlyphRun(glyphTypeface, glyphRun.BidiLevel, glyphRun.IsSideways, glyphRun.FontEmSize, PixelsPerDip,
+			new(glyphTypeface, glyphRun.BidiLevel, glyphRun.IsSideways, glyphRun.FontEmSize, PixelsPerDip,
 				glyphRun.GlyphIndices.ToArray(),
 				baselineOrigin.ToWpfPoint(),
 				Convert(glyphRun.GlyphAdvances, x => (double)x),

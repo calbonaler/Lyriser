@@ -20,13 +20,13 @@ public partial class Model : INotifyPropertyChanged
 		_monoRubyProvider = monoRubyProvider;
 		_parser.ErrorReporter = _backingParserErrors.Add;
 		_originalVersion = SourceDocument.Version;
-		Observable.FromEventPattern(x => SourceDocument.TextChanged += x, x => SourceDocument.TextChanged -= x)
+		_ = Observable.FromEventPattern(x => SourceDocument.TextChanged += x, x => SourceDocument.TextChanged -= x)
 			.Do(_ => PropertyChanged.Raise(this, nameof(IsModified)))
 			.Throttle(TimeSpan.FromMilliseconds(500))
 			.Subscribe(_ =>
 			{
 				_backingParserErrors.Clear();
-				LyricsSource = new LyricsSource(_parser.Parse(SourceDocument.CreateSnapshot().Text).Select(x => x.Line));
+				LyricsSource = new(_parser.Parse(SourceDocument.CreateSnapshot().Text).Select(x => x.Line));
 				ParserErrors = [.. _backingParserErrors];
 			});
 	}
@@ -55,21 +55,10 @@ public partial class Model : INotifyPropertyChanged
 	public string? SavedFileNameWithoutExtension => Path.GetFileNameWithoutExtension(_savedFilePath);
 
 	public TextDocument SourceDocument { get; } = new();
-
-	LyricsSource _lyricsSource = LyricsSource.Empty;
-	public LyricsSource LyricsSource
-	{
-		get => _lyricsSource;
-		set => Utils.SetProperty(ref _lyricsSource, value, PropertyChanged, this);
-	}
+	public LyricsSource LyricsSource { get; set => Utils.SetProperty(ref field, value, PropertyChanged, this); } = LyricsSource.Empty;
 
 	readonly List<ParserError> _backingParserErrors = [];
-	IReadOnlyList<ParserError> _parserErrors = [];
-	public IReadOnlyList<ParserError> ParserErrors
-	{
-		get => _parserErrors;
-		private set => Utils.SetProperty(ref _parserErrors, value, PropertyChanged, this);
-	}
+	public IReadOnlyList<ParserError> ParserErrors { get; private set => Utils.SetProperty(ref field, value, PropertyChanged, this); } = [];
 
 	public void New()
 	{
@@ -159,7 +148,7 @@ public partial class Model : INotifyPropertyChanged
 			// GetMonoRubyでモノルビ分割がされない場合の送り仮名向け特殊処理
 			var baseTextElements = GetTextElements(baseText);
 			var rubyTextElements = GetTextElements(monoRuby.Text);
-			for (int i = baseTextElements.Length - 1, j = rubyTextElements.Length - 1; i >= 0 && j >= 0; )
+			for (int i = baseTextElements.Length - 1, j = rubyTextElements.Length - 1; i >= 0 && j >= 0;)
 			{
 				if (baseTextElements[i].Text != rubyTextElements[j].Text)
 				{
@@ -185,7 +174,7 @@ public partial class Model : INotifyPropertyChanged
 				// 下記のすべてに該当する場合のみルビを作成する
 				// ・ルビのベースはカテゴリLoのCode Pointまたは文字「々」のみから生成される
 				// ・ルビのベースにはひらがな、カタカナ、半角・全角形類を含まない
-				if (RubyBaseRegex().IsMatch(rubyBase))
+				if (RubyBaseRegex.IsMatch(rubyBase))
 				{
 					var nodes = new List<SimpleNode>();
 					for (var j = rubyBaseStart; j < i;)
@@ -208,7 +197,7 @@ public partial class Model : INotifyPropertyChanged
 	}
 
 	[GeneratedRegex("^(?=[\\p{Lo}々]+$)(?![\\p{IsHiragana}\\p{IsKatakana}\\p{IsKatakanaPhoneticExtensions}\\p{IsHalfwidthandFullwidthForms}]+$)")]
-	private static partial Regex RubyBaseRegex();
+	private static partial Regex RubyBaseRegex { get; }
 
 	static TextElement[] GetTextElements(string text)
 	{
@@ -221,7 +210,7 @@ public partial class Model : INotifyPropertyChanged
 			if (oldIndex >= 0)
 			{
 				var length = (result ? enumerator.ElementIndex : text.Length) - oldIndex;
-				indexes.Add(new TextElement(text, oldIndex, length));
+				indexes.Add(new(text, oldIndex, length));
 			}
 			if (!result) return [.. indexes];
 			oldIndex = enumerator.ElementIndex;
@@ -277,7 +266,7 @@ public partial class Model : INotifyPropertyChanged
 				for (var i = 0; i < rubySpec.Ruby.Length;)
 				{
 					var textLength = i + 1 < rubySpec.Ruby.Length && char.IsSurrogatePair(rubySpec.Ruby, i) ? 2 : 1;
-					rubyNodes.Add(new SimpleNode(rubySpec.Ruby.Substring(i, textLength), default));
+					rubyNodes.Add(new(rubySpec.Ruby.Substring(i, textLength), default));
 					i += textLength;
 				}
 				newNodes.Add(new CompositeNode(rubySpec.Base, rubyNodes, default));
@@ -312,7 +301,7 @@ public partial class Model : INotifyPropertyChanged
 
 public class EncodedFileInfo(string path, FileEncoding encoding)
 {
-	public string Path { get; } = path ?? throw new ArgumentNullException(nameof(path));
+	public string Path { get; } = path;
 	public FileEncoding Encoding { get; } = encoding;
 }
 

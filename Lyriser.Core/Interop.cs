@@ -13,10 +13,7 @@ static class ComUtils
 		=> ref ((delegate*<ref nint, ref TTo*>)IdPtr)(ref from);
 
 	public static unsafe void Cast<T>(void* obj, out nint ppv) where T : unmanaged
-	{
-		var iid = typeof(T).GUID;
-		new HRESULT(Marshal.QueryInterface((nint)obj, ref iid, out ppv)).ThrowOnFailure();
-	}
+		=> _ = new HRESULT(Marshal.QueryInterface((nint)obj, typeof(T).GUID, out ppv)).ThrowOnFailure();
 
 	public static unsafe ComPtr<T> Cast<T>(void* obj) where T : unmanaged
 	{
@@ -24,7 +21,7 @@ static class ComUtils
 		Cast<T>(obj, out result.PutIntPtr());
 		return result;
 	}
-	
+
 	static unsafe delegate*<nint, nint> IdPtr => &Id;
 
 	static nint Id(nint x) => x;
@@ -50,7 +47,7 @@ public class ComPtr : IDisposable
 	{
 		if (_pointer != 0)
 		{
-			Marshal.Release(_pointer);
+			_ = Marshal.Release(_pointer);
 			_pointer = 0;
 		}
 	}

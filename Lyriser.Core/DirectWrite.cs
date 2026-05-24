@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Buffers;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -106,31 +108,31 @@ public record struct TextRange
 	public readonly int EndPosition => StartPosition + Length;
 
 	/// <summary>テキスト範囲の開始位置です。</summary>
-	public int StartPosition;
+	public int StartPosition { get; set; }
 	/// <summary>テキスト範囲の長さ（含まれる位置の数）です。</summary>
-	public int Length;
+	public int Length { get; set; }
 };
 
 /// <summary>グリフ クラスタに関する情報を格納します。</summary>
 public record struct ClusterMetrics
 {
 	/// <summary>クラスタ内の全グリフの合計アドバンス幅です。</summary>
-	public float Width;
+	public float Width { get; set; }
 	/// <summary>クラスタ内のテキスト位置の数です。</summary>
-	public short Length;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
-	short bitValues;
+	public short Length { get; set; }
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	short _bitValues;
 
 	/// <summary>クラスタ直後で改行できるかどうかを示します。</summary>
-	public readonly bool CanWrapLineAfter => (bitValues & 1) != 0;
+	public readonly bool CanWrapLineAfter => (_bitValues & 1) != 0;
 	/// <summary>クラスタが空白文字に対応しているかどうかを示します。</summary>
-	public readonly bool IsWhitespace => (bitValues & 2) != 0;
+	public readonly bool IsWhitespace => (_bitValues & 2) != 0;
 	/// <summary>クラスタが改行文字に対応しているかどうかを示します。</summary>
-	public readonly bool IsNewline => (bitValues & 4) != 0;
+	public readonly bool IsNewline => (_bitValues & 4) != 0;
 	/// <summary>クラスタがソフトハイフン文字に対応しているかどうかを示します。</summary>
-	public readonly bool IsSoftHyphen => (bitValues & 8) != 0;
+	public readonly bool IsSoftHyphen => (_bitValues & 8) != 0;
 	/// <summary>クラスタが右から左に読まれるかどうかを示します。</summary>
-	public readonly bool IsRightToLeft => (bitValues & 16) != 0;
+	public readonly bool IsRightToLeft => (_bitValues & 16) != 0;
 };
 
 /// <summary>
@@ -140,44 +142,44 @@ public record struct ClusterMetrics
 public record struct TextMetrics
 {
 	/// <summary>グリフのオーバーハングを除いた、割り付け矩形を基準とした書式設定されたテキストの左上の点です。</summary>
-	public System.Numerics.Vector2 TopLeft;
+	public System.Numerics.Vector2 TopLeft { get; set; }
 	/// <summary>各行末の空白を無視した書式設定されたテキストの幅です。</summary>
-	public float Width;
+	public float Width { get; set; }
 	/// <summary>各行末の空白を考慮した書式設定されたテキストの幅です。</summary>
-	public float WidthIncludingTrailingWhitespace;
+	public float WidthIncludingTrailingWhitespace { get; set; }
 	/// <summary>
 	/// 書式設定されたテキストの高さです。
 	/// 空文字列の高さは既定のフォントのそれと同じ値に設定されます。
 	/// </summary>
-	public float Height;
+	public float Height { get; set; }
 	/// <summary>
 	/// レイアウトに与えられた大きさの初期値です。
 	/// テキストの折り返しや長さによってテキスト内容の大きさと異なる値になる場合があります。
 	/// </summary>
-	public System.Numerics.Vector2 LayoutSize;
+	public System.Numerics.Vector2 LayoutSize { get; set; }
 	/// <summary>
 	/// 必要となるヒット テスト ボックスの最大数の計算に使用される任意のテキスト行の最大並び替え数です。
 	/// レイアウトに双方向テキストがないかテキストが全くない場合、最小レベルは1です。
 	/// </summary>
-	public int MaxBidiReorderingDepth;
+	public int MaxBidiReorderingDepth { get; set; }
 	/// <summary>総行数です。</summary>
-	public int LineCount;
+	public int LineCount { get; set; }
 }
 
 /// <summary>ヒット テストで得られた領域を記述します。</summary>
 public record struct HitTestMetrics
 {
 	/// <summary>ヒット領域内のテキスト範囲です。</summary>
-	public TextRange TextRange;
+	public TextRange TextRange { get; set; }
 	/// <summary>ヒット領域の左上隅です。</summary>
-	public System.Numerics.Vector2 TopLeft;
+	public System.Numerics.Vector2 TopLeft { get; set; }
 	/// <summary>ヒット領域の大きさです。</summary>
-	public System.Numerics.Vector2 Size;
+	public System.Numerics.Vector2 Size { get; set; }
 	/// <summary>ヒット領域内のテキスト位置の双方向レベルです。</summary>
-	public int BidiLevel;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	public int BidiLevel { get; set; }
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	BOOL _isText;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	BOOL _isTrimmed;
 
 	/// <summary>ヒット領域にテキストがあるかどうかを示します。</summary>
@@ -208,12 +210,12 @@ public record struct GlyphOffset
 	/// ランのアドバンス方向のオフセットです。
 	/// 正の値を指定すると、ランが左から右の読字方向の場合は（変換前の座標において）右に、右から左の読字方向の場合は左に、グリフは移動します。
 	/// </summary>
-	public float AdvanceOffset;
+	public float AdvanceOffset { get; set; }
 	/// <summary>
 	/// アセント方向、すなわち、アセンダーが指す方向へのオフセットです。
 	/// 正の値を指定すると（変換前の座標において）グリフは上に移動します。
 	/// </summary>
-	public float AscenderOffset;
+	public float AscenderOffset { get; set; }
 }
 
 /// <summary>
@@ -223,21 +225,21 @@ public record struct GlyphOffset
 public struct GlyphRun
 {
 #pragma warning disable CS0649
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	unsafe void* _fontFace;
 #pragma warning restore CS0649
 	/// <summary>ポイントではなく（1/96 インチに等しい）DIP 単位のフォントの論理サイズです。</summary>
-	public float FontEmSize;
+	public float FontEmSize { get; set; }
 #pragma warning disable CS0649
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	int _glyphCount;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	unsafe ushort* _glyphIndices;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	unsafe float* _glyphAdvances;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	unsafe GlyphOffset* _glyphOffsets;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	BOOL _isSideways;
 #pragma warning restore CS0649
 	/// <summary>
@@ -246,7 +248,7 @@ public struct GlyphRun
 	/// 偶数レベルは英語や（横書きの場合の）日本語のような左から右の読字方向の言語を示します。
 	/// 右から左の読字方向の言語については、テキストの原点は右になり、左に向かって描画されます。
 	/// </summary>
-	public int BidiLevel;
+	public int BidiLevel { get; set; }
 
 	/// <summary>描画に使用する物理フォント フェイスを取得します。</summary>
 	/// <returns>物理フォント フェイス。</returns>
@@ -271,27 +273,27 @@ public struct GlyphRun
 public struct GlyphRunDescription
 {
 #pragma warning disable CS0649
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	unsafe char* _localeName;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
-	unsafe char* _string;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
-	int _stringLength;
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	unsafe char* _text;
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
+	int _textLength;
+	[SuppressMessage("Style", "IDE0044", Justification = "Assigned by native layer")]
 	unsafe ushort* _clusterMap;
 #pragma warning restore CS0649
 	/// <summary>このグリフ ランの元となった文字列内の対応するテキスト位置です。</summary>
-	public int TextPosition;
+	public int TextPosition { get; set; }
 
 	/// <summary>このランに関連付けられたロケール名を取得します。</summary>
 	public readonly unsafe string LocaleName => new(_localeName);
 	/// <summary>グリフに関連付けられたテキストを取得します。</summary>
-	public readonly unsafe ReadOnlySpan<char> String => new(_string, _stringLength);
+	public readonly unsafe ReadOnlySpan<char> Text => new(_text, _textLength);
 	/// <summary>
 	/// レンダリングするグリフのすべてのグリフ クラスタの最初のグリフの、グリフ
 	/// インデックス配列へのインデックスの配列を取得します。
 	/// </summary>
-	public readonly unsafe ReadOnlySpan<ushort> ClusterMap => new(_clusterMap, _stringLength);
+	public readonly unsafe ReadOnlySpan<ushort> ClusterMap => new(_clusterMap, _textLength);
 }
 
 /// <summary>テキスト レンダラーのピクセル スナップに関する特性を定義します。</summary>
@@ -352,7 +354,7 @@ unsafe struct NativeTextRendererImpl
 	static NativeTextRendererImpl()
 	{
 		VTable = (void**)RuntimeHelpers.AllocateTypeAssociatedMemory(typeof(NativeTextRendererImpl), sizeof(void*) * (3 + 3 + 4));
-		int idx = 0;
+		var idx = 0;
 		// IUnknown
 		VTable[idx++] = (delegate* unmanaged[Stdcall]<NativeTextRendererImpl*, Guid*, void**, HRESULT>)&QueryInterface;
 		VTable[idx++] = (delegate* unmanaged[Stdcall]<NativeTextRendererImpl*, uint>)&AddRef;
@@ -395,7 +397,7 @@ unsafe struct NativeTextRendererImpl
 	{
 		if (*guid == IDWriteTextRendererGuid || *guid == IDWritePixelSnappingGuid || *guid == IUnknownGuid)
 		{
-			((delegate* unmanaged[Stdcall]<void*, uint>)self->_vptr[1])(self); // AddRef
+			_ = ((delegate* unmanaged[Stdcall]<void*, uint>)self->_vptr[1])(self); // AddRef
 			*ppv = self;
 			return HRESULT.S_OK;
 		}
@@ -407,7 +409,7 @@ unsafe struct NativeTextRendererImpl
 	[UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
 	static uint Release(NativeTextRendererImpl* self)
 	{
-		uint newRefCount = Interlocked.Decrement(ref self->_refCount);
+		var newRefCount = Interlocked.Decrement(ref self->_refCount);
 		if (newRefCount == 0)
 		{
 			if (self->_managedPtr != nint.Zero)
@@ -431,7 +433,7 @@ unsafe struct NativeTextRendererImpl
 		catch (Exception ex)
 		{
 			Debug.Fail(ex.Message);
-			return new HRESULT(ex.HResult);
+			return new(ex.HResult);
 		}
 	}
 	[UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
@@ -445,7 +447,7 @@ unsafe struct NativeTextRendererImpl
 		catch (Exception ex)
 		{
 			Debug.Fail(ex.Message);
-			return new HRESULT(ex.HResult);
+			return new(ex.HResult);
 		}
 	}
 	[UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
@@ -459,7 +461,7 @@ unsafe struct NativeTextRendererImpl
 		catch (Exception ex)
 		{
 			Debug.Fail(ex.Message);
-			return new HRESULT(ex.HResult);
+			return new(ex.HResult);
 		}
 	}
 	// IDWriteTextRenderer
@@ -474,7 +476,7 @@ unsafe struct NativeTextRendererImpl
 		catch (Exception ex)
 		{
 			Debug.Fail(ex.Message);
-			return new HRESULT(ex.HResult);
+			return new(ex.HResult);
 		}
 	}
 	[UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
@@ -511,10 +513,14 @@ public unsafe class FontFace : Interop.ComPtr
 			Pointer->GetFamilyNames(p);
 		uint length;
 		localizedStrings.Pointer->GetStringLength(0, &length);
-		var buffer = new char[length + 1];
-		fixed (char* p = buffer)
-			localizedStrings.Pointer->GetString(0, p, length + 1);
-		return buffer.AsSpan(..^1).ToString();
+		var buffer = ArrayPool<char>.Shared.Rent((int)length + 1);
+		try
+		{
+			fixed (char* p = buffer)
+				localizedStrings.Pointer->GetString(0, p, length + 1);
+			return buffer.AsSpan(..^1).ToString();
+		}
+		finally { ArrayPool<char>.Shared.Return(buffer); }
 	}
 
 	internal new DWrite.IDWriteFontFace3* Pointer => (DWrite.IDWriteFontFace3*)base.Pointer;
@@ -597,11 +603,11 @@ public unsafe class TextLayout : TextFormat
 		var actualClusterCount = 0u;
 		var hr = Pointer->GetClusterMetrics(null, 0, &actualClusterCount);
 		if (hr != PInvoke.HRESULT_FROM_WIN32(WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER))
-			hr.ThrowOnFailure();
+			_ = hr.ThrowOnFailure();
 		if (actualClusterCount == 0) return [];
 		var clusterMetrics = new ClusterMetrics[actualClusterCount];
 		fixed (ClusterMetrics* ptr = &clusterMetrics[0])
-			Pointer->GetClusterMetrics(ptr, actualClusterCount, &actualClusterCount).ThrowOnFailure();
+			_ = Pointer->GetClusterMetrics(ptr, actualClusterCount, &actualClusterCount).ThrowOnFailure();
 		return clusterMetrics;
 	}
 	/// <summary>テキスト位置と位置の論理的な方向を指定して、割り付け矩形の左上を基準とした相対的なピクセル位置を取得します。</summary>
@@ -641,7 +647,7 @@ public unsafe class TextLayout : TextFormat
 			hr = Pointer->HitTestTextRange((uint)textRange.StartPosition, (uint)textRange.Length, origin.X, origin.Y, pHitTestMetrics, (uint)hitTestMetrics.Length, &actualHitTestMetricsCount);
 		if (hr == PInvoke.HRESULT_FROM_WIN32(WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER))
 			return -1;
-		hr.ThrowOnFailure();
+		_ = hr.ThrowOnFailure();
 		return (int)actualHitTestMetricsCount;
 	}
 	/// <summary>テキスト位置の範囲に対応するヒット テスト計量情報を取得します。</summary>
@@ -713,7 +719,7 @@ public unsafe class Factory : Interop.ComPtr
 	{
 		var guid = typeof(DWrite.IDWriteFactory).GUID;
 		fixed (nint* pp = &PutIntPtr())
-			PInvoke.DWriteCreateFactory(DWrite.DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_SHARED, &guid, pp).ThrowOnFailure();
+			_ = PInvoke.DWriteCreateFactory(DWrite.DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_SHARED, &guid, pp).ThrowOnFailure();
 	}
 
 	/// <summary>テキストの割り付けに使用されるテキスト書式設定オブジェクトを作成します。</summary>
@@ -747,7 +753,7 @@ public unsafe class Factory : Interop.ComPtr
 		fixed (DWrite.IDWriteTextLayout** ppResult = &result.Put())
 		fixed (char* pinnedText = text)
 		{
-			char emptyString = '\0';
+			var emptyString = '\0';
 			Pointer->CreateTextLayout(pinnedText != null ? pinnedText : &emptyString, (uint)text.Length, textFormat.Pointer, maxSize.X, maxSize.Y, ppResult);
 		}
 		return result;

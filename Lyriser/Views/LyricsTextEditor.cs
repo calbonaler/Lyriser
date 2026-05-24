@@ -26,7 +26,7 @@ public class LyricsHighlightingColorizer(IHighlightingDefinition highlightingDef
 public class HighlightingDefinition : IHighlightingDefinition
 {
 	public string Name => nameof(HighlightingDefinition);
-	public HighlightingRuleSet MainRuleSet { get; } = new HighlightingRuleSet();
+	public HighlightingRuleSet MainRuleSet { get; } = new();
 	public HighlightDecorationCollection HighlightDecorations { get; set; } = [];
 	public IEnumerable<HighlightingColor> NamedHighlightingColors => HighlightDecorations.NamedHighlightingColors;
 	public IDictionary<string, string> Properties { get; } = new Dictionary<string, string>();
@@ -112,7 +112,11 @@ public class HighlightDecorationCollection : IList<HighlightDecoration>, IList
 	void IList.Insert(int index, object? value) => InsertItem(index, Cast(value));
 	void IList.Remove(object? value) => Remove(Cast(value));
 
-	static HighlightDecoration Cast(object? value) => value is null ? throw new ArgumentNullException(nameof(value)) : (HighlightDecoration)value;
+	static HighlightDecoration Cast(object? value)
+	{
+		ArgumentNullException.ThrowIfNull(value, nameof(value));
+		return (HighlightDecoration)value;
+	}
 	static HighlightingColor ConvertTo(HighlightDecoration highlightDecoration)
 	{
 		var highlightingColor = new HighlightingColor();
@@ -157,7 +161,7 @@ public class HighlightDecorationCollection : IList<HighlightDecoration>, IList
 		if (oldItem.Name != item.Name)
 		{
 			if (oldItem.Name != null)
-				_dictionary.Remove(oldItem.Name);
+				_ = _dictionary.Remove(oldItem.Name);
 			if (item.Name != null)
 				_dictionary.Add(item.Name, index);
 		}
@@ -167,7 +171,7 @@ public class HighlightDecorationCollection : IList<HighlightDecoration>, IList
 	{
 		var oldItem = _list[index];
 		if (oldItem.Name != null)
-			_dictionary.Remove(oldItem.Name);
+			_ = _dictionary.Remove(oldItem.Name);
 		_list.RemoveAt(index);
 	}
 	void ClearItems()
@@ -206,7 +210,7 @@ public sealed class LyricsSyntaxHighlighter(IDocument document, IHighlightingDef
 		{
 			foreach (var token in node.Tokens)
 			{
-				highlightedLine.Sections.Add(new HighlightedSection
+				highlightedLine.Sections.Add(new()
 				{
 					Offset = token.Span.Start.Index + documentLine.Offset,
 					Length = token.Span.Length,

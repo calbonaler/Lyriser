@@ -9,7 +9,7 @@ namespace Lyriser.Views;
 
 public class CaretPositionBindingBehavior : Behavior<TextEditor>
 {
-	public static readonly DependencyProperty LocationProperty = DependencyProperty.Register(nameof(Location), typeof(TextLocation), typeof(CaretPositionBindingBehavior), new PropertyMetadata((s, _) => ((CaretPositionBindingBehavior)s).OnLocationPropertyChanged()));
+	public static readonly DependencyProperty LocationProperty = DependencyProperty.Register(nameof(Location), typeof(TextLocation), typeof(CaretPositionBindingBehavior), new((s, _) => ((CaretPositionBindingBehavior)s).OnLocationPropertyChanged()));
 
 	public TextLocation Location
 	{

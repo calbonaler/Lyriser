@@ -11,30 +11,30 @@ public static class Ime
 	public static unsafe MonoRuby GetMonoRuby(ReadOnlySpan<char> text)
 	{
 		if (text.Length == 0)
-			return new MonoRuby() { Text = string.Empty, Indexes = [0] };
+			return new(string.Empty, [0]);
 		var languageType = Type.GetTypeFromProgID("MSIME.Japan");
 		Debug.Assert(languageType is not null);
 		var language = (IFELanguage?)Activator.CreateInstance(languageType);
 		Debug.Assert(language is not null);
 		try
 		{
-			language.Open().ThrowOnFailure();
+			_ = language.Open().ThrowOnFailure();
 			try
 			{
 				MORRSLT* result;
 				fixed (char* pText = text)
-					language.GetJMorphResult(PInvoke.FELANG_REQ_REV, PInvoke.FELANG_CMODE_MONORUBY, text.Length, new(pText), null, &result).ThrowOnFailure();
+					_ = language.GetJMorphResult(PInvoke.FELANG_REQ_REV, PInvoke.FELANG_CMODE_MONORUBY, text.Length, new(pText), null, &result).ThrowOnFailure();
 				try
 				{
 					var output = new ReadOnlySpan<char>(result->pwchOutput, result->cchOutput);
 					var indexes = new ReadOnlySpan<ushort>(result->paMonoRubyPos, text.Length + 1);
-					return new MonoRuby() { Text = output.ToString(), Indexes = indexes.ToArray() };
+					return new(output.ToString(), indexes.ToArray());
 				}
 				finally { Marshal.FreeCoTaskMem((nint)result); }
 			}
-			finally { language.Close(); }
+			finally { _ = language.Close(); }
 		}
-		finally { Marshal.ReleaseComObject(language); }
+		finally { _ = Marshal.ReleaseComObject(language); }
 	}
 }
 
