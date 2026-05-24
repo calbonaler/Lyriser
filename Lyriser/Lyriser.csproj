@@ -4,7 +4,6 @@
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <Platforms>x64</Platforms>
-		<CsWinRTAotOptimizerEnabled>false</CsWinRTAotOptimizerEnabled>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
