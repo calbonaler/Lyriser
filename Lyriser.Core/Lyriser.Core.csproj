@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <Platforms>x64</Platforms>
     <Authors>calbonaler</Authors>
-    <Copyright>Copyright © calbonaler 2019-2023</Copyright>
+    <Copyright>Copyright © calbonaler 2019-2026</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

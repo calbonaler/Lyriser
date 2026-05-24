@@ -8,7 +8,7 @@
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Nullable>enable</Nullable>
-    <Copyright>Copyright © calbonaler 2019-2023</Copyright>
+    <Copyright>Copyright © calbonaler 2019-2026</Copyright>
     <Authors>calbonaler</Authors>
   </PropertyGroup>
   <ItemGroup>
