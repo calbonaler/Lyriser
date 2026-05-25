@@ -19,7 +19,7 @@ public partial class Model : INotifyPropertyChanged
 	{
 		_monoRubyProvider = monoRubyProvider;
 		_parser.ErrorReporter = _backingParserErrors.Add;
-		_originalVersion = SourceDocument.Version;
+		OriginalVersion = SourceDocument.Version;
 		_ = Observable.FromEventPattern(x => SourceDocument.TextChanged += x, x => SourceDocument.TextChanged -= x)
 			.Do(_ => PropertyChanged.Raise(this, nameof(IsModified)))
 			.Throttle(TimeSpan.FromMilliseconds(500))
@@ -32,22 +32,9 @@ public partial class Model : INotifyPropertyChanged
 	}
 
 	readonly IMonoRubyProvider _monoRubyProvider;
-
 	readonly LyricsParser _parser = new();
-	ITextSourceVersion _originalVersion;
-	ITextSourceVersion OriginalVersion
-	{
-		get => _originalVersion;
-		set
-		{
-			if (_originalVersion != value)
-			{
-				_originalVersion = value;
-				PropertyChanged?.Raise(this, nameof(IsModified));
-			}
-		}
-	}
 
+	ITextSourceVersion OriginalVersion { get; set => PropertyChangedUtils.Set(ref field, value, PropertyChanged, this, nameof(IsModified)); }
 	public bool IsModified => SourceDocument.Version != OriginalVersion;
 
 	string? _savedFilePath;

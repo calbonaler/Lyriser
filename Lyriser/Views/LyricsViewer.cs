@@ -405,33 +405,14 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 	public bool CanHorizontallyScroll { get => true; set { if (!value) throw new ArgumentException($"cannot set {nameof(CanHorizontallyScroll)} to false.", nameof(value)); } }
 	public bool CanVerticallyScroll { get => true; set { if (!value) throw new ArgumentException($"cannot set {nameof(CanVerticallyScroll)} to false.", nameof(value)); } }
 
-	Size _extentSize;
-	Size ExtentSize
-	{
-		get => _extentSize;
-		set
-		{
-			_extentSize = value;
-			ScrollOwner?.InvalidateScrollInfo();
-		}
-	}
-	Size _viewportSize;
-	Size ViewportSize
-	{
-		get => _viewportSize;
-		set
-		{
-			_viewportSize = value;
-			ScrollOwner?.InvalidateScrollInfo();
-		}
-	}
-	Vector _scrollOffset;
+	Size ExtentSize { get; set { field = value; ScrollOwner?.InvalidateScrollInfo(); } }
+	Size ViewportSize { get; set { field = value; ScrollOwner?.InvalidateScrollInfo(); } }
 	Vector ScrollOffset
 	{
-		get => _scrollOffset;
+		get;
 		set
 		{
-			_scrollOffset = new(
+			field = new(
 				Math.Max(Math.Min(value.X, ExtentSize.Width - ViewportSize.Width), 0),
 				Math.Max(Math.Min(value.Y, ExtentSize.Height - ViewportSize.Height), 0)
 			);
