@@ -55,10 +55,10 @@ public partial class Model : INotifyPropertyChanged
 	public string? SavedFileNameWithoutExtension => Path.GetFileNameWithoutExtension(_savedFilePath);
 
 	public TextDocument SourceDocument { get; } = new();
-	public LyricsSource LyricsSource { get; set => Utils.SetProperty(ref field, value, PropertyChanged, this); } = LyricsSource.Empty;
+	public LyricsSource LyricsSource { get; set => PropertyChangedUtils.Set(ref field, value, PropertyChanged, this); } = LyricsSource.Empty;
 
 	readonly List<ParserError> _backingParserErrors = [];
-	public IReadOnlyList<ParserError> ParserErrors { get; private set => Utils.SetProperty(ref field, value, PropertyChanged, this); } = [];
+	public IReadOnlyList<ParserError> ParserErrors { get; private set => PropertyChangedUtils.Set(ref field, value, PropertyChanged, this); } = [];
 
 	public void New()
 	{

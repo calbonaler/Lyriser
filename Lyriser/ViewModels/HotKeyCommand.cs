@@ -13,7 +13,7 @@ public class HotKeyCommand(Action execute, Func<bool> canExecute) : ICommand, IN
 	readonly Func<bool> _canExecute = canExecute;
 	static readonly Func<bool> AlwaysExecute = () => true;
 
-	public KeyGesture? Gesture { get; set => Utils.SetPropertyWithRelated(ref field, value, PropertyChanged, this, [nameof(GestureText)]); }
+	public KeyGesture? Gesture { get; set => PropertyChangedUtils.SetWithRelated(ref field, value, PropertyChanged, this, [nameof(GestureText)]); }
 
 	public string? GestureText => Gesture?.GetDisplayStringForCulture(CultureInfo.CurrentUICulture);
 
