@@ -189,7 +189,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 				rects.Max(x => x.Right) + MainPadding.Right,
 				TextRun.GetLineHeight(FontSize) + MainPadding.Bottom
 			)
-		), new(ViewportSize.Width, ViewportSize.Height - NextLineViewerHeight));
+		), ViewportSize);
 	}
 
 	public LyricsSource Source
