@@ -189,7 +189,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 				rects.Max(x => x.Right) + MainPadding.Right,
 				TextRun.GetLineHeight(FontSize) + MainPadding.Bottom
 			)
-		), ViewportSize);
+		));
 	}
 
 	public LyricsSource Source
@@ -448,7 +448,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 	public void PageDown() => ScrollVertically(RoundDownToNearestLine(ViewportSize.Height));
 	public void SetHorizontalOffset(double offset) => ScrollOffset = ScrollOffset with { X = offset };
 	public void SetVerticalOffset(double offset) => ScrollOffset = ScrollOffset with { Y = offset };
-	Rect MakeVisible(Visual visual, Rect rectangle, Size viewportSize)
+	public Rect MakeVisible(Visual visual, Rect rectangle)
 	{
 		static double ComputeScrollOffset(double viewportStart, double viewportLength, double rectStart, double rectLength)
 			=> rectStart < viewportStart ? rectStart :
@@ -460,8 +460,8 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		var scrollInVerticallyFixedArea = visual == this || visual == _nextLineBackgroundVisual || visual == _nextLineVisual;
 		var rectangleInViewportCoord = visual.TransformToAncestor(this).TransformBounds(rectangle);
 		var actualViewportSize = scrollInVerticallyFixedArea ?
-			new(viewportSize.Width, viewportSize.Height + NextLineViewerHeight) :
-			viewportSize;
+			new(ViewportSize.Width, ViewportSize.Height + NextLineViewerHeight) :
+			ViewportSize;
 		var viewportInExtentCoord = new Rect((Point)ScrollOffset, actualViewportSize);
 		var rectangleInExtentCoord = Rect.Offset(rectangleInViewportCoord, ScrollOffset);
 		var minX = ComputeScrollOffset(viewportInExtentCoord.X, viewportInExtentCoord.Width, rectangleInExtentCoord.X, rectangleInExtentCoord.Width);
@@ -473,7 +473,6 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		var visibleRect = Rect.Intersect(rectangleInExtentCoord, scrolledViewport);
 		return !visibleRect.IsEmpty ? Rect.Offset(visibleRect, -ScrollOffset) : visibleRect;
 	}
-	public Rect MakeVisible(Visual visual, Rect rectangle) => MakeVisible(visual, rectangle, ViewportSize);
 }
 
 abstract class Attached(Core.DirectWrite.TextRange range)
