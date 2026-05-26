@@ -457,13 +457,19 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 
 		if (rectangle.IsEmpty || visual == null || visual != this && !IsAncestorOf(visual))
 			return Rect.Empty;
+		var scrollInVerticallyFixedArea = visual == this || visual == _nextLineBackgroundVisual || visual == _nextLineVisual;
 		var rectangleInViewportCoord = visual.TransformToAncestor(this).TransformBounds(rectangle);
-		var viewportInExtentCoord = new Rect((Point)ScrollOffset, viewportSize);
+		var actualViewportSize = scrollInVerticallyFixedArea ?
+			new(viewportSize.Width, viewportSize.Height + NextLineViewerHeight) :
+			viewportSize;
+		var viewportInExtentCoord = new Rect((Point)ScrollOffset, actualViewportSize);
 		var rectangleInExtentCoord = Rect.Offset(rectangleInViewportCoord, ScrollOffset);
 		var minX = ComputeScrollOffset(viewportInExtentCoord.X, viewportInExtentCoord.Width, rectangleInExtentCoord.X, rectangleInExtentCoord.Width);
-		var minY = ComputeScrollOffset(viewportInExtentCoord.Y, viewportInExtentCoord.Height, rectangleInExtentCoord.Y, rectangleInExtentCoord.Height);
+		var minY = scrollInVerticallyFixedArea ?
+			ScrollOffset.Y :
+			ComputeScrollOffset(viewportInExtentCoord.Y, viewportInExtentCoord.Height, rectangleInExtentCoord.Y, rectangleInExtentCoord.Height);
 		ScrollOffset = new(minX, minY);
-		var scrolledViewport = new Rect((Point)ScrollOffset, viewportSize);
+		var scrolledViewport = new Rect((Point)ScrollOffset, actualViewportSize);
 		var visibleRect = Rect.Intersect(rectangleInExtentCoord, scrolledViewport);
 		return !visibleRect.IsEmpty ? Rect.Offset(visibleRect, -ScrollOffset) : visibleRect;
 	}
