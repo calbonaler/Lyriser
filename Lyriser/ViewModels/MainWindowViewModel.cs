@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ICSharpCode.AvalonEdit.Document;
@@ -9,8 +10,6 @@ using Livet.Commands;
 using Livet.EventListeners;
 using Livet.Messaging;
 using Lyriser.Models;
-using System.Threading;
-using System.Diagnostics;
 
 namespace Lyriser.ViewModels;
 
