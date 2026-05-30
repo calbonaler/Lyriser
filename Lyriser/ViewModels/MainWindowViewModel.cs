@@ -1,7 +1,9 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Input;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
@@ -17,6 +19,16 @@ class MainWindowViewModel : ViewModel
 {
 	public MainWindowViewModel()
 	{
+		var supportedEncodings = new ObservableCollection<EncodingViewModel>();
+		foreach (var model in FileEncoding.All)
+		{
+			var vm = new EncodingViewModel(model);
+			CompositeDisposable.Add(vm);
+			supportedEncodings.Add(vm);
+		}
+		SupportedEncodings = new(supportedEncodings);
+		CurrentEncoding = SupportedEncodings.First(x => x.Model == _model.CurrentEncoding);
+
 		CompositeDisposable.Add(new PropertyChangedEventListener(_model, (s, ev) =>
 		{
 			switch (ev.PropertyName)
@@ -29,6 +41,9 @@ class MainWindowViewModel : ViewModel
 					break;
 				case nameof(_model.SavedFileNameWithoutExtension):
 					RaisePropertyChanged(nameof(DocumentName));
+					break;
+				case nameof(_model.CurrentEncoding):
+					CurrentEncoding = SupportedEncodings.First(x => x.Model == _model.CurrentEncoding);
 					break;
 			}
 		}));
@@ -88,6 +103,7 @@ class MainWindowViewModel : ViewModel
 		HighlightNextLineCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.NextLine));
 		HighlightPreviousLineCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.PreviousLine));
 		MoveCaretToSelectedErrorCommand = new(async () => await MoveCaretToSelectedErrorAsync());
+		SelectEncodingCommand = new(async ev => await SelectEncodingAsync(ev));
 	}
 
 	readonly Model _model = new(ImeLanguage.Instance);
@@ -101,6 +117,9 @@ class MainWindowViewModel : ViewModel
 	public ObservableCollection<ParserError> ParserErrors { get; } = [];
 	public bool IsModified => _model.IsModified;
 	public string DocumentName => _model.SavedFileNameWithoutExtension ?? "無題";
+
+	public ReadOnlyObservableCollection<EncodingViewModel> SupportedEncodings { get; }
+	public EncodingViewModel CurrentEncoding { get; private set => RaisePropertyChangedIfSet(ref field, value); }
 
 	public TextLocation CaretLocation { get; set => RaisePropertyChangedIfSet(ref field, value); }
 	public SyllableLocation CurrentSyllable { get; set => RaisePropertyChangedIfSet(ref field, value); }
@@ -118,6 +137,7 @@ class MainWindowViewModel : ViewModel
 	public ViewModelCommand HighlightNextLineCommand { get; }
 	public ViewModelCommand HighlightPreviousLineCommand { get; }
 	public ViewModelCommand MoveCaretToSelectedErrorCommand { get; }
+	public ListenerCommand<SelectionChangedEventArgs> SelectEncodingCommand { get; }
 
 	public async Task NewAsync()
 	{
@@ -130,18 +150,18 @@ class MainWindowViewModel : ViewModel
 	{
 		if (!await ConfirmSaveAsync())
 			return;
-		var metadata = await GetOpeningFileAysnc();
-		if (metadata == null)
+		var filePath = await GetOpeningFileAysnc();
+		if (filePath == null)
 			return;
-		_model.Open(metadata);
+		_model.Open(filePath);
 		await HighlightLyricsAsync(LyricsHighlightRequest.First);
 	}
 	public async Task SaveAsAsync()
 	{
-		var metadata = await GetSavingFileAsync();
-		if (metadata == null)
+		var filePath = await GetSavingFileAsync();
+		if (filePath == null)
 			return;
-		_model.Save(metadata);
+		_model.Save(filePath);
 	}
 	public async Task SaveAsync()
 	{
@@ -170,19 +190,55 @@ class MainWindowViewModel : ViewModel
 			_model.AutoSetRuby(Selection.SurroundingSegment);
 	}
 
+	async Task SelectEncodingAsync(SelectionChangedEventArgs selection)
+	{
+		var newEncoding = (EncodingViewModel)selection.AddedItems[0]!;
+		if (CurrentEncoding == newEncoding) return;
+		if (_model.SavedFileNameWithoutExtension != null)
+		{
+			var result = await QueryEncodingChangeAsync(newEncoding.Name);
+			if (result == null)
+			{
+				RaisePropertyChanged(nameof(CurrentEncoding));
+				return;
+			}
+			if (result.Value)
+			{
+				if (_model.IsModified && !await WarnReopenWithEncodingAsync(newEncoding.Name))
+				{
+					RaisePropertyChanged(nameof(CurrentEncoding));
+					return;
+				}
+				_model.Reopen(newEncoding.Model);
+				await HighlightLyricsAsync(LyricsHighlightRequest.First);
+				return;
+			}
+		}
+		_model.CurrentEncoding = newEncoding.Model;
+	}
+	async Task<bool?> QueryEncodingChangeAsync(string newEncodingName)
+	{
+		var message = await Messenger.GetResponseAsync(new QueryYesNoCancelMessage("QueryEncodingChange", [DocumentName, newEncodingName]));
+		return message.Response;
+	}
+	async Task<bool> WarnReopenWithEncodingAsync(string newEncodingName)
+	{
+		var message = await Messenger.GetResponseAsync(new QueryDoCancelMessage("WarnReopenWithEncoding", [DocumentName, newEncodingName]));
+		return message.Response;
+	}
 	async Task<bool?> WarnUnsavedChangeAsync()
 	{
-		var message = await Messenger.GetResponseAsync(new WarnUnsavedChangeMessage("WarnUnsavedChange", DocumentName));
+		var message = await Messenger.GetResponseAsync(new QueryYesNoCancelMessage("WarnUnsavedChange", [DocumentName]));
 		return message.Response;
 	}
-	async Task<EncodedFileInfo?> GetOpeningFileAysnc()
+	async Task<string?> GetOpeningFileAysnc()
 	{
-		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<EncodedFileInfo?>("GetOpeningFile"));
+		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<string?>("GetOpeningFile"));
 		return message.Response;
 	}
-	async Task<EncodedFileInfo?> GetSavingFileAsync()
+	async Task<string?> GetSavingFileAsync()
 	{
-		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<EncodedFileInfo?>("GetSavingFile"));
+		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<string?>("GetSavingFile"));
 		return message.Response;
 	}
 	Task ScrollViewerIntoCurrentSyllableAsync() => Messenger.RaiseAsync(new InteractionMessage("ScrollViewerIntoCurrentSyllable"));
@@ -195,6 +251,12 @@ class MainWindowViewModel : ViewModel
 		CaretLocation = new(SelectedError.Location.Line, SelectedError.Location.Column);
 		await ScrollEditorIntoCaretAsync(true);
 	}
+}
+
+public class EncodingViewModel(FileEncoding model) : ViewModel
+{
+	public FileEncoding Model { get; } = model;
+	public string Name => Model.Name;
 }
 
 public enum LyricsHighlightRequest

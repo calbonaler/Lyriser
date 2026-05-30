@@ -1,40 +1,37 @@
-﻿using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
+﻿using System.Globalization;
 using System.Windows;
 using System.Windows.Interop;
 using ICSharpCode.AvalonEdit;
 using Livet.Behaviors.Messaging;
 using Livet.Messaging;
-using Lyriser.Models;
 using Lyriser.ViewModels;
+using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Dialogs;
-using Microsoft.WindowsAPICodePack.Dialogs.Controls;
 
 namespace Lyriser.Views;
 
-public class WarnUnsavedChangeAction : InteractionMessageAction<Window>
+public class QueryYesNoCancelAction : InteractionMessageAction<Window>
 {
-	public static readonly DependencyProperty MessageFormatProperty = DependencyProperty.Register(nameof(MessageFormat), typeof(string), typeof(WarnUnsavedChangeAction));
-	public static readonly DependencyProperty SaveButtonTextProperty = DependencyProperty.Register(nameof(SaveButtonText), typeof(string), typeof(WarnUnsavedChangeAction));
-	public static readonly DependencyProperty DoNotSaveButtonTextProperty = DependencyProperty.Register(nameof(DoNotSaveButtonText), typeof(string), typeof(WarnUnsavedChangeAction));
-	public static readonly DependencyProperty CancelButtonTextProperty = DependencyProperty.Register(nameof(CancelButtonText), typeof(string), typeof(WarnUnsavedChangeAction));
-	public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(WarnUnsavedChangeAction));
+	public static readonly DependencyProperty MessageFormatProperty = DependencyProperty.Register(nameof(MessageFormat), typeof(string), typeof(QueryYesNoCancelAction));
+	public static readonly DependencyProperty YesButtonTextProperty = DependencyProperty.Register(nameof(YesButtonText), typeof(string), typeof(QueryYesNoCancelAction));
+	public static readonly DependencyProperty NoButtonTextProperty = DependencyProperty.Register(nameof(NoButtonText), typeof(string), typeof(QueryYesNoCancelAction));
+	public static readonly DependencyProperty CancelButtonTextProperty = DependencyProperty.Register(nameof(CancelButtonText), typeof(string), typeof(QueryYesNoCancelAction));
+	public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(QueryYesNoCancelAction));
 
 	public string MessageFormat
 	{
 		get => (string)GetValue(MessageFormatProperty);
 		set => SetValue(MessageFormatProperty, value);
 	}
-	public string SaveButtonText
+	public string YesButtonText
 	{
-		get => (string)GetValue(SaveButtonTextProperty);
-		set => SetValue(SaveButtonTextProperty, value);
+		get => (string)GetValue(YesButtonTextProperty);
+		set => SetValue(YesButtonTextProperty, value);
 	}
-	public string DoNotSaveButtonText
+	public string NoButtonText
 	{
-		get => (string)GetValue(DoNotSaveButtonTextProperty);
-		set => SetValue(DoNotSaveButtonTextProperty, value);
+		get => (string)GetValue(NoButtonTextProperty);
+		set => SetValue(NoButtonTextProperty, value);
 	}
 	public string CancelButtonText
 	{
@@ -49,18 +46,18 @@ public class WarnUnsavedChangeAction : InteractionMessageAction<Window>
 
 	protected override void InvokeAction(InteractionMessage message)
 	{
-		if (message is not WarnUnsavedChangeMessage actualMessage)
+		if (message is not QueryYesNoCancelMessage actualMessage)
 			return;
 		using var dialog = new TaskDialog();
 		dialog.Cancelable = true;
 		dialog.Caption = Title;
-		dialog.InstructionText = string.Format(CultureInfo.CurrentCulture, MessageFormat, actualMessage.DocumentName);
-		TaskDialogButton SaveButton = new(nameof(SaveButton), SaveButtonText);
-		SaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Yes);
-		dialog.Controls.Add(SaveButton);
-		TaskDialogButton DontSaveButton = new(nameof(DontSaveButton), DoNotSaveButtonText);
-		DontSaveButton.Click += (s, ev) => dialog.Close(TaskDialogResult.No);
-		dialog.Controls.Add(DontSaveButton);
+		dialog.InstructionText = string.Format(CultureInfo.CurrentCulture, MessageFormat, actualMessage.MessageArguments);
+		TaskDialogButton YesButton = new(nameof(YesButton), YesButtonText);
+		YesButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Yes);
+		dialog.Controls.Add(YesButton);
+		TaskDialogButton NoButton = new(nameof(NoButton), NoButtonText);
+		NoButton.Click += (s, ev) => dialog.Close(TaskDialogResult.No);
+		dialog.Controls.Add(NoButton);
 		TaskDialogButton CancelButton = new(nameof(CancelButton), CancelButtonText);
 		CancelButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Cancel);
 		dialog.Controls.Add(CancelButton);
@@ -71,11 +68,59 @@ public class WarnUnsavedChangeAction : InteractionMessageAction<Window>
 	}
 }
 
+public class QueryDoCancelAction : InteractionMessageAction<Window>
+{
+	public static readonly DependencyProperty MessageFormatProperty = DependencyProperty.Register(nameof(MessageFormat), typeof(string), typeof(QueryDoCancelAction));
+	public static readonly DependencyProperty DoButtonTextProperty = DependencyProperty.Register(nameof(DoButtonText), typeof(string), typeof(QueryDoCancelAction));
+	public static readonly DependencyProperty CancelButtonTextProperty = DependencyProperty.Register(nameof(CancelButtonText), typeof(string), typeof(QueryDoCancelAction));
+	public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(QueryDoCancelAction));
+
+	public string MessageFormat
+	{
+		get => (string)GetValue(MessageFormatProperty);
+		set => SetValue(MessageFormatProperty, value);
+	}
+	public string DoButtonText
+	{
+		get => (string)GetValue(DoButtonTextProperty);
+		set => SetValue(DoButtonTextProperty, value);
+	}
+	public string CancelButtonText
+	{
+		get => (string)GetValue(CancelButtonTextProperty);
+		set => SetValue(CancelButtonTextProperty, value);
+	}
+	public string Title
+	{
+		get => (string)GetValue(TitleProperty);
+		set => SetValue(TitleProperty, value);
+	}
+
+	protected override void InvokeAction(InteractionMessage message)
+	{
+		if (message is not QueryDoCancelMessage actualMessage)
+			return;
+		using var dialog = new TaskDialog();
+		dialog.Cancelable = true;
+		dialog.Caption = Title;
+		dialog.InstructionText = string.Format(CultureInfo.CurrentCulture, MessageFormat, actualMessage.MessageArguments);
+		TaskDialogButton YesButton = new(nameof(YesButton), DoButtonText);
+		YesButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Yes);
+		dialog.Controls.Add(YesButton);
+		TaskDialogButton CancelButton = new(nameof(CancelButton), CancelButtonText);
+		CancelButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Cancel);
+		dialog.Controls.Add(CancelButton);
+		dialog.StartupLocation = TaskDialogStartupLocation.CenterOwner;
+		dialog.OwnerWindowHandle = ((HwndSource)PresentationSource.FromVisual(AssociatedObject)).Handle;
+		var result = dialog.Show();
+		actualMessage.Response = result == TaskDialogResult.Yes;
+	}
+}
+
 public abstract class EncodedFileMessageAction : InteractionMessageAction<DependencyObject>
 {
 	public static readonly DependencyProperty FilterDisplayNameProperty = DependencyProperty.Register(nameof(FilterDisplayName), typeof(string), typeof(EncodedFileMessageAction));
 	public static readonly DependencyProperty FilterExtensionListProperty = DependencyProperty.Register(nameof(FilterExtensionList), typeof(string), typeof(EncodedFileMessageAction));
-	public static readonly DependencyProperty EncodingLabelTextProperty = DependencyProperty.Register(nameof(EncodingLabelText), typeof(string), typeof(EncodedFileMessageAction));
 
 	public string FilterDisplayName
 	{
@@ -87,66 +132,33 @@ public abstract class EncodedFileMessageAction : InteractionMessageAction<Depend
 		get => (string)GetValue(FilterExtensionListProperty);
 		set => SetValue(FilterExtensionListProperty, value);
 	}
-	public string EncodingLabelText
-	{
-		get => (string)GetValue(EncodingLabelTextProperty);
-		set => SetValue(EncodingLabelTextProperty, value);
-	}
 
-	protected virtual IEnumerable<(string DisplayName, FileEncoding Encoding)> SupportedEncodings
-	{
-		get
-		{
-#pragma warning disable format
-			yield return ("UTF-8",       FileEncoding.UTF8);
-			yield return ("UTF-8 (BOM)", FileEncoding.UTF8WithBom);
-			yield return ("ANSI",        FileEncoding.Ansi);
-#pragma warning restore format
-		}
-	}
-	protected abstract CommonFileDialog CreateFileDialog();
+	protected abstract FileDialog CreateFileDialog();
 
 	protected override void InvokeAction(InteractionMessage message)
 	{
-		if (message is not ResponsiveInteractionMessage<EncodedFileInfo?> actualMessage)
+		if (message is not ResponsiveInteractionMessage<string?> actualMessage)
 			return;
-		var encodings = SupportedEncodings.ToArray();
-		using var dialog = CreateFileDialog();
-		dialog.EnsurePathExists = true;
-		dialog.Filters.Add(new(FilterDisplayName, FilterExtensionList));
-		dialog.DefaultExtension = dialog.Filters[0].Extensions[0];
-		var encodingComboBox = new CommonFileDialogComboBox();
-		foreach (var (displayName, _) in encodings)
-			encodingComboBox.Items.Add(new(displayName));
-		encodingComboBox.SelectedIndex = 0;
-		var group = new CommonFileDialogGroupBox(EncodingLabelText);
-		group.Items.Add(encodingComboBox);
-		group.IsProminent = true;
-		dialog.Controls.Add(group);
-		actualMessage.Response = dialog.ShowDialog() == CommonFileDialogResult.Ok ? new(dialog.FileName, encodings[encodingComboBox.SelectedIndex].Encoding) : null;
+		var dialog = CreateFileDialog();
+		var filterExtensionsList = FilterExtensionList;
+		dialog.Filter = FilterDisplayName + "|" + filterExtensionsList;
+		dialog.DefaultExt = filterExtensionsList.Split(";")[0][2..];
+		actualMessage.Response = dialog.ShowDialog() == true ? dialog.FileName : null;
 	}
 }
 
 public class OpenEncodedFileMessageAction : EncodedFileMessageAction
 {
-	public static readonly DependencyProperty AutoDetectEncodingDisplayNameProperty = DependencyProperty.Register(nameof(AutoDetectEncodingDisplayName), typeof(string), typeof(EncodedFileMessageAction));
-	public string AutoDetectEncodingDisplayName
-	{
-		get => (string)GetValue(AutoDetectEncodingDisplayNameProperty);
-		set => SetValue(AutoDetectEncodingDisplayNameProperty, value);
-	}
-
-	protected override IEnumerable<(string DisplayName, FileEncoding Encoding)> SupportedEncodings => base.SupportedEncodings.Prepend((AutoDetectEncodingDisplayName, FileEncoding.AutoDetect));
-	protected override CommonFileDialog CreateFileDialog() => new CommonOpenFileDialog { EnsureFileExists = true };
+	protected override FileDialog CreateFileDialog() => new OpenFileDialog { CheckFileExists = true };
 }
 
 public class SaveEncodedFileMessageAction : EncodedFileMessageAction
 {
-	protected override CommonFileDialog CreateFileDialog() => new CommonSaveFileDialog
+	protected override FileDialog CreateFileDialog() => new SaveFileDialog
 	{
-		AlwaysAppendDefaultExtension = true,
+		AddExtension = true,
 		CreatePrompt = true,
-		EnsureValidNames = true,
+		ValidateNames = true,
 		OverwritePrompt = true
 	};
 }

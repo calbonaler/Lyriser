@@ -3,9 +3,16 @@ using Livet.Messaging;
 
 namespace Lyriser.ViewModels;
 
-public class WarnUnsavedChangeMessage(string messageKey, string documentName) : ResponsiveInteractionMessage<bool?>(messageKey)
+public class QueryYesNoCancelMessage(string messageKey, object?[] messageArguments) : ResponsiveInteractionMessage<bool?>(messageKey)
 {
-	public string DocumentName { get; } = documentName;
+	public object?[] MessageArguments { get; } = messageArguments;
 
-	protected override Freezable CreateInstanceCore() => new WarnUnsavedChangeMessage(MessageKey, DocumentName);
+	protected override Freezable CreateInstanceCore() => new QueryYesNoCancelMessage(MessageKey, MessageArguments);
+}
+
+public class QueryDoCancelMessage(string messageKey, object?[] messageArguments) : ResponsiveInteractionMessage<bool>(messageKey)
+{
+	public object?[] MessageArguments { get; } = messageArguments;
+
+	protected override Freezable CreateInstanceCore() => new QueryDoCancelMessage(MessageKey, MessageArguments);
 }

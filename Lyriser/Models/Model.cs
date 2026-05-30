@@ -35,8 +35,8 @@ public partial class Model : INotifyPropertyChanged
 	public bool IsModified => SourceDocument.Version != OriginalVersion;
 
 	string? _savedFilePath;
-	Encoding? _savedEncoding;
 	public string? SavedFileNameWithoutExtension => Path.GetFileNameWithoutExtension(_savedFilePath);
+	public FileEncoding CurrentEncoding { get; set => PropertyChangedUtils.Set(ref field, value, PropertyChanged, this); } = FileEncoding.Utf8;
 
 	public TextDocument SourceDocument { get; } = new();
 	public LyricsSource LyricsSource { get; set => PropertyChangedUtils.Set(ref field, value, PropertyChanged, this); } = LyricsSource.Empty;
@@ -49,71 +49,58 @@ public partial class Model : INotifyPropertyChanged
 		SourceDocument.Remove(0, SourceDocument.TextLength);
 		SourceDocument.UndoStack.ClearAll();
 		_savedFilePath = null;
-		_savedEncoding = null;
+		CurrentEncoding = FileEncoding.Utf8;
 		PropertyChanged.Raise(this, nameof(SavedFileNameWithoutExtension));
 		OriginalVersion = SourceDocument.Version;
 	}
 
-	public void Open(EncodedFileInfo info)
+	public void Open(string filePath) => Open(filePath, null);
+
+	public void Reopen(FileEncoding encoding)
 	{
-		if (info.Encoding == FileEncoding.AutoDetect)
+		if (_savedFilePath == null)
+			throw new InvalidOperationException("Current document is not saved.");
+		Open(_savedFilePath, encoding);
+	}
+
+	void Open(string filePath, FileEncoding? encoding)
+	{
+		if (encoding is null)
 		{
-			using var fs = new FileStream(info.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
-			using var reader = FileReader.OpenStream(fs, AnsiEncoding);
+			using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+			using var reader = FileReader.OpenStream(fs, FileEncoding.Ansi.ToEncoding());
 			SourceDocument.Text = reader.ReadToEnd();
-			_savedEncoding = reader.CurrentEncoding;
+			CurrentEncoding = FileEncoding.All.First(x => x.Creates(reader.CurrentEncoding));
 		}
 		else
 		{
-			var encoding = ToEncoding(info.Encoding);
-			SourceDocument.Text = File.ReadAllText(info.Path, encoding);
-			_savedEncoding = encoding;
+			SourceDocument.Text = File.ReadAllText(filePath, encoding.ToEncoding());
+			CurrentEncoding = encoding;
 		}
 		SourceDocument.UndoStack.ClearAll();
-		_savedFilePath = info.Path;
+		_savedFilePath = filePath;
 		PropertyChanged.Raise(this, nameof(SavedFileNameWithoutExtension));
 		OriginalVersion = SourceDocument.Version;
 	}
 
-	public void Save(EncodedFileInfo info)
-	{
-		if (info.Encoding == FileEncoding.AutoDetect)
-			throw new ArgumentException($"{nameof(FileEncoding.AutoDetect)} cannot be used");
-		Save(info.Path, ToEncoding(info.Encoding));
-	}
+	public void Save(string filePath) => Save(filePath, FileEncoding.Utf8);
 
 	public void Save()
 	{
-		if (_savedFilePath == null || _savedEncoding == null)
-			throw new InvalidOperationException("Current document is not saved. Use Save(EncodedFileInfo) overload.");
-		Save(_savedFilePath, _savedEncoding);
+		if (_savedFilePath == null)
+			throw new InvalidOperationException("Current document is not saved. Use Save(string) overload.");
+		Save(_savedFilePath, CurrentEncoding);
 	}
 
-	public void Save(string path, Encoding encoding)
+	public void Save(string path, FileEncoding encoding)
 	{
 		using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-		using (var writer = new StreamWriter(fs, encoding))
+		using (var writer = new StreamWriter(fs, encoding.ToEncoding()))
 			SourceDocument.WriteTextTo(writer);
 		_savedFilePath = path;
-		_savedEncoding = encoding;
+		CurrentEncoding = encoding;
 		PropertyChanged.Raise(this, nameof(SavedFileNameWithoutExtension));
 		OriginalVersion = SourceDocument.Version;
-	}
-
-	static Encoding ToEncoding(FileEncoding fileEncoding) => fileEncoding switch
-	{
-		FileEncoding.UTF8WithBom => new UTF8Encoding(true),
-		FileEncoding.Ansi => AnsiEncoding,
-		_ => new UTF8Encoding(false),
-	};
-
-	static Encoding AnsiEncoding
-	{
-		get
-		{
-			Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-			return Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.ANSICodePage);
-		}
 	}
 
 	public void AutoSetRuby(ISegment segment)
@@ -283,16 +270,44 @@ public partial class Model : INotifyPropertyChanged
 	readonly record struct RubySpecifier(SimpleNode[] Base, string Ruby);
 }
 
-public class EncodedFileInfo(string path, FileEncoding encoding)
+public class FileEncoding
 {
-	public string Path { get; } = path;
-	public FileEncoding Encoding { get; } = encoding;
-}
+	FileEncoding(string name, int codePage, bool hasBom)
+	{
+		Name = name;
+		CodePage = codePage;
+		HasBom = hasBom;
+	}
 
-public enum FileEncoding
-{
-	AutoDetect,
-	UTF8,
-	UTF8WithBom,
-	Ansi,
+	public string Name { get; }
+	public int CodePage { get; }
+	public bool HasBom { get; }
+	public Encoding ToEncoding() => CodePage == Utf8.CodePage ? new UTF8Encoding(HasBom) : Encoding.GetEncoding(CodePage);
+
+	public static FileEncoding Utf8 { get; } = new("UTF-8", Encoding.UTF8.CodePage, false);
+	public static FileEncoding Ansi => field ??= All.First(x => x.CodePage == CultureInfo.CurrentCulture.TextInfo.ANSICodePage);
+	public static IReadOnlyList<FileEncoding> All
+	{
+		get
+		{
+			if (field is not null) return field;
+			Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+			var list = new List<FileEncoding>
+			{
+				Utf8,
+				new("UTF-8 (BOM)", Utf8.CodePage, true),
+				new("UTF-16", Encoding.Unicode.CodePage, false),
+				new("UTF-16 (Big Endian)", Encoding.BigEndianUnicode.CodePage, false),
+				new("UTF-32", Encoding.UTF32.CodePage, false),
+				new("UTF-32 (Big Endian)", Encoding.UTF32.CodePage + 1, false),
+			};
+			var ansiCodePage = CultureInfo.CurrentCulture.TextInfo.ANSICodePage;
+			if (!list.Any(x => x.CodePage == ansiCodePage))
+				list.Add(new("ANSI", ansiCodePage, false));
+			field = [.. list];
+			return field;
+		}
+	}
+	public bool Creates(Encoding encoding)
+		=> encoding.CodePage == CodePage && (encoding.CodePage != Utf8.CodePage || HasBom == ((UTF8Encoding)encoding).Preamble.Length > 0);
 }

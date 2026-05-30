@@ -8,6 +8,7 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:v="clr-namespace:Lyriser.Views"
 		xmlns:vm="clr-namespace:Lyriser.ViewModels"
+		xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero2"
 		mc:Ignorable="d"
 		Height="600" Width="800" UseLayoutRounding="True" SnapsToDevicePixels="True">
 	<Window.DataContext>
@@ -166,31 +167,132 @@
 				</DrawingGroup>
 			</DrawingBrush.Drawing>
 		</DrawingBrush>
+		<ControlTemplate x:Key="ComboBoxFlatTemplate" TargetType="{x:Type ComboBox}">
+			<Grid x:Name="templateRoot" SnapsToDevicePixels="true">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition/>
+					<ColumnDefinition MinWidth="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}" Width="0"/>
+				</Grid.ColumnDefinitions>
+				<Popup
+					x:Name="PART_Popup"
+					AllowsTransparency="true"
+					Grid.ColumnSpan="2"
+					IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+					Placement="Bottom"
+					PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}">
+					<theme:SystemDropShadowChrome
+						x:Name="shadow"
+						MinWidth="{Binding ActualWidth, ElementName=templateRoot}"
+						MaxHeight="{TemplateBinding MaxDropDownHeight}">
+						<Border
+							x:Name="dropDownBorder"
+							Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+							BorderBrush="#FF808080"
+							BorderThickness="1">
+							<ScrollViewer>
+								<ItemsPresenter
+									KeyboardNavigation.DirectionalNavigation="Contained"
+									SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+							</ScrollViewer>
+						</Border>
+					</theme:SystemDropShadowChrome>
+				</Popup>
+				<ToggleButton
+					Background="{TemplateBinding Background}"
+					BorderBrush="{TemplateBinding BorderBrush}"
+					BorderThickness="{TemplateBinding BorderThickness}"
+					Grid.ColumnSpan="2"
+					IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+					IsTabStop="False"
+					Focusable="False"
+					ClickMode="Press">
+					<ToggleButton.Template>
+						<ControlTemplate TargetType="{x:Type ToggleButton}">
+							<Border
+								x:Name="templateRoot"
+								Background="Transparent"
+								BorderBrush="Transparent"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								SnapsToDevicePixels="true">
+								<Border
+									HorizontalAlignment="Right"
+									SnapsToDevicePixels="true"
+									Width="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}">
+									<Path
+										x:Name="arrow"
+										Data="F1 M 0,0 L 2.667,2.66665 L 5.3334,0 L 5.3334,-1.78168 L 2.6667,0.88501 L0,-1.78168 L0,0 Z"
+										Fill="#FF606060"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center"/>
+								</Border>
+							</Border>
+							<ControlTemplate.Triggers>
+								<Trigger Property="IsMouseOver" Value="true">
+									<Setter Property="Fill" TargetName="arrow" Value="#FF000000"/>
+									<Setter Property="BorderBrush" TargetName="templateRoot" Value="#FFA0A0A0"/>
+								</Trigger>
+							</ControlTemplate.Triggers>
+						</ControlTemplate>
+					</ToggleButton.Template>
+				</ToggleButton>
+				<ContentPresenter
+					ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+					ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+					Content="{TemplateBinding SelectionBoxItem}"
+					ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+					HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+					IsHitTestVisible="false"
+					Margin="{TemplateBinding Padding}"
+					SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+					VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+			</Grid>
+			<ControlTemplate.Triggers>
+				<Trigger Property="HasDropShadow" SourceName="PART_Popup" Value="true">
+					<Setter Property="Margin" TargetName="shadow" Value="0,0,5,5"/>
+					<Setter Property="Color" TargetName="shadow" Value="#50000000"/>
+				</Trigger>
+				<Trigger Property="HasItems" Value="False">
+					<Setter Property="Height" TargetName="dropDownBorder" Value="95"/>
+				</Trigger>
+			</ControlTemplate.Triggers>
+		</ControlTemplate>
 	</Window.Resources>
 	<i:Interaction.Triggers>
 		<i:EventTrigger EventName="Closed">
 			<l:DataContextDisposeAction/>
 		</i:EventTrigger>
 		<l:InteractionMessageTrigger MessageKey="WarnUnsavedChange" Messenger="{Binding Messenger}">
-			<v:WarnUnsavedChangeAction
+			<v:QueryYesNoCancelAction
 				MessageFormat="{}{0} への変更を保存しますか?"
-				SaveButtonText="保存する(&amp;S)"
-				DoNotSaveButtonText="保存しない(&amp;N)"
+				YesButtonText="保存する(&amp;S)"
+				NoButtonText="保存しない(&amp;N)"
 				CancelButtonText="キャンセル"
 				Title="Lyriser"/>
 		</l:InteractionMessageTrigger>
 		<l:InteractionMessageTrigger MessageKey="GetOpeningFile" Messenger="{Binding Messenger}">
 			<v:OpenEncodedFileMessageAction
-				EncodingLabelText="文字コード(&amp;E): "
-				AutoDetectEncodingDisplayName="自動検出"
 				FilterDisplayName="テキストファイル"
 				FilterExtensionList="*.txt"/>
 		</l:InteractionMessageTrigger>
 		<l:InteractionMessageTrigger MessageKey="GetSavingFile" Messenger="{Binding Messenger}">
 			<v:SaveEncodedFileMessageAction
-				EncodingLabelText="文字コード(&amp;E): "
 				FilterDisplayName="テキストファイル"
 				FilterExtensionList="*.txt"/>
+		</l:InteractionMessageTrigger>
+		<l:InteractionMessageTrigger MessageKey="QueryEncodingChange" Messenger="{Binding Messenger}">
+			<v:QueryYesNoCancelAction
+				MessageFormat="{}{0} を {1} で開き直しますか?"
+				YesButtonText="開き直す(&amp;R)"
+				NoButtonText="保存時の文字コードのみ変更する(&amp;S)"
+				CancelButtonText="キャンセル"
+				Title="Lyriser"/>
+		</l:InteractionMessageTrigger>
+		<l:InteractionMessageTrigger MessageKey="WarnReopenWithEncoding" Messenger="{Binding Messenger}">
+			<v:QueryDoCancelAction
+				MessageFormat="{}{0} への変更を破棄して {1} で開き直しますか?"
+				DoButtonText="変更を破棄して開き直す(&amp;R)"
+				CancelButtonText="キャンセル"
+				Title="Lyriser"/>
 		</l:InteractionMessageTrigger>
 	</i:Interaction.Triggers>
 	<i:Interaction.Behaviors>
@@ -335,106 +437,127 @@
 				</ScrollViewer>
 			</Border>
 			<GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"/>
-			<Grid Grid.Column="2">
-				<Grid.RowDefinitions>
-					<RowDefinition Height="3*"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="*"/>
-				</Grid.RowDefinitions>
-				<v:LyricsTextEditor
-					Grid.Row="0" FontSize="12pt" Document="{Binding SourceDocument, Mode=OneWay}"
-					ShowLineNumbers="True">
-					<v:LyricsTextEditor.Resources>
-						<Style TargetType="{x:Type avalonedit:TextArea}">
-							<Setter Property="SelectionCornerRadius" Value="0"/>
-							<Setter Property="SelectionBorder" Value="{x:Null}"/>
-						</Style>
-					</v:LyricsTextEditor.Resources>
-					<v:LyricsTextEditor.Options>
-						<avalonedit:TextEditorOptions EnableEmailHyperlinks="False" EnableHyperlinks="False" EnableRectangularSelection="False"/>
-					</v:LyricsTextEditor.Options>
-					<i:Interaction.Triggers>
-						<l:InteractionMessageTrigger MessageKey="ScrollEditorIntoCaret" Messenger="{Binding Messenger}">
-							<v:ScrollIntoCaretAction/>
-						</l:InteractionMessageTrigger>
-					</i:Interaction.Triggers>
-					<i:Interaction.Behaviors>
-						<v:CaretPositionBindingBehavior Location="{Binding CaretLocation, Mode=TwoWay}"/>
-						<v:SelectionBindingBehavior Selection="{Binding Selection, Mode=OneWayToSource}"/>
-					</i:Interaction.Behaviors>
-					<v:LyricsTextEditor.SyntaxHighlighting>
-						<v:HighlightingDefinition>
-							<v:HighlightingDefinition.HighlightDecorations>
-								<v:HighlightDecorationCollection>
-									<v:HighlightDecoration Name="SyllableGrouping" ForeColor="Red"/>
-									<v:HighlightDecoration Name="AttachedBase" ForeColor="Red"/>
-									<v:HighlightDecoration Name="SyllableDivision" ForeColor="Purple"/>
-									<v:HighlightDecoration Name="Ruby" ForeColor="Blue"/>
-									<v:HighlightDecoration Name="Silent" BackColor="Gainsboro"/>
-								</v:HighlightDecorationCollection>
-							</v:HighlightingDefinition.HighlightDecorations>
-						</v:HighlightingDefinition>
-					</v:LyricsTextEditor.SyntaxHighlighting>
-					<v:LyricsTextEditor.ContextMenu>
-						<ContextMenu>
-							<MenuItem Header="元に戻す(_U)" Command="Undo">
-								<MenuItem.Icon>
-									<Rectangle Fill="{StaticResource UndoBrush}"/>
-								</MenuItem.Icon>
-							</MenuItem>
-							<MenuItem Header="やり直し(_R)" Command="Redo">
-								<MenuItem.Icon>
-									<Rectangle Fill="{StaticResource RedoBrush}"/>
-								</MenuItem.Icon>
-							</MenuItem>
-							<Separator/>
-							<MenuItem Header="切り取り(_T)" Command="Cut">
-								<MenuItem.Icon>
-									<Rectangle Fill="{StaticResource CutBrush}"/>
-								</MenuItem.Icon>
-							</MenuItem>
-							<MenuItem Header="コピー(_C)" Command="Copy">
-								<MenuItem.Icon>
-									<Rectangle Fill="{StaticResource CopyBrush}"/>
-								</MenuItem.Icon>
-							</MenuItem>
-							<MenuItem Header="貼り付け(_P)" Command="Paste">
-								<MenuItem.Icon>
-									<Rectangle Fill="{StaticResource PasteBrush}"/>
-								</MenuItem.Icon>
-							</MenuItem>
-							<Separator/>
-							<MenuItem Header="すべて選択(_A)" Command="SelectAll">
-								<MenuItem.Icon>
-									<Rectangle Fill="{StaticResource SelectAllBrush}"/>
-								</MenuItem.Icon>
-							</MenuItem>
-						</ContextMenu>
-					</v:LyricsTextEditor.ContextMenu>
-				</v:LyricsTextEditor>
-				<GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch"/>
-				<ListView x:Name="ParserErrorList" Grid.Row="2" ItemsSource="{Binding ParserErrors}" SelectedItem="{Binding SelectedError}">
-					<ListView.View>
-						<GridView>
-							<GridView.ColumnHeaderContainerStyle>
-								<Style TargetType="{x:Type GridViewColumnHeader}">
-									<Setter Property="HorizontalContentAlignment" Value="Left"/>
-									<Setter Property="Padding" Value="5,0"/>
-								</Style>
-							</GridView.ColumnHeaderContainerStyle>
-							<GridViewColumn Header="コード" DisplayMemberBinding="{Binding Code}"/>
-							<GridViewColumn Header="説明" DisplayMemberBinding="{Binding Description}"/>
-							<GridViewColumn Header="行" DisplayMemberBinding="{Binding Location.Line}"/>
-							<GridViewColumn Header="列" DisplayMemberBinding="{Binding Location.Column}"/>
-						</GridView>
-					</ListView.View>
-					<i:Interaction.Triggers>
-						<l:RoutedEventTrigger RoutedEvent="ListViewItem.MouseDoubleClick">
-							<i:InvokeCommandAction Command="{Binding MoveCaretToSelectedErrorCommand}"/>
-						</l:RoutedEventTrigger>
-					</i:Interaction.Triggers>
-				</ListView>
-			</Grid>
+			<DockPanel Grid.Column="2">
+				<StatusBar DockPanel.Dock="Bottom">
+					<StatusBarItem HorizontalAlignment="Right">
+						<ComboBox
+							ItemsSource="{Binding SupportedEncodings}"
+							SelectedItem="{Binding CurrentEncoding, Mode=OneWay}"
+							Template="{StaticResource ComboBoxFlatTemplate}">
+							<ComboBox.Resources>
+								<DataTemplate DataType="{x:Type vm:EncodingViewModel}">
+									<TextBlock Text="{Binding Name}"/>
+								</DataTemplate>
+							</ComboBox.Resources>
+							<i:Interaction.Triggers>
+								<l:RoutedEventTrigger RoutedEvent="Selector.SelectionChanged">
+									<i:InvokeCommandAction Command="{Binding SelectEncodingCommand}" PassEventArgsToCommand="True"/>
+								</l:RoutedEventTrigger>
+							</i:Interaction.Triggers>
+						</ComboBox>
+					</StatusBarItem>
+				</StatusBar>
+				<Grid>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="3*"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="*"/>
+					</Grid.RowDefinitions>
+					<v:LyricsTextEditor
+						Grid.Row="0" FontSize="12pt" Document="{Binding SourceDocument, Mode=OneWay}"
+						ShowLineNumbers="True">
+						<v:LyricsTextEditor.Resources>
+							<Style TargetType="{x:Type avalonedit:TextArea}">
+								<Setter Property="SelectionCornerRadius" Value="0"/>
+								<Setter Property="SelectionBorder" Value="{x:Null}"/>
+							</Style>
+						</v:LyricsTextEditor.Resources>
+						<v:LyricsTextEditor.Options>
+							<avalonedit:TextEditorOptions EnableEmailHyperlinks="False" EnableHyperlinks="False" EnableRectangularSelection="False"/>
+						</v:LyricsTextEditor.Options>
+						<i:Interaction.Triggers>
+							<l:InteractionMessageTrigger MessageKey="ScrollEditorIntoCaret" Messenger="{Binding Messenger}">
+								<v:ScrollIntoCaretAction/>
+							</l:InteractionMessageTrigger>
+						</i:Interaction.Triggers>
+						<i:Interaction.Behaviors>
+							<v:CaretPositionBindingBehavior Location="{Binding CaretLocation, Mode=TwoWay}"/>
+							<v:SelectionBindingBehavior Selection="{Binding Selection, Mode=OneWayToSource}"/>
+						</i:Interaction.Behaviors>
+						<v:LyricsTextEditor.SyntaxHighlighting>
+							<v:HighlightingDefinition>
+								<v:HighlightingDefinition.HighlightDecorations>
+									<v:HighlightDecorationCollection>
+										<v:HighlightDecoration Name="SyllableGrouping" ForeColor="Red"/>
+										<v:HighlightDecoration Name="AttachedBase" ForeColor="Red"/>
+										<v:HighlightDecoration Name="SyllableDivision" ForeColor="Purple"/>
+										<v:HighlightDecoration Name="Ruby" ForeColor="Blue"/>
+										<v:HighlightDecoration Name="Silent" BackColor="Gainsboro"/>
+									</v:HighlightDecorationCollection>
+								</v:HighlightingDefinition.HighlightDecorations>
+							</v:HighlightingDefinition>
+						</v:LyricsTextEditor.SyntaxHighlighting>
+						<v:LyricsTextEditor.ContextMenu>
+							<ContextMenu>
+								<MenuItem Header="元に戻す(_U)" Command="Undo">
+									<MenuItem.Icon>
+										<Rectangle Fill="{StaticResource UndoBrush}"/>
+									</MenuItem.Icon>
+								</MenuItem>
+								<MenuItem Header="やり直し(_R)" Command="Redo">
+									<MenuItem.Icon>
+										<Rectangle Fill="{StaticResource RedoBrush}"/>
+									</MenuItem.Icon>
+								</MenuItem>
+								<Separator/>
+								<MenuItem Header="切り取り(_T)" Command="Cut">
+									<MenuItem.Icon>
+										<Rectangle Fill="{StaticResource CutBrush}"/>
+									</MenuItem.Icon>
+								</MenuItem>
+								<MenuItem Header="コピー(_C)" Command="Copy">
+									<MenuItem.Icon>
+										<Rectangle Fill="{StaticResource CopyBrush}"/>
+									</MenuItem.Icon>
+								</MenuItem>
+								<MenuItem Header="貼り付け(_P)" Command="Paste">
+									<MenuItem.Icon>
+										<Rectangle Fill="{StaticResource PasteBrush}"/>
+									</MenuItem.Icon>
+								</MenuItem>
+								<Separator/>
+								<MenuItem Header="すべて選択(_A)" Command="SelectAll">
+									<MenuItem.Icon>
+										<Rectangle Fill="{StaticResource SelectAllBrush}"/>
+									</MenuItem.Icon>
+								</MenuItem>
+							</ContextMenu>
+						</v:LyricsTextEditor.ContextMenu>
+					</v:LyricsTextEditor>
+					<GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch"/>
+					<ListView x:Name="ParserErrorList" Grid.Row="2" ItemsSource="{Binding ParserErrors}" SelectedItem="{Binding SelectedError}">
+						<ListView.View>
+							<GridView>
+								<GridView.ColumnHeaderContainerStyle>
+									<Style TargetType="{x:Type GridViewColumnHeader}">
+										<Setter Property="HorizontalContentAlignment" Value="Left"/>
+										<Setter Property="Padding" Value="5,0"/>
+									</Style>
+								</GridView.ColumnHeaderContainerStyle>
+								<GridViewColumn Header="コード" DisplayMemberBinding="{Binding Code}"/>
+								<GridViewColumn Header="説明" DisplayMemberBinding="{Binding Description}"/>
+								<GridViewColumn Header="行" DisplayMemberBinding="{Binding Location.Line}"/>
+								<GridViewColumn Header="列" DisplayMemberBinding="{Binding Location.Column}"/>
+							</GridView>
+						</ListView.View>
+						<i:Interaction.Triggers>
+							<l:RoutedEventTrigger RoutedEvent="ListViewItem.MouseDoubleClick">
+								<i:InvokeCommandAction Command="{Binding MoveCaretToSelectedErrorCommand}"/>
+							</l:RoutedEventTrigger>
+						</i:Interaction.Triggers>
+					</ListView>
+				</Grid>
+			</DockPanel>
 		</Grid>
 	</DockPanel>
 </Window>
