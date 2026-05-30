@@ -56,12 +56,13 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 	protected virtual void OnSourceChanged(DependencyPropertyChangedEventArgs e)
 	{
 		CoerceHighlight();
-		_invalidatedItems = InvalidatedItems.Source;
+		_invalidatedItems |= InvalidatedItems.Source;
 		InvalidateMeasure();
 	}
 	protected virtual void OnCurrentSyllableChanged(DependencyPropertyChangedEventArgs e)
 	{
-		_invalidatedItems = InvalidatedItems.CurrentSyllable;
+		CoerceHighlight();
+		_invalidatedItems |= InvalidatedItems.CurrentSyllable;
 		InvalidateArrange();
 	}
 
@@ -82,7 +83,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 				CurrentSyllable = new(newLineIndex, newColumnIndex);
 			}
 		}
-		ScrollIntoCurrentSyllable();
+		ScrollIntoSyllable(CurrentSyllable, null);
 	}
 	public void HighlightNextLine(bool forward)
 	{
@@ -99,8 +100,6 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 			CurrentSyllable = new(newLineIndex, FindNearestSyllableIndex(newLineIndex, centerX, nextLineRun));
 			ScrollIntoSyllable(CurrentSyllable, nextLineRun);
 		}
-		else
-			ScrollIntoCurrentSyllable();
 	}
 	public void HighlightFirst()
 	{
@@ -116,14 +115,15 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 	}
 	void CoerceHighlight()
 	{
-		if (Source.SyllableLines.Count <= 0)
-			return;
-		var line = CurrentSyllable.Line;
-		var column = CurrentSyllable.Column;
-		if (line >= Source.SyllableLines.Count)
-			line = Source.SyllableLines.Count - 1;
-		if (column >= Source.SyllableLines[line].Syllables.Count)
-			column = Source.SyllableLines[line].Syllables.Count - 1;
+		var syllableLines = Source.SyllableLines;
+		var currentSyllable = CurrentSyllable;
+		var line = 0;
+		var column = 0;
+		if (syllableLines.Count > 0)
+		{
+			line = Math.Min(currentSyllable.Line, syllableLines.Count - 1);
+			column = Math.Min(currentSyllable.Column, syllableLines[line].Syllables.Count);
+		}
 		CurrentSyllable = new(line, column);
 	}
 	int FindNearestLineIndex(double y)
@@ -168,7 +168,11 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		var lineIndex = FindNearestLineIndex(point.Y);
 		return lineIndex < 0 ? default : new(lineIndex, FindNearestSyllableIndex(lineIndex, point.X, null));
 	}
-	public void ScrollIntoCurrentSyllable() => ScrollIntoSyllable(CurrentSyllable, null);
+	public void ScrollIntoCurrentSyllable()
+	{
+		if (Source.SyllableLines.Count > 0)
+			ScrollIntoSyllable(CurrentSyllable, null);
+	}
 	void ScrollIntoSyllable(SyllableLocation syllableLocation, TextRun? lineRun)
 	{
 		var syllableLine = Source.SyllableLines[syllableLocation.Line];
@@ -180,7 +184,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 			rects = [.. syllableLine.Syllables[syllableLocation.Column].Select(lineRun.GetSubSyllableBounds)];
 		}
 		finally { allocatedRun?.Dispose(); }
-		_ = MakeVisible(_lineVisuals[syllableLine.PhysicalLineIndex], new(
+		_ = MakeVisible(false, Rect.Offset(new(
 			new Point(
 				rects.Min(x => x.Left) - MainPadding.Left,
 				-MainPadding.Top
@@ -189,7 +193,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 				rects.Max(x => x.Right) + MainPadding.Right,
 				TextRun.GetLineHeight(FontSize) + MainPadding.Bottom
 			)
-		));
+		), GetLineVisualOffset(syllableLine.PhysicalLineIndex)));
 	}
 
 	public LyricsSource Source
@@ -241,7 +245,7 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 			_lineVisuals = newLineVisuals;
 		}
 		for (var i = 0; i < _lineVisuals.Length; i++)
-			_lineVisuals[i].Offset = new Vector(MainPadding.Left, MainPadding.Top + i * TextRun.GetLineHeight(FontSize)) - ScrollOffset;
+			_lineVisuals[i].Offset = GetLineVisualOffset(i);
 		SetVisualChild(ref _nextLineBackgroundVisual, null);
 		SetVisualChild(ref _nextLineBackgroundVisual, CreateNextLineBackgroundVisual(finalSize));
 		if ((_invalidatedItems & InvalidatedItems.Source) != 0 || (_invalidatedItems & InvalidatedItems.CurrentSyllable) != 0)
@@ -258,6 +262,8 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		_highlightVisual?.Offset = new Vector(MainPadding.Left, MainPadding.Top + Source.SyllableLines[CurrentSyllable.Line].PhysicalLineIndex * TextRun.GetLineHeight(FontSize)) - ScrollOffset;
 		_invalidatedItems = InvalidatedItems.None;
 	}
+	Vector GetLineVisualOffset(int physicalLineIndex)
+		=> new Vector(MainPadding.Left, MainPadding.Top + physicalLineIndex * TextRun.GetLineHeight(FontSize)) - ScrollOffset;
 	void CreateLineVisuals(ref DrawingVisual[] newLineVisuals, float pixelsPerDip)
 	{
 		if (newLineVisuals.Length != Source.PhysicalLines.Count)
@@ -448,17 +454,13 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 	public void PageDown() => ScrollVertically(RoundDownToNearestLine(ViewportSize.Height));
 	public void SetHorizontalOffset(double offset) => ScrollOffset = ScrollOffset with { X = offset };
 	public void SetVerticalOffset(double offset) => ScrollOffset = ScrollOffset with { Y = offset };
-	public Rect MakeVisible(Visual visual, Rect rectangle)
+	Rect MakeVisible(bool scrollInVerticallyFixedArea, Rect rectangleInViewportCoord)
 	{
 		static double ComputeScrollOffset(double viewportStart, double viewportLength, double rectStart, double rectLength)
 			=> rectStart < viewportStart ? rectStart :
 				rectStart + rectLength > viewportStart + viewportLength ? rectStart + rectLength - viewportLength :
 				viewportStart;
 
-		if (rectangle.IsEmpty || visual == null || visual != this && !IsAncestorOf(visual))
-			return Rect.Empty;
-		var scrollInVerticallyFixedArea = visual == this || visual == _nextLineBackgroundVisual || visual == _nextLineVisual;
-		var rectangleInViewportCoord = visual.TransformToAncestor(this).TransformBounds(rectangle);
 		var actualViewportSize = scrollInVerticallyFixedArea ?
 			new(ViewportSize.Width, ViewportSize.Height + NextLineViewerHeight) :
 			ViewportSize;
@@ -472,6 +474,14 @@ public class LyricsViewer : FrameworkElement, IScrollInfo
 		var scrolledViewport = new Rect((Point)ScrollOffset, actualViewportSize);
 		var visibleRect = Rect.Intersect(rectangleInExtentCoord, scrolledViewport);
 		return !visibleRect.IsEmpty ? Rect.Offset(visibleRect, -ScrollOffset) : visibleRect;
+	}
+	public Rect MakeVisible(Visual visual, Rect rectangle)
+	{
+		if (rectangle.IsEmpty || visual == null || visual != this && !IsAncestorOf(visual))
+			return Rect.Empty;
+		var scrollInVerticallyFixedArea = visual == this || visual == _nextLineBackgroundVisual || visual == _nextLineVisual;
+		var rectangleInViewportCoord = visual.TransformToAncestor(this).TransformBounds(rectangle);
+		return MakeVisible(scrollInVerticallyFixedArea, rectangleInViewportCoord);
 	}
 }
 

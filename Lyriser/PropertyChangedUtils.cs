@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Lyriser;
@@ -23,9 +20,4 @@ static class PropertyChangedUtils
 	}
 
 	public static void Set<T>(ref T storage, T value, PropertyChangedEventHandler? handler, INotifyPropertyChanged @this, [CallerMemberName] string propertyName = "") => SetWithRelated(ref storage, value, handler, @this, [], propertyName);
-
-	public static IObservable<PropertyChangedEventArgs> AsPropertyChanged(this INotifyPropertyChanged source) =>
-		Observable.FromEventPattern<PropertyChangedEventArgs>(x => source.PropertyChanged += x.Invoke, x => source.PropertyChanged -= x.Invoke).Select(x => x.EventArgs);
-
-	public static IObservable<PropertyChangedEventArgs> AsPropertyChanged(this INotifyPropertyChanged source, string propertyName) => AsPropertyChanged(source).Where(x => x.PropertyName == propertyName);
 }

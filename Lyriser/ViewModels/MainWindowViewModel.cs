@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ICSharpCode.AvalonEdit.Document;
@@ -36,17 +35,18 @@ class MainWindowViewModel : ViewModel
 		}));
 		var synchronizationContext = SynchronizationContext.Current;
 		Debug.Assert(synchronizationContext != null, "SynchronizationContext.Current is null");
-		CompositeDisposable.Add(
-			_model.AsPropertyChanged(nameof(_model.ParserErrors))
-				.Throttle(TimeSpan.FromMilliseconds(1000))
-				.ObserveOn(synchronizationContext)
-				.Subscribe(_ =>
+		CompositeDisposable.Add(new PropertyChangedEventListener(_model, (s, ev) =>
+		{
+			if (ev.PropertyName == nameof(_model.ParserErrors))
+			{
+				synchronizationContext.Post(_ =>
 				{
 					ParserErrors.Clear();
 					foreach (var item in _model.ParserErrors)
 						ParserErrors.Add(item);
-				})
-		);
+				}, null);
+			}
+		}));
 		CompositeDisposable.Add(new PropertyChangedEventListener(this, async (s, ev) =>
 		{
 			switch (ev.PropertyName)
@@ -65,7 +65,9 @@ class MainWindowViewModel : ViewModel
 				case nameof(CurrentSyllable):
 					if (LyricsSource != null)
 					{
-						var physicalLineNumber = LyricsSource.SyllableLines[CurrentSyllable.Line].PhysicalLineIndex + 1;
+						var physicalLineNumber = (LyricsSource.SyllableLines.Count > 0 ?
+							LyricsSource.SyllableLines[CurrentSyllable.Line].PhysicalLineIndex :
+							0) + 1;
 						if (CaretLocation.Line != physicalLineNumber)
 						{
 							CaretLocation = new(physicalLineNumber, 0);

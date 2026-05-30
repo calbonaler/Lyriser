@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using ICSharpCode.AvalonEdit.Document;
@@ -20,15 +19,13 @@ public partial class Model : INotifyPropertyChanged
 		_monoRubyProvider = monoRubyProvider;
 		_parser.ErrorReporter = _backingParserErrors.Add;
 		OriginalVersion = SourceDocument.Version;
-		_ = Observable.FromEventPattern(x => SourceDocument.TextChanged += x, x => SourceDocument.TextChanged -= x)
-			.Do(_ => PropertyChanged.Raise(this, nameof(IsModified)))
-			.Throttle(TimeSpan.FromMilliseconds(500))
-			.Subscribe(_ =>
-			{
-				_backingParserErrors.Clear();
-				LyricsSource = new(_parser.Parse(SourceDocument.CreateSnapshot().Text).Select(x => x.Line));
-				ParserErrors = [.. _backingParserErrors];
-			});
+		SourceDocument.TextChanged += (s, ev) =>
+		{
+			PropertyChanged.Raise(this, nameof(IsModified));
+			_backingParserErrors.Clear();
+			LyricsSource = new(_parser.Parse(SourceDocument.CreateSnapshot().Text).Select(x => x.Line));
+			ParserErrors = [.. _backingParserErrors];
+		};
 	}
 
 	readonly IMonoRubyProvider _monoRubyProvider;
