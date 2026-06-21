@@ -123,18 +123,12 @@ public abstract class EncodedFileMessageAction : InteractionMessageAction<Depend
 
 public class OpenEncodedFileMessageAction : EncodedFileMessageAction
 {
-	protected override FileDialog CreateFileDialog() => new OpenFileDialog { CheckFileExists = true };
+	protected override FileDialog CreateFileDialog() => new OpenFileDialog();
 }
 
 public class SaveEncodedFileMessageAction : EncodedFileMessageAction
 {
-	protected override FileDialog CreateFileDialog() => new SaveFileDialog
-	{
-		AddExtension = true,
-		CreatePrompt = true,
-		ValidateNames = true,
-		OverwritePrompt = true
-	};
+	protected override FileDialog CreateFileDialog() => new SaveFileDialog();
 }
 
 public class ScrollIntoCurrentSyllableAction : InteractionMessageAction<LyricsViewer>
