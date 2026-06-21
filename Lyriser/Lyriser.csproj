@@ -28,11 +28,9 @@
     <PackageReference Include="LivetCask.Mvvm">
       <Version>4.0.2</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft-WindowsAPICodePack-Shell">
-      <Version>1.1.5</Version>
-    </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\.submodules\TaskDialogLite\TaskDialogLite\TaskDialogLite.csproj" />
     <ProjectReference Include="..\Lyriser.Core\Lyriser.Core.csproj" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

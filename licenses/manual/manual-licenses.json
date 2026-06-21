@@ -36,18 +36,6 @@
 		"Copyright": "Livet Copyright (c) 2010-2011 Livet Project\nLivet is provided with zlib/libpng license."
 	},
 	{
-		"Name": "Microsoft-WindowsAPICodePack-Core",
-		"Version": "1.1.5",
-		"LicenseId": "Microsoft Software License Terms – Microsoft Windows API Code Pack for Microsoft .NET Framework",
-		"LicenseFile": "WindowsAPICodePack_License.txt"
-	},
-	{
-		"Name": "Microsoft-WindowsAPICodePack-Shell",
-		"Version": "1.1.5",
-		"LicenseId": "Microsoft Software License Terms – Microsoft Windows API Code Pack for Microsoft .NET Framework",
-		"LicenseFile": "WindowsAPICodePack_License.txt"
-	},
-	{
 		"Name": "Livet.Behaviors.MethodBinder",
 		"Version": "custom",
 		"LicenseId": "Zlib",

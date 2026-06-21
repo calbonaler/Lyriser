@@ -6,7 +6,7 @@ using Livet.Behaviors.Messaging;
 using Livet.Messaging;
 using Lyriser.ViewModels;
 using Microsoft.Win32;
-using Microsoft.WindowsAPICodePack.Dialogs;
+using TaskDialogLite;
 
 namespace Lyriser.Views;
 
@@ -15,7 +15,6 @@ public class QueryYesNoCancelAction : InteractionMessageAction<Window>
 	public static readonly DependencyProperty MessageFormatProperty = DependencyProperty.Register(nameof(MessageFormat), typeof(string), typeof(QueryYesNoCancelAction));
 	public static readonly DependencyProperty YesButtonTextProperty = DependencyProperty.Register(nameof(YesButtonText), typeof(string), typeof(QueryYesNoCancelAction));
 	public static readonly DependencyProperty NoButtonTextProperty = DependencyProperty.Register(nameof(NoButtonText), typeof(string), typeof(QueryYesNoCancelAction));
-	public static readonly DependencyProperty CancelButtonTextProperty = DependencyProperty.Register(nameof(CancelButtonText), typeof(string), typeof(QueryYesNoCancelAction));
 	public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(QueryYesNoCancelAction));
 
 	public string MessageFormat
@@ -33,11 +32,6 @@ public class QueryYesNoCancelAction : InteractionMessageAction<Window>
 		get => (string)GetValue(NoButtonTextProperty);
 		set => SetValue(NoButtonTextProperty, value);
 	}
-	public string CancelButtonText
-	{
-		get => (string)GetValue(CancelButtonTextProperty);
-		set => SetValue(CancelButtonTextProperty, value);
-	}
 	public string Title
 	{
 		get => (string)GetValue(TitleProperty);
@@ -48,23 +42,16 @@ public class QueryYesNoCancelAction : InteractionMessageAction<Window>
 	{
 		if (message is not QueryYesNoCancelMessage actualMessage)
 			return;
-		using var dialog = new TaskDialog();
-		dialog.Cancelable = true;
-		dialog.Caption = Title;
-		dialog.InstructionText = string.Format(CultureInfo.CurrentCulture, MessageFormat, actualMessage.MessageArguments);
-		TaskDialogButton YesButton = new(nameof(YesButton), YesButtonText);
-		YesButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Yes);
-		dialog.Controls.Add(YesButton);
-		TaskDialogButton NoButton = new(nameof(NoButton), NoButtonText);
-		NoButton.Click += (s, ev) => dialog.Close(TaskDialogResult.No);
-		dialog.Controls.Add(NoButton);
-		TaskDialogButton CancelButton = new(nameof(CancelButton), CancelButtonText);
-		CancelButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Cancel);
-		dialog.Controls.Add(CancelButton);
-		dialog.StartupLocation = TaskDialogStartupLocation.CenterOwner;
-		dialog.OwnerWindowHandle = ((HwndSource)PresentationSource.FromVisual(AssociatedObject)).Handle;
-		var result = dialog.Show();
-		actualMessage.Response = result == TaskDialogResult.Yes ? true : result == TaskDialogResult.No ? false : null;
+		var yesButton = new TaskDialogButton(YesButtonText);
+		var noButton = new TaskDialogButton(NoButtonText);
+		var dialog = new TaskDialog
+		{
+			Title = Title,
+			HeaderText = string.Format(CultureInfo.CurrentCulture, MessageFormat, actualMessage.MessageArguments),
+			Buttons = [yesButton, noButton, TaskDialogButton.Cancel],
+		};
+		var result = dialog.Show(((HwndSource)PresentationSource.FromVisual(AssociatedObject)).Handle);
+		actualMessage.Response = result == yesButton ? true : result == noButton ? false : null;
 	}
 }
 
@@ -72,7 +59,6 @@ public class QueryDoCancelAction : InteractionMessageAction<Window>
 {
 	public static readonly DependencyProperty MessageFormatProperty = DependencyProperty.Register(nameof(MessageFormat), typeof(string), typeof(QueryDoCancelAction));
 	public static readonly DependencyProperty DoButtonTextProperty = DependencyProperty.Register(nameof(DoButtonText), typeof(string), typeof(QueryDoCancelAction));
-	public static readonly DependencyProperty CancelButtonTextProperty = DependencyProperty.Register(nameof(CancelButtonText), typeof(string), typeof(QueryDoCancelAction));
 	public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(QueryDoCancelAction));
 
 	public string MessageFormat
@@ -85,11 +71,6 @@ public class QueryDoCancelAction : InteractionMessageAction<Window>
 		get => (string)GetValue(DoButtonTextProperty);
 		set => SetValue(DoButtonTextProperty, value);
 	}
-	public string CancelButtonText
-	{
-		get => (string)GetValue(CancelButtonTextProperty);
-		set => SetValue(CancelButtonTextProperty, value);
-	}
 	public string Title
 	{
 		get => (string)GetValue(TitleProperty);
@@ -100,20 +81,13 @@ public class QueryDoCancelAction : InteractionMessageAction<Window>
 	{
 		if (message is not QueryDoCancelMessage actualMessage)
 			return;
-		using var dialog = new TaskDialog();
-		dialog.Cancelable = true;
-		dialog.Caption = Title;
-		dialog.InstructionText = string.Format(CultureInfo.CurrentCulture, MessageFormat, actualMessage.MessageArguments);
-		TaskDialogButton YesButton = new(nameof(YesButton), DoButtonText);
-		YesButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Yes);
-		dialog.Controls.Add(YesButton);
-		TaskDialogButton CancelButton = new(nameof(CancelButton), CancelButtonText);
-		CancelButton.Click += (s, ev) => dialog.Close(TaskDialogResult.Cancel);
-		dialog.Controls.Add(CancelButton);
-		dialog.StartupLocation = TaskDialogStartupLocation.CenterOwner;
-		dialog.OwnerWindowHandle = ((HwndSource)PresentationSource.FromVisual(AssociatedObject)).Handle;
-		var result = dialog.Show();
-		actualMessage.Response = result == TaskDialogResult.Yes;
+		var dialog = new TaskDialog
+		{
+			Title = Title,
+			HeaderText = string.Format(CultureInfo.CurrentCulture, MessageFormat, actualMessage.MessageArguments),
+			Buttons = [new(DoButtonText), TaskDialogButton.Cancel],
+		};
+		actualMessage.Response = dialog.Show(((HwndSource)PresentationSource.FromVisual(AssociatedObject)).Handle) != TaskDialogButton.Cancel;
 	}
 }
 

@@ -1,0 +1,4 @@
+[submodule ".submodules/TaskDialogLite"]
+	path = .submodules/TaskDialogLite
+	url = https://github.com/calbonaler/TaskDialogLite.git
+	update = none

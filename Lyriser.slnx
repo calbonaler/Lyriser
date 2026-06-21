@@ -2,6 +2,9 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
+  <Project Path=".submodules/TaskDialogLite/TaskDialogLite/TaskDialogLite.csproj">
+    <Platform Project="x64" />
+  </Project>
   <Project Path="Lyriser.Core/Lyriser.Core.csproj">
     <Platform Project="x64" />
   </Project>

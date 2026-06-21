@@ -266,7 +266,6 @@
 				MessageFormat="{}{0} への変更を保存しますか?"
 				YesButtonText="保存する(&amp;S)"
 				NoButtonText="保存しない(&amp;N)"
-				CancelButtonText="キャンセル"
 				Title="Lyriser"/>
 		</l:InteractionMessageTrigger>
 		<l:InteractionMessageTrigger MessageKey="GetOpeningFile" Messenger="{Binding Messenger}">
@@ -284,14 +283,12 @@
 				MessageFormat="{}{0} を {1} で開き直しますか?"
 				YesButtonText="開き直す(&amp;R)"
 				NoButtonText="保存時の文字コードのみ変更する(&amp;S)"
-				CancelButtonText="キャンセル"
 				Title="Lyriser"/>
 		</l:InteractionMessageTrigger>
 		<l:InteractionMessageTrigger MessageKey="WarnReopenWithEncoding" Messenger="{Binding Messenger}">
 			<v:QueryDoCancelAction
 				MessageFormat="{}{0} への変更を破棄して {1} で開き直しますか?"
 				DoButtonText="変更を破棄して開き直す(&amp;R)"
-				CancelButtonText="キャンセル"
 				Title="Lyriser"/>
 		</l:InteractionMessageTrigger>
 	</i:Interaction.Triggers>
