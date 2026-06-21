@@ -156,31 +156,30 @@ class MainWindowViewModel : ViewModel
 		_model.Open(filePath);
 		await HighlightLyricsAsync(LyricsHighlightRequest.First);
 	}
-	public async Task SaveAsAsync()
+	public async Task SaveAsAsync() => await SaveAsInternalAsync();
+	public async Task SaveAsync() => await SaveInternalAsync();
+	async Task<bool> SaveAsInternalAsync()
 	{
 		var filePath = await GetSavingFileAsync();
 		if (filePath == null)
-			return;
+			return false;
 		_model.Save(filePath);
+		return true;
 	}
-	public async Task SaveAsync()
+	async Task<bool> SaveInternalAsync()
 	{
 		if (_model.SavedFileNameWithoutExtension == null)
-		{
-			await SaveAsAsync();
-			return;
-		}
+			return await SaveAsInternalAsync();
 		_model.Save();
+		return true;
 	}
 	public async Task<bool> ConfirmSaveAsync()
 	{
 		if (_model.IsModified)
 		{
 			var action = await WarnUnsavedChangeAsync();
-			if (action == null)
+			if (action == null || action == true && !await SaveInternalAsync())
 				return false;
-			if (action == true)
-				await SaveAsync();
 		}
 		return true;
 	}
