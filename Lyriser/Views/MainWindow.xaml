@@ -3,7 +3,6 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
-		xmlns:l="http://schemas.livet-mvvm.net/2011/wpf"
 		xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:v="clr-namespace:Lyriser.Views"
@@ -257,43 +256,8 @@
 			</ControlTemplate.Triggers>
 		</ControlTemplate>
 	</Window.Resources>
-	<i:Interaction.Triggers>
-		<i:EventTrigger EventName="Closed">
-			<l:DataContextDisposeAction/>
-		</i:EventTrigger>
-		<l:InteractionMessageTrigger MessageKey="WarnUnsavedChange" Messenger="{Binding Messenger}">
-			<v:QueryYesNoCancelAction
-				MessageFormat="{}{0} への変更を保存しますか?"
-				YesButtonText="保存する(&amp;S)"
-				NoButtonText="保存しない(&amp;N)"
-				Title="Lyriser"/>
-		</l:InteractionMessageTrigger>
-		<l:InteractionMessageTrigger MessageKey="GetOpeningFile" Messenger="{Binding Messenger}">
-			<v:OpenEncodedFileMessageAction
-				FilterDisplayName="テキストファイル"
-				FilterExtensionList="*.txt"/>
-		</l:InteractionMessageTrigger>
-		<l:InteractionMessageTrigger MessageKey="GetSavingFile" Messenger="{Binding Messenger}">
-			<v:SaveEncodedFileMessageAction
-				FilterDisplayName="テキストファイル"
-				FilterExtensionList="*.txt"/>
-		</l:InteractionMessageTrigger>
-		<l:InteractionMessageTrigger MessageKey="QueryEncodingChange" Messenger="{Binding Messenger}">
-			<v:QueryYesNoCancelAction
-				MessageFormat="{}{0} を {1} で開き直しますか?"
-				YesButtonText="開き直す(&amp;R)"
-				NoButtonText="保存時の文字コードのみ変更する(&amp;S)"
-				Title="Lyriser"/>
-		</l:InteractionMessageTrigger>
-		<l:InteractionMessageTrigger MessageKey="WarnReopenWithEncoding" Messenger="{Binding Messenger}">
-			<v:QueryDoCancelAction
-				MessageFormat="{}{0} への変更を破棄して {1} で開き直しますか?"
-				DoButtonText="変更を破棄して開き直す(&amp;R)"
-				Title="Lyriser"/>
-		</l:InteractionMessageTrigger>
-	</i:Interaction.Triggers>
 	<i:Interaction.Behaviors>
-		<v:WindowClosingBehavior MethodName="ConfirmSaveAsync" MethodTarget="{Binding}"/>
+		<v:WindowClosingBehavior MethodName="ConfirmSave" MethodTarget="{Binding}"/>
 	</i:Interaction.Behaviors>
 	<Window.InputBindings>
 		<KeyBinding Key="{Binding NewCommand.Gesture.Key}" Modifiers="{Binding NewCommand.Gesture.Modifiers}" Command="{Binding NewCommand}"/>
@@ -325,17 +289,7 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<Separator/>
-				<MenuItem Header="終了(_X)" InputGestureText="Alt+F4">
-					<i:Interaction.Triggers>
-						<i:EventTrigger EventName="Click">
-							<l:WindowInteractionMessageAction>
-								<l:DirectInteractionMessage>
-									<l:WindowActionMessage Action="Close"/>
-								</l:DirectInteractionMessage>
-							</l:WindowInteractionMessageAction>
-						</i:EventTrigger>
-					</i:Interaction.Triggers>
-				</MenuItem>
+				<MenuItem Header="終了(_X)" InputGestureText="Alt+F4" Click="OnExitMenuItemClick"/>
 			</MenuItem>
 			<MenuItem Header="編集(_E)">
 				<MenuItem Header="元に戻す(_U)" Command="Undo">
@@ -422,14 +376,6 @@
 						x:Name="LyricsViewer"
 						Source="{Binding LyricsSource}"
 						CurrentSyllable="{Binding CurrentSyllable}">
-						<i:Interaction.Triggers>
-							<l:InteractionMessageTrigger MessageKey="ScrollViewerIntoCurrentSyllable" Messenger="{Binding Messenger}">
-								<v:ScrollIntoCurrentSyllableAction/>
-							</l:InteractionMessageTrigger>
-							<l:InteractionMessageTrigger MessageKey="HighlightLyrics" Messenger="{Binding Messenger}">
-								<v:HighlightLyricsAction/>
-							</l:InteractionMessageTrigger>
-						</i:Interaction.Triggers>
 					</v:LyricsViewer>
 				</ScrollViewer>
 			</Border>
@@ -438,18 +384,18 @@
 				<StatusBar DockPanel.Dock="Bottom">
 					<StatusBarItem HorizontalAlignment="Right">
 						<ComboBox
-							ItemsSource="{Binding SupportedEncodings}"
+							ItemsSource="{Binding Path=(vm:MainWindowViewModel.SupportedEncodings), Mode=OneTime}"
 							SelectedItem="{Binding CurrentEncoding, Mode=OneWay}"
 							Template="{StaticResource ComboBoxFlatTemplate}">
-							<ComboBox.Resources>
-								<DataTemplate DataType="{x:Type vm:EncodingViewModel}">
-									<TextBlock Text="{Binding Name}"/>
+							<ComboBox.ItemTemplate>
+								<DataTemplate>
+									<TextBlock Text="{Binding Name, Mode=OneTime}"/>
 								</DataTemplate>
-							</ComboBox.Resources>
+							</ComboBox.ItemTemplate>
 							<i:Interaction.Triggers>
-								<l:RoutedEventTrigger RoutedEvent="Selector.SelectionChanged">
+								<i:EventTrigger EventName="SelectionChanged">
 									<i:InvokeCommandAction Command="{Binding SelectEncodingCommand}" PassEventArgsToCommand="True"/>
-								</l:RoutedEventTrigger>
+								</i:EventTrigger>
 							</i:Interaction.Triggers>
 						</ComboBox>
 					</StatusBarItem>
@@ -461,6 +407,7 @@
 						<RowDefinition Height="*"/>
 					</Grid.RowDefinitions>
 					<v:LyricsTextEditor
+						x:Name="LyricsEditor"
 						Grid.Row="0" FontSize="12pt" Document="{Binding SourceDocument, Mode=OneWay}"
 						ShowLineNumbers="True">
 						<v:LyricsTextEditor.Resources>
@@ -472,11 +419,6 @@
 						<v:LyricsTextEditor.Options>
 							<avalonedit:TextEditorOptions EnableEmailHyperlinks="False" EnableHyperlinks="False" EnableRectangularSelection="False"/>
 						</v:LyricsTextEditor.Options>
-						<i:Interaction.Triggers>
-							<l:InteractionMessageTrigger MessageKey="ScrollEditorIntoCaret" Messenger="{Binding Messenger}">
-								<v:ScrollIntoCaretAction/>
-							</l:InteractionMessageTrigger>
-						</i:Interaction.Triggers>
 						<i:Interaction.Behaviors>
 							<v:CaretPositionBindingBehavior Location="{Binding CaretLocation, Mode=TwoWay}"/>
 							<v:SelectionBindingBehavior Selection="{Binding Selection, Mode=OneWayToSource}"/>
@@ -548,9 +490,9 @@
 							</GridView>
 						</ListView.View>
 						<i:Interaction.Triggers>
-							<l:RoutedEventTrigger RoutedEvent="ListViewItem.MouseDoubleClick">
+							<i:EventTrigger EventName="MouseDoubleClick">
 								<i:InvokeCommandAction Command="{Binding MoveCaretToSelectedErrorCommand}"/>
-							</l:RoutedEventTrigger>
+							</i:EventTrigger>
 						</i:Interaction.Triggers>
 					</ListView>
 				</Grid>

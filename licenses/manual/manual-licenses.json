@@ -1,41 +1,5 @@
 [
 	{
-		"Name": "LivetCask.Behaviors",
-		"Version": "4.0.2",
-		"LicenseId": "Zlib",
-		"Copyright": "Livet Copyright (c) 2010-2011 Livet Project\nLivet is provided with zlib/libpng license."
-	},
-	{
-		"Name": "LivetCask.Collections",
-		"Version": "4.0.2",
-		"LicenseId": "Zlib",
-		"Copyright": "Livet Copyright (c) 2010-2011 Livet Project\nLivet is provided with zlib/libpng license."
-	},
-	{
-		"Name": "LivetCask.Core",
-		"Version": "4.0.2",
-		"LicenseId": "Zlib",
-		"Copyright": "Livet Copyright (c) 2010-2011 Livet Project\nLivet is provided with zlib/libpng license."
-	},
-	{
-		"Name": "LivetCask.EventListeners",
-		"Version": "4.0.2",
-		"LicenseId": "Zlib",
-		"Copyright": "Livet Copyright (c) 2010-2011 Livet Project\nLivet is provided with zlib/libpng license."
-	},
-	{
-		"Name": "LivetCask.Messaging",
-		"Version": "4.0.2",
-		"LicenseId": "Zlib",
-		"Copyright": "Livet Copyright (c) 2010-2011 Livet Project\nLivet is provided with zlib/libpng license."
-	},
-	{
-		"Name": "LivetCask.Mvvm",
-		"Version": "4.0.2",
-		"LicenseId": "Zlib",
-		"Copyright": "Livet Copyright (c) 2010-2011 Livet Project\nLivet is provided with zlib/libpng license."
-	},
-	{
 		"Name": "Livet.Behaviors.MethodBinder",
 		"Version": "custom",
 		"LicenseId": "Zlib",

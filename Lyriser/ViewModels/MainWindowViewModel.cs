@@ -1,67 +1,51 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
-using Livet;
-using Livet.Commands;
-using Livet.EventListeners;
-using Livet.Messaging;
 using Lyriser.Models;
 
 namespace Lyriser.ViewModels;
 
-class MainWindowViewModel : ViewModel
+public partial class MainWindowViewModel : ObservableRecipient
 {
 	public MainWindowViewModel()
 	{
-		var supportedEncodings = new ObservableCollection<EncodingViewModel>();
-		foreach (var model in FileEncoding.All)
-		{
-			var vm = new EncodingViewModel(model);
-			CompositeDisposable.Add(vm);
-			supportedEncodings.Add(vm);
-		}
-		SupportedEncodings = new(supportedEncodings);
-		CurrentEncoding = SupportedEncodings.First(x => x.Model == _model.CurrentEncoding);
-
-		CompositeDisposable.Add(new PropertyChangedEventListener(_model, (s, ev) =>
+		var synchronizationContext = SynchronizationContext.Current;
+		Debug.Assert(synchronizationContext != null, "SynchronizationContext.Current is null");
+		_model.PropertyChanged += (s, ev) =>
 		{
 			switch (ev.PropertyName)
 			{
 				case nameof(_model.LyricsSource):
-					RaisePropertyChanged(nameof(LyricsSource));
+					OnPropertyChanged(nameof(LyricsSource));
 					break;
 				case nameof(_model.IsModified):
-					RaisePropertyChanged(nameof(IsModified));
+					OnPropertyChanged(nameof(IsModified));
 					break;
 				case nameof(_model.SavedFileNameWithoutExtension):
-					RaisePropertyChanged(nameof(DocumentName));
+					OnPropertyChanged(nameof(DocumentName));
 					break;
 				case nameof(_model.CurrentEncoding):
-					CurrentEncoding = SupportedEncodings.First(x => x.Model == _model.CurrentEncoding);
+					OnPropertyChanged(nameof(CurrentEncoding));
+					break;
+				case nameof(_model.ParserErrors):
+					synchronizationContext.Post(_ =>
+					{
+						ParserErrors.Clear();
+						foreach (var item in _model.ParserErrors)
+							ParserErrors.Add(item);
+					}, null);
 					break;
 			}
-		}));
-		var synchronizationContext = SynchronizationContext.Current;
-		Debug.Assert(synchronizationContext != null, "SynchronizationContext.Current is null");
-		CompositeDisposable.Add(new PropertyChangedEventListener(_model, (s, ev) =>
-		{
-			if (ev.PropertyName == nameof(_model.ParserErrors))
-			{
-				synchronizationContext.Post(_ =>
-				{
-					ParserErrors.Clear();
-					foreach (var item in _model.ParserErrors)
-						ParserErrors.Add(item);
-				}, null);
-			}
-		}));
-		CompositeDisposable.Add(new PropertyChangedEventListener(this, async (s, ev) =>
+		};
+		PropertyChanged += (s, ev) =>
 		{
 			switch (ev.PropertyName)
 			{
@@ -72,7 +56,7 @@ class MainWindowViewModel : ViewModel
 						if (logicalLineIndex >= 0 && CurrentSyllable.Line != logicalLineIndex)
 						{
 							CurrentSyllable = new(logicalLineIndex, 0);
-							await ScrollViewerIntoCurrentSyllableAsync();
+							ScrollViewerIntoCurrentSyllable();
 						}
 					}
 					break;
@@ -85,25 +69,16 @@ class MainWindowViewModel : ViewModel
 						if (CaretLocation.Line != physicalLineNumber)
 						{
 							CaretLocation = new(physicalLineNumber, 0);
-							await ScrollEditorIntoCaretAsync(false);
+							ScrollEditorIntoCaret(false);
 						}
 					}
 					break;
 			}
-		}));
+		};
 
-		NewCommand = new(async () => await NewAsync()) { Gesture = new(Key.N, ModifierKeys.Control) };
-		OpenCommand = new(async () => await OpenAsync()) { Gesture = new(Key.O, ModifierKeys.Control) };
-		SaveAsCommand = new(async () => await SaveAsAsync());
-		SaveCommand = new(async () => await SaveAsync()) { Gesture = new(Key.S, ModifierKeys.Control) };
-		AutoSetRubyInSelectionCommand = new(AutoSetRubyInSelection);
-		HighlightFirstCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.First));
-		HighlightNextCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.Next));
-		HighlightPreviousCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.Previous));
-		HighlightNextLineCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.NextLine));
-		HighlightPreviousLineCommand = new(async () => await HighlightLyricsAsync(LyricsHighlightRequest.PreviousLine));
-		MoveCaretToSelectedErrorCommand = new(async () => await MoveCaretToSelectedErrorAsync());
-		SelectEncodingCommand = new(async ev => await SelectEncodingAsync(ev));
+		NewCommand = new(New) { Gesture = new(Key.N, ModifierKeys.Control) };
+		OpenCommand = new(Open) { Gesture = new(Key.O, ModifierKeys.Control) };
+		SaveCommand = new(Save) { Gesture = new(Key.S, ModifierKeys.Control) };
 	}
 
 	readonly Model _model = new(ImeLanguage.Instance);
@@ -118,144 +93,127 @@ class MainWindowViewModel : ViewModel
 	public bool IsModified => _model.IsModified;
 	public string DocumentName => _model.SavedFileNameWithoutExtension ?? "無題";
 
-	public ReadOnlyObservableCollection<EncodingViewModel> SupportedEncodings { get; }
-	public EncodingViewModel CurrentEncoding { get; private set => RaisePropertyChangedIfSet(ref field, value); }
+	public static IReadOnlyList<FileEncoding> SupportedEncodings => FileEncoding.All;
+	public FileEncoding CurrentEncoding => _model.CurrentEncoding;
 
-	public TextLocation CaretLocation { get; set => RaisePropertyChangedIfSet(ref field, value); }
-	public SyllableLocation CurrentSyllable { get; set => RaisePropertyChangedIfSet(ref field, value); }
-	public ParserError? SelectedError { get; set => RaisePropertyChangedIfSet(ref field, value); }
-	public Selection? Selection { get; set => RaisePropertyChangedIfSet(ref field, value); }
+	[ObservableProperty]
+	public partial TextLocation CaretLocation { get; set; }
+	[ObservableProperty]
+	public partial SyllableLocation CurrentSyllable { get; set; }
+	[ObservableProperty]
+	public partial ParserError? SelectedError { get; set; }
+	[ObservableProperty]
+	public partial Selection? Selection { get; set; }
 
 	public HotKeyCommand NewCommand { get; }
 	public HotKeyCommand OpenCommand { get; }
-	public ViewModelCommand SaveAsCommand { get; }
 	public HotKeyCommand SaveCommand { get; }
-	public ViewModelCommand AutoSetRubyInSelectionCommand { get; }
-	public ViewModelCommand HighlightFirstCommand { get; }
-	public ViewModelCommand HighlightNextCommand { get; }
-	public ViewModelCommand HighlightPreviousCommand { get; }
-	public ViewModelCommand HighlightNextLineCommand { get; }
-	public ViewModelCommand HighlightPreviousLineCommand { get; }
-	public ViewModelCommand MoveCaretToSelectedErrorCommand { get; }
-	public ListenerCommand<SelectionChangedEventArgs> SelectEncodingCommand { get; }
 
-	public async Task NewAsync()
+	public void New()
 	{
-		if (!await ConfirmSaveAsync())
+		if (!ConfirmSave())
 			return;
 		_model.New();
-		await HighlightLyricsAsync(LyricsHighlightRequest.First);
+		HighlightFirst();
 	}
-	public async Task OpenAsync()
+	public void Open()
 	{
-		if (!await ConfirmSaveAsync())
+		if (!ConfirmSave())
 			return;
-		var filePath = await GetOpeningFileAysnc();
+		var filePath = GetOpeningFile();
 		if (filePath == null)
 			return;
 		_model.Open(filePath);
-		await HighlightLyricsAsync(LyricsHighlightRequest.First);
+		HighlightFirst();
 	}
-	public async Task SaveAsAsync() => await SaveAsInternalAsync();
-	public async Task SaveAsync() => await SaveInternalAsync();
-	async Task<bool> SaveAsInternalAsync()
+	[RelayCommand]
+	public void SaveAs() => SaveAsInternal();
+	public void Save() => SaveInternal();
+	bool SaveAsInternal()
 	{
-		var filePath = await GetSavingFileAsync();
+		var filePath = GetSavingFile();
 		if (filePath == null)
 			return false;
 		_model.Save(filePath);
 		return true;
 	}
-	async Task<bool> SaveInternalAsync()
+	bool SaveInternal()
 	{
 		if (_model.SavedFileNameWithoutExtension == null)
-			return await SaveAsInternalAsync();
+			return SaveAsInternal();
 		_model.Save();
 		return true;
 	}
-	public async Task<bool> ConfirmSaveAsync()
+	public bool ConfirmSave()
 	{
 		if (_model.IsModified)
 		{
-			var action = await WarnUnsavedChangeAsync();
-			if (action == null || action == true && !await SaveInternalAsync())
+			var action = WarnUnsavedChange();
+			if (action == null || action == true && !SaveInternal())
 				return false;
 		}
 		return true;
 	}
+	[RelayCommand]
 	public void AutoSetRubyInSelection()
 	{
 		if (Selection != null)
 			_model.AutoSetRuby(Selection.SurroundingSegment);
 	}
-
-	async Task SelectEncodingAsync(SelectionChangedEventArgs selection)
-	{
-		var newEncoding = (EncodingViewModel)selection.AddedItems[0]!;
-		if (CurrentEncoding == newEncoding) return;
-		if (_model.SavedFileNameWithoutExtension != null)
-		{
-			var result = await QueryEncodingChangeAsync(newEncoding.Name);
-			if (result == null)
-			{
-				RaisePropertyChanged(nameof(CurrentEncoding));
-				return;
-			}
-			if (result.Value)
-			{
-				if (_model.IsModified && !await WarnReopenWithEncodingAsync(newEncoding.Name))
-				{
-					RaisePropertyChanged(nameof(CurrentEncoding));
-					return;
-				}
-				_model.Reopen(newEncoding.Model);
-				await HighlightLyricsAsync(LyricsHighlightRequest.First);
-				return;
-			}
-		}
-		_model.CurrentEncoding = newEncoding.Model;
-	}
-	async Task<bool?> QueryEncodingChangeAsync(string newEncodingName)
-	{
-		var message = await Messenger.GetResponseAsync(new QueryYesNoCancelMessage("QueryEncodingChange", [DocumentName, newEncodingName]));
-		return message.Response;
-	}
-	async Task<bool> WarnReopenWithEncodingAsync(string newEncodingName)
-	{
-		var message = await Messenger.GetResponseAsync(new QueryDoCancelMessage("WarnReopenWithEncoding", [DocumentName, newEncodingName]));
-		return message.Response;
-	}
-	async Task<bool?> WarnUnsavedChangeAsync()
-	{
-		var message = await Messenger.GetResponseAsync(new QueryYesNoCancelMessage("WarnUnsavedChange", [DocumentName]));
-		return message.Response;
-	}
-	async Task<string?> GetOpeningFileAysnc()
-	{
-		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<string?>("GetOpeningFile"));
-		return message.Response;
-	}
-	async Task<string?> GetSavingFileAsync()
-	{
-		var message = await Messenger.GetResponseAsync(new ResponsiveInteractionMessage<string?>("GetSavingFile"));
-		return message.Response;
-	}
-	Task ScrollViewerIntoCurrentSyllableAsync() => Messenger.RaiseAsync(new InteractionMessage("ScrollViewerIntoCurrentSyllable"));
-	Task ScrollEditorIntoCaretAsync(bool focus) => Messenger.RaiseAsync(new GenericInteractionMessage<bool>(focus, "ScrollEditorIntoCaret"));
-	Task HighlightLyricsAsync(LyricsHighlightRequest request) => Messenger.RaiseAsync(new GenericInteractionMessage<LyricsHighlightRequest>(request, "HighlightLyrics"));
-	async Task MoveCaretToSelectedErrorAsync()
+	[RelayCommand]
+	public void HighlightFirst() => HighlightLyrics(LyricsHighlightRequest.First);
+	[RelayCommand]
+	public void HighlightNext() => HighlightLyrics(LyricsHighlightRequest.Next);
+	[RelayCommand]
+	public void HighlightPrevious() => HighlightLyrics(LyricsHighlightRequest.Previous);
+	[RelayCommand]
+	public void HighlightNextLine() => HighlightLyrics(LyricsHighlightRequest.NextLine);
+	[RelayCommand]
+	public void HighlightPreviousLine() => HighlightLyrics(LyricsHighlightRequest.PreviousLine);
+	[RelayCommand]
+	public void MoveCaretToSelectedError()
 	{
 		if (SelectedError == null)
 			return;
 		CaretLocation = new(SelectedError.Location.Line, SelectedError.Location.Column);
-		await ScrollEditorIntoCaretAsync(true);
+		ScrollEditorIntoCaret(true);
 	}
-}
+	[RelayCommand]
+	public void SelectEncoding(SelectionChangedEventArgs selection)
+	{
+		var newEncoding = (FileEncoding)selection.AddedItems[0]!;
+		if (CurrentEncoding == newEncoding) return;
+		if (_model.SavedFileNameWithoutExtension != null)
+		{
+			var result = QueryEncodingChange(newEncoding.Name);
+			if (result == null)
+			{
+				OnPropertyChanged(nameof(CurrentEncoding));
+				return;
+			}
+			if (result.Value)
+			{
+				if (_model.IsModified && !WarnReopenWithEncoding(newEncoding.Name))
+				{
+					OnPropertyChanged(nameof(CurrentEncoding));
+					return;
+				}
+				_model.Reopen(newEncoding);
+				HighlightFirst();
+				return;
+			}
+		}
+		_model.CurrentEncoding = newEncoding;
+	}
 
-public class EncodingViewModel(FileEncoding model) : ViewModel
-{
-	public FileEncoding Model { get; } = model;
-	public string Name => Model.Name;
+	bool? QueryEncodingChange(string newEncodingName) => Messenger.Send(new QueryEncodingChangeMessage(DocumentName, newEncodingName)).Response;
+	bool WarnReopenWithEncoding(string newEncodingName) => Messenger.Send(new WarnReopenWithEncodingMessage(DocumentName, newEncodingName)).Response;
+	bool? WarnUnsavedChange() => Messenger.Send(new WarnUnsavedChangeMessage(DocumentName)).Response;
+	string? GetOpeningFile() => Messenger.Send(new GetOpeningFileMessage()).Response;
+	string? GetSavingFile() => Messenger.Send(new GetSavingFileMessage()).Response;
+	void ScrollViewerIntoCurrentSyllable() => Messenger.Send(new ScrollViewerIntoCurrentSyllableMessage());
+	void ScrollEditorIntoCaret(bool focus) => Messenger.Send(new ScrollEditorIntoCaretMessage(focus));
+	void HighlightLyrics(LyricsHighlightRequest request) => Messenger.Send(new HighlightLyricsMessage(request));
 }
 
 public enum LyricsHighlightRequest

@@ -25,139 +25,177 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
-Package: LivetCask.Behaviors (4.0.2)
-License: Zlib
-Source: https://www.nuget.org/packages/LivetCask.Behaviors/
+Package: CommunityToolkit.Mvvm (8.4.2)
+License: MIT + THIRD-PARTY-NOTICES
+Source: https://www.nuget.org/packages/CommunityToolkit.Mvvm/
 
-Livet Copyright (c) 2010-2011 Livet Project
-Livet is provided with zlib/libpng license.
+MIT License
 
-zlib License
+Copyright (c) <year> <copyright holders>
 
-This software is provided 'as-is', without any express or implied warranty.  In no event will the authors be held liable for any damages arising from the use of this software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
 
-Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
+The above copyright notice and this permission notice shall be included in all copies or substantial
+portions of the Software.
 
-     1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-     2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
 
-     3. This notice may not be removed or altered from any source distribution.
+.NET-Community-Toolkit
 
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+Do Not Translate or Localize
+
+This project incorporates components from the projects listed below. The original copyright notices and the licenses under which the .NET Foundation received such components are set forth below. The .NET Foundation reserves all rights not expressly granted herein, whether by implication, estoppel or otherwise.
+
+1.	PedroLamas/DeferredEvents version 1.0.4 (https://github.com/PedroLamas/DeferredEvents), included in CommunityToolkit.Common/Deferred.
+2.	MichaeIDietrich/UwpNotificationNetCoreTest commit 5c1a4a3 (https://github.com/MichaeIDietrich/UwpNotificationNetCoreTest), used in DesktopNotificationManagerCompat.cs to support .NET Core 3.0.
+3.	lbugnion/mvvmlight commit 4cbf77c (https://github.com/lbugnion/mvvmlight), from which some APIs from the `CommunityToolkit.Mvvm` package take inspiration from.
+4.  PrivateObject/PrivateType (https://github.com/microsoft/testfx/tree/664ac7c2ac9dbfbee9d2a0ef560cfd72449dfe34/src/TestFramework/Extension.Desktop), included in UnitTests.
+5.  QuinnDamerell/UniversalMarkdown (https://github.com/QuinnDamerell/UniversalMarkdown) contributed by Quinn Damerell and Paul Bartrum for the MarkdownTextBlock control, relicensed to this .NET Foundation project under the MIT license upon contribution in https://github.com/CommunityToolkit/WindowsCommunityToolkit/pull/772.
+6.  qmatteoq/DesktopBridgeHelpers commit e278153 (https://github.com/qmatteoq/DesktopBridgeHelpers), contributed by Matteo Pagani to identify if running with identity in DesktopNotificationManagerCompat.cs and DesktopBridgeHelpers.cs, relicensed to this .NET Foundation project under the MIT license upon contribution in https://github.com/CommunityToolkit/WindowsCommunityToolkit/pull/3457.
+7.  Sergio0694/ComputeSharp (https://github.com/Sergio0694/ComputeSharp), contributed by Sergio Pedri to reuse some helpers to support incremental generators in the MVVM Toolkit.
+
+%% PedroLamas/DeferredEvents NOTICES AND INFORMATION BEGIN HERE
+=========================================
+Copyright (C) 2017 Pedro Lamas, http://www.pedrolamas.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+=========================================
+END OF PedroLamas/DeferredEvents NOTICES AND INFORMATION
+
+%% MichaeIDietrich/UwpNotificationNetCoreTest NOTICES AND INFORMATION BEGIN HERE
+=========================================
+The MIT License (MIT)
+
+Copyright (c) 2020 Michael Dietrich
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+=========================================
+END OF MichaeIDietrich/UwpNotificationNetCoreTest NOTICES AND INFORMATION
+
+%% lbugnion/mvvmlight NOTICES AND INFORMATION BEGIN HERE
+=========================================
+The MIT License (MIT)
+
+Copyright (c) 2009 - 2018 Laurent Bugnion
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+=========================================
+END OF lbugnion/mvvmlight NOTICES AND INFORMATION
+
+%% PrivateOject/PrivateType NOTICED AND INFORMATION BEGIN HERE
+=========================================
+MSTest Framework
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+=========================================
+END OF PrivateOject/PrivateType NOTICES AND INFORMATION
+
+%% Sergio0694/ComputeSharp NOTICES AND INFORMATION BEGIN HERE
+=========================================
+MIT License
+
+Copyright (c) 2021 Sergio Pedri
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+=========================================
+END OF Sergio0694/ComputeSharp NOTICES AND INFORMATION
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
-Package: LivetCask.Collections (4.0.2)
-License: Zlib
-Source: https://www.nuget.org/packages/LivetCask.Collections/
-
-Livet Copyright (c) 2010-2011 Livet Project
-Livet is provided with zlib/libpng license.
-
-zlib License
-
-This software is provided 'as-is', without any express or implied warranty.  In no event will the authors be held liable for any damages arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
-
-     1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-
-     2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-
-     3. This notice may not be removed or altered from any source distribution.
-
--------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------
-Package: LivetCask.Core (4.0.2)
-License: Zlib
-Source: https://www.nuget.org/packages/LivetCask.Core/
-
-Livet Copyright (c) 2010-2011 Livet Project
-Livet is provided with zlib/libpng license.
-
-zlib License
-
-This software is provided 'as-is', without any express or implied warranty.  In no event will the authors be held liable for any damages arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
-
-     1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-
-     2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-
-     3. This notice may not be removed or altered from any source distribution.
-
--------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------
-Package: LivetCask.EventListeners (4.0.2)
-License: Zlib
-Source: https://www.nuget.org/packages/LivetCask.EventListeners/
-
-Livet Copyright (c) 2010-2011 Livet Project
-Livet is provided with zlib/libpng license.
-
-zlib License
-
-This software is provided 'as-is', without any express or implied warranty.  In no event will the authors be held liable for any damages arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
-
-     1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-
-     2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-
-     3. This notice may not be removed or altered from any source distribution.
-
--------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------
-Package: LivetCask.Messaging (4.0.2)
-License: Zlib
-Source: https://www.nuget.org/packages/LivetCask.Messaging/
-
-Livet Copyright (c) 2010-2011 Livet Project
-Livet is provided with zlib/libpng license.
-
-zlib License
-
-This software is provided 'as-is', without any express or implied warranty.  In no event will the authors be held liable for any damages arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
-
-     1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-
-     2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-
-     3. This notice may not be removed or altered from any source distribution.
-
--------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------
-Package: LivetCask.Mvvm (4.0.2)
-License: Zlib
-Source: https://www.nuget.org/packages/LivetCask.Mvvm/
-
-Livet Copyright (c) 2010-2011 Livet Project
-Livet is provided with zlib/libpng license.
-
-zlib License
-
-This software is provided 'as-is', without any express or implied warranty.  In no event will the authors be held liable for any damages arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
-
-     1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-
-     2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-
-     3. This notice may not be removed or altered from any source distribution.
-
--------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------
-Package: Microsoft.Xaml.Behaviors.Wpf (1.1.31)
+Package: Microsoft.Xaml.Behaviors.Wpf (1.1.142)
 License: MIT
 Source: https://www.nuget.org/packages/Microsoft.Xaml.Behaviors.Wpf/
 
