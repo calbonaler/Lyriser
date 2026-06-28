@@ -1,12 +1,5 @@
 [
 	{
-		"Name": "Livet.Behaviors.MethodBinder",
-		"Version": "custom",
-		"LicenseId": "Zlib",
-		"Source": "https://github.com/runceel/Livet/blob/38f5c86c4ebcecfb18c42cbbebfab39e03dab185/LivetCask.Core/Behaviors/MethodBinder.cs",
-		"Copyright": "Livet Copyright (c) 2010-2011 Livet Project\nLivet is provided with zlib/libpng license."
-	},
-	{
 		"Name": "Binary floating point summation accurate to full precision (ActiveState Recipe 393090)",
 		"Version": "custom",
 		"LicenseId": "PSF-2.0",

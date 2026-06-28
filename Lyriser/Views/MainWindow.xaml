@@ -257,7 +257,7 @@
 		</ControlTemplate>
 	</Window.Resources>
 	<i:Interaction.Behaviors>
-		<v:WindowClosingBehavior MethodName="ConfirmSave" MethodTarget="{Binding}"/>
+		<v:WindowClosingBehavior Method="{Binding SaveConfirmation}"/>
 	</i:Interaction.Behaviors>
 	<Window.InputBindings>
 		<KeyBinding Key="{Binding NewCommand.Gesture.Key}" Modifiers="{Binding NewCommand.Gesture.Modifiers}" Command="{Binding NewCommand}"/>

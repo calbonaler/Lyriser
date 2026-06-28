@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
@@ -79,6 +80,7 @@ public partial class MainWindowViewModel : ObservableRecipient
 		NewCommand = new(New) { Gesture = new(Key.N, ModifierKeys.Control) };
 		OpenCommand = new(Open) { Gesture = new(Key.O, ModifierKeys.Control) };
 		SaveCommand = new(Save) { Gesture = new(Key.S, ModifierKeys.Control) };
+		SaveConfirmation = ConfirmSave;
 	}
 
 	readonly Model _model = new(ImeLanguage.Instance);
@@ -108,6 +110,7 @@ public partial class MainWindowViewModel : ObservableRecipient
 	public HotKeyCommand NewCommand { get; }
 	public HotKeyCommand OpenCommand { get; }
 	public HotKeyCommand SaveCommand { get; }
+	public Func<bool> SaveConfirmation { get; }
 
 	public void New()
 	{
@@ -144,7 +147,7 @@ public partial class MainWindowViewModel : ObservableRecipient
 		_model.Save();
 		return true;
 	}
-	public bool ConfirmSave()
+	bool ConfirmSave()
 	{
 		if (_model.IsModified)
 		{
