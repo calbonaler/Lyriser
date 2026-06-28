@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <Platforms>x64</Platforms>
@@ -10,7 +10,6 @@
     <Nullable>enable</Nullable>
     <Copyright>Copyright © calbonaler 2019-2026</Copyright>
     <Authors>calbonaler</Authors>
-    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <ApplicationDefinition Include="Views\App.xaml" />
@@ -33,7 +32,4 @@
     <ProjectReference Include="..\.submodules\TaskDialogLite\TaskDialogLite\TaskDialogLite.csproj" />
     <ProjectReference Include="..\Lyriser.Core\Lyriser.Core.csproj" />
   </ItemGroup>
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="del /f /q $(OutDir)\Microsoft.Windows.SDK.NET.dll $(OutDir)\WinRT.Runtime.dll" />
-  </Target>
 </Project>
