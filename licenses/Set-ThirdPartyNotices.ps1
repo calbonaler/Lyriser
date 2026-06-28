@@ -23,7 +23,7 @@ function Invoke-Main {
 		}
 		# Add notice for manual-only entry
 		Add-ThirdPartyNotice -Path $target -Package $entry -License $license
-    }
+	}
 }
 function Get-RuntimePackages {
 	# Process for each project in given solution
@@ -106,6 +106,16 @@ function Get-PackageLicense {
 			+ "See $licenseResource and edit manual-licenses.json"
 		$licenseId = "NO-SPDX ($licenseResource)"
 		$licenseText = "<<<Edit manual-licenses.json to fill the license information.>>>"
+	}
+	# Detect ThirdPartyNotices-like files
+	$thirdPartyNoticesFiles = Get-ChildItem -LiteralPath $packageRootDir `
+		| Where-Object { $_.Name -imatch "third.*party.*notice" }
+	if ($thirdPartyNoticesFiles.Count -gt 0) {
+		# Usually only one, but take the first
+		$thirdPartyNoticesText = Get-Content -LiteralPath $thirdPartyNoticesFiles[0].FullName -Raw
+		# Combine license ID and text
+		$licenseId = "$licenseId + THIRD-PARTY-NOTICES"
+		$licenseText += "`n`n" + $thirdPartyNoticesText
 	}
 	[PSCustomObject]@{
 		Id = $licenseId
